@@ -67,12 +67,43 @@ src/
 
 ## Testing Conventions
 
-- **Browser tests for components**: `*.svelte.spec.ts` in the same directory as the component
-- **Import pattern**: `import { render } from 'vitest-browser-svelte'` + `import { page } from 'vitest/browser'`
-- **Assertions**: Use `await expect.element(page.getByText(...)).toBeInTheDocument()`
+Two test modes configured in `vite.config.ts`:
+
+### Pure logic (.ts files) — Node environment
+```ts
+import { describe, it, expect } from 'vitest';
+import { greet } from './greet';
+
+describe('greet', () => {
+	it('returns a greeting', () => {
+		expect(greet('Svelte')).toBe('Hello, Svelte!');
+	});
+});
+```
+
+### Components (.svelte files) — Browser environment
+```ts
+import { page } from 'vitest/browser';
+import { describe, expect, it } from 'vitest';
+import { render } from 'vitest-browser-svelte';
+import Welcome from './Welcome.svelte';
+
+describe('Welcome.svelte', () => {
+	it('renders content', async () => {
+		render(Welcome, { host: 'SvelteKit' });
+
+		await expect.element(page.getByRole('heading', { level: 1 })).toHaveTextContent('Hello, SvelteKit!');
+		await expect.element(page.getByText('Hello, Vitest!')).toBeInTheDocument();
+	});
+});
+```
+
+### Rules
+- **Colocate**: Test file lives next to the file it tests (e.g. `Hero.svelte.spec.ts` next to `Hero.svelte`)
 - **Locator API**: `page.getByText()`, `page.getByRole()`, `page.getByLabelText()` — NO `page.locator()`
-- **Colocate**: Test file lives next to the component it tests
 - **Run single file**: `pnpm vitest run path/to/file.spec.ts`
+- **Run all tests**: `pnpm test`
+- See examples in `src/lib/vitest-examples/`
 
 ## What NOT to Do
 
