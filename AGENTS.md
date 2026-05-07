@@ -45,6 +45,7 @@ src/
 │   └── utils/               # shared utilities
 │   ├── assets/
 │   ├── hooks/
+│   └── server/
 └── lib/vitest-examples/     # test examples for reference
 ```
 
@@ -70,35 +71,38 @@ src/
 Two test modes configured in `vite.config.ts`:
 
 ### Pure logic (.ts files) — Node environment
-```ts
-import { describe, it, expect } from 'vitest';
-import { greet } from './greet';
 
-describe('greet', () => {
-	it('returns a greeting', () => {
-		expect(greet('Svelte')).toBe('Hello, Svelte!');
-	});
+```ts
+import { describe, it, expect } from "vitest";
+import { greet } from "./greet";
+
+describe("greet", () => {
+  it("returns a greeting", () => {
+    expect(greet("Svelte")).toBe("Hello, Svelte!");
+  });
 });
 ```
 
 ### Components (.svelte files) — Browser environment
+
 ```ts
-import { page } from 'vitest/browser';
-import { describe, expect, it } from 'vitest';
-import { render } from 'vitest-browser-svelte';
-import Welcome from './Welcome.svelte';
+import { page } from "vitest/browser";
+import { describe, expect, it } from "vitest";
+import { render } from "vitest-browser-svelte";
+import Welcome from "./Welcome.svelte";
 
-describe('Welcome.svelte', () => {
-	it('renders content', async () => {
-		render(Welcome, { host: 'SvelteKit' });
+describe("Welcome.svelte", () => {
+  it("renders content", async () => {
+    render(Welcome, { host: "SvelteKit" });
 
-		await expect.element(page.getByRole('heading', { level: 1 })).toHaveTextContent('Hello, SvelteKit!');
-		await expect.element(page.getByText('Hello, Vitest!')).toBeInTheDocument();
-	});
+    await expect.element(page.getByRole("heading", { level: 1 })).toHaveTextContent("Hello, SvelteKit!");
+    await expect.element(page.getByText("Hello, Vitest!")).toBeInTheDocument();
+  });
 });
 ```
 
 ### Rules
+
 - **Colocate**: Test file lives next to the file it tests (e.g. `Hero.svelte.spec.ts` next to `Hero.svelte`)
 - **Locator API**: `page.getByText()`, `page.getByRole()`, `page.getByLabelText()` — NO `page.locator()`
 - **Run single file**: `pnpm vitest run path/to/file.spec.ts`
