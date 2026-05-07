@@ -95,7 +95,7 @@ spacing:
   md: 1rem
   lg: 1.5rem
   xl: 2.5rem
-  container-max: 1280px
+  container-max: 1536px (Tailwind 2xl default)
   gutter: 1.5rem
 ---
 
@@ -128,7 +128,7 @@ Strict vertical rhythm is maintained by adhering to a 4px baseline grid.
 
 The layout follows a **Fluid Modular Grid** system. Inspired by the reference image, content is organized into logical "Dashboard Cards" that can stack or expand based on screen real estate.
 
-- **Grid**: A 12-column grid with a fixed maximum container width for desktop layouts.
+- **Grid**: A 12-column grid with Tailwind `container` as the max-width wrapper (responsive: 640px → 768px → 1024px → 1280px → 1536px).
 - **Modules**: Information is grouped into cards with generous internal padding (24px to 32px) to allow the content to breathe.
 - **Visual Rhythm**: High-level summaries (Total Votes, Time Remaining) occupy full-width hero sections, while granular details (Voter lists, Protocol specs) utilize 4-column or 6-column modules.
 

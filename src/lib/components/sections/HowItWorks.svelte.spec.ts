@@ -13,19 +13,19 @@ describe('HowItWorks.svelte', () => {
 	it('renders all 4 steps in order', async () => {
 		render(HowItWorks);
 
-		await expect.element(page.getByRole('heading', { name: 'Propuesta' })).toBeInTheDocument();
-		await expect.element(page.getByRole('heading', { name: 'Discusión' })).toBeInTheDocument();
-		await expect.element(page.getByRole('heading', { name: 'Votación' })).toBeInTheDocument();
-		await expect.element(page.getByRole('heading', { name: 'Escrutinio' })).toBeInTheDocument();
+		await expect.element(page.getByRole('heading', { name: 'Firma del Voto' })).toBeInTheDocument();
+		await expect.element(page.getByRole('heading', { name: 'Verificación de Identidad' })).toBeInTheDocument();
+		await expect.element(page.getByRole('heading', { name: 'Persistencia On-Chain' })).toBeInTheDocument();
+		await expect.element(page.getByRole('heading', { name: 'Escrutinio y Resultados' })).toBeInTheDocument();
 	});
 
-	it('renders step numbers 1 through 4', async () => {
+	it('renders step labels Paso 01 through Paso 04', async () => {
 		render(HowItWorks);
 
-		await expect.element(page.getByText(/^1$/)).toBeInTheDocument();
-		await expect.element(page.getByText(/^2$/)).toBeInTheDocument();
-		await expect.element(page.getByText(/^3$/)).toBeInTheDocument();
-		await expect.element(page.getByText(/^4$/)).toBeInTheDocument();
+		await expect.element(page.getByText('Paso 01')).toBeInTheDocument();
+		await expect.element(page.getByText('Paso 02')).toBeInTheDocument();
+		await expect.element(page.getByText('Paso 03')).toBeInTheDocument();
+		await expect.element(page.getByText('Paso 04')).toBeInTheDocument();
 	});
 
 	it('renders subtitle description', async () => {

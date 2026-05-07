@@ -4,10 +4,10 @@ import { render } from 'vitest-browser-svelte';
 import Hero from './Hero.svelte';
 
 describe('Hero.svelte', () => {
-	it('renders the badge with "Procesos Activos: 1,204"', async () => {
+	it('does NOT render the "Procesos Activos" badge', async () => {
 		render(Hero);
 
-		await expect.element(page.getByText('Procesos Activos: 1,204')).toBeInTheDocument();
+		await expect.element(page.getByText('Procesos Activos')).not.toBeInTheDocument();
 	});
 
 	it('renders the heading with "redefinida." highlighted', async () => {

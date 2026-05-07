@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button/index.js";
+	import { GitBranch, Globe, X } from "lucide-svelte";
 </script>
 
 <footer class="bg-brand-white pt-24 pb-12 border-t border-brand-gray-100">
@@ -34,10 +35,17 @@
 			</div>
 		</div>
 		<div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-brand-gray-100 text-sm text-brand-gray-800">
-			<p>© 2024 Plataforma Consensus. Todos los derechos reservados.</p>
-			<div class="flex gap-6 mt-4 md:mt-0">
-				<Button variant="ghost" class="h-auto px-0 hover:text-brand-red">Términos de Servicio</Button>
-				<Button variant="ghost" class="h-auto px-0 hover:text-brand-red">Política de Privacidad</Button>
+			<p>© 2026 Plataforma Consensus. Todos los derechos reservados.</p>
+			<div class="flex items-center gap-4 mt-4 md:mt-0">
+				<span class="text-brand-gray-800 hover:text-brand-red transition-colors cursor-pointer" aria-label="GitHub">
+					<GitBranch class="size-5" />
+				</span>
+				<span class="text-brand-gray-800 hover:text-brand-red transition-colors cursor-pointer" aria-label="LinkedIn">
+					<Globe class="size-5" />
+				</span>
+				<span class="text-brand-gray-800 hover:text-brand-red transition-colors cursor-pointer" aria-label="X">
+					<X class="size-5" />
+				</span>
 			</div>
 		</div>
 	</div>

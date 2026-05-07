@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Card from "$lib/components/ui/card/index.js";
+	import { PenSquare, ShieldCheck, Database, BarChart3 } from "lucide-svelte";
 </script>
 
 <section class="py-32 bg-brand-white border-t border-brand-gray-100" id="how-it-works">
@@ -11,43 +11,68 @@
 			</p>
 		</div>
 		<div class="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-			<div class="hidden md:block absolute top-12 left-[10%] right-[10%] h-0.5 bg-brand-gray-100 z-0"></div>
-			<Card.Root class="relative z-10 group bg-transparent shadow-none ring-0 border-0 items-center text-center">
+			<!-- Connecting Line -->
+			<div class="hidden md:block absolute top-1/2 left-0 right-0 h-[2px] bg-brand-gray-100 -translate-y-1/2 z-0"></div>
+			<!-- Step 1 -->
+			<div class="relative z-10">
 				<div
-					class="w-24 h-24 rounded-full bg-brand-white border-2 border-brand-gray-200 flex items-center justify-center text-2xl font-bold mb-6 group-hover:border-brand-red group-hover:text-brand-red transition-colors"
+					class="bg-white p-8 rounded-xl border border-brand-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center h-full"
 				>
-					1
+					<div class="w-14 h-14 rounded-full bg-brand-red/5 text-brand-red flex items-center justify-center mb-6">
+						<PenSquare class="size-7" />
+					</div>
+					<p class="text-xs font-bold text-brand-red uppercase tracking-widest mb-2">Paso 01</p>
+					<h3 class="text-xl font-bold mb-4 tracking-tight">Firma del Voto</h3>
+					<p class="text-brand-gray-800 text-sm leading-relaxed">
+						Generación de pruebas de pertenencia y firma privada utilizando el protocolo Semaphore.
+					</p>
 				</div>
-				<h3 class="text-xl font-bold mb-3">Propuesta</h3>
-				<p class="text-brand-gray-800 text-sm leading-relaxed">Redacta y envía propuestas claras y accionables a la red.</p>
-			</Card.Root>
-			<Card.Root class="relative z-10 group bg-transparent shadow-none ring-0 border-0 items-center text-center">
+			</div>
+			<!-- Step 2 -->
+			<div class="relative z-10">
 				<div
-					class="w-24 h-24 rounded-full bg-brand-white border-2 border-brand-gray-200 flex items-center justify-center text-2xl font-bold mb-6 group-hover:border-brand-red group-hover:text-brand-red transition-colors"
+					class="bg-white p-8 rounded-xl border border-brand-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center h-full"
 				>
-					2
+					<div class="w-14 h-14 rounded-full bg-brand-red/5 text-brand-red flex items-center justify-center mb-6">
+						<ShieldCheck class="size-7" />
+					</div>
+					<p class="text-xs font-bold text-brand-red uppercase tracking-widest mb-2">Paso 02</p>
+					<h3 class="text-xl font-bold mb-4 tracking-tight">Verificación de Identidad</h3>
+					<p class="text-brand-gray-800 text-sm leading-relaxed">
+						Validación criptográfica de la prueba sin revelar la identidad del votante (Protocolo Semaphore).
+					</p>
 				</div>
-				<h3 class="text-xl font-bold mb-3">Discusión</h3>
-				<p class="text-brand-gray-800 text-sm leading-relaxed">Participa en debates estructurados y refina propuestas antes de votar.</p>
-			</Card.Root>
-			<Card.Root class="relative z-10 group bg-transparent shadow-none ring-0 border-0 items-center text-center">
+			</div>
+			<!-- Step 3 -->
+			<div class="relative z-10">
 				<div
-					class="w-24 h-24 rounded-full bg-brand-white border-2 border-brand-gray-200 flex items-center justify-center text-2xl font-bold mb-6 group-hover:border-brand-red group-hover:text-brand-red transition-colors"
+					class="bg-white p-8 rounded-xl border border-brand-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center h-full"
 				>
-					3
+					<div class="w-14 h-14 rounded-full bg-brand-red/5 text-brand-red flex items-center justify-center mb-6">
+						<Database class="size-7" />
+					</div>
+					<p class="text-xs font-bold text-brand-red uppercase tracking-widest mb-2">Paso 03</p>
+					<h3 class="text-xl font-bold mb-4 tracking-tight">Persistencia On-Chain</h3>
+					<p class="text-brand-gray-800 text-sm leading-relaxed">
+						Registro inmutable y seguro del voto en la blockchain, garantizando transparencia total.
+					</p>
 				</div>
-				<h3 class="text-xl font-bold mb-3">Votación</h3>
-				<p class="text-brand-gray-800 text-sm leading-relaxed">Emite votos seguros y privados utilizando pruebas de conocimiento cero.</p>
-			</Card.Root>
-			<Card.Root class="relative z-10 group bg-transparent shadow-none ring-0 border-0 items-center text-center">
+			</div>
+			<!-- Step 4 -->
+			<div class="relative z-10">
 				<div
-					class="w-24 h-24 rounded-full bg-brand-white border-2 border-brand-gray-200 flex items-center justify-center text-2xl font-bold mb-6 group-hover:border-brand-red group-hover:text-brand-red transition-colors"
+					class="bg-white p-8 rounded-xl border border-brand-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center h-full"
 				>
-					4
+					<div class="w-14 h-14 rounded-full bg-brand-red/5 text-brand-red flex items-center justify-center mb-6">
+						<BarChart3 class="size-7" />
+					</div>
+					<p class="text-xs font-bold text-brand-red uppercase tracking-widest mb-2">Paso 04</p>
+					<h3 class="text-xl font-bold mb-4 tracking-tight">Escrutinio y Resultados</h3>
+					<p class="text-brand-gray-800 text-sm leading-relaxed">
+						Conteo automatizado y publicación de resultados verificables por cualquier nodo de la red.
+					</p>
 				</div>
-				<h3 class="text-xl font-bold mb-3">Escrutinio</h3>
-				<p class="text-brand-gray-800 text-sm leading-relaxed">Ejecución automatizada y verificable de los resultados en cadena.</p>
-			</Card.Root>
+			</div>
 		</div>
 	</div>
 </section>

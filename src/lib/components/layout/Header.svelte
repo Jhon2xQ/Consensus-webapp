@@ -3,7 +3,7 @@
 </script>
 
 <header class="fixed top-0 w-full bg-brand-white/90 backdrop-blur-md z-50 border-b border-brand-gray-100">
-	<div class="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
+	<div class="container mx-auto px-20 h-20 flex items-center justify-between">
 		<a href="/" class="flex items-center gap-2 group">
 			<div class="w-8 h-8 bg-brand-red rounded flex items-center justify-center text-white font-bold text-xl group-hover:bg-brand-black transition-colors">
 				C
