@@ -30,4 +30,11 @@ describe('Header.svelte', () => {
 		const homeLink = page.getByRole('link', { name: 'Consensus' });
 		await expect.element(homeLink).toHaveAttribute('href', '/');
 	});
+
+	it('renders the Procesos navigation link', async () => {
+		render(Header);
+		const procesosLink = page.getByRole('link', { name: 'Procesos' });
+		await expect.element(procesosLink).toBeInTheDocument();
+		await expect.element(procesosLink).toHaveAttribute('href', '/procesos');
+	});
 });

@@ -14,6 +14,7 @@
 			<nav aria-label="Navegación principal" class="hidden md:flex gap-6 text-sm font-medium">
 				<a href="#how-it-works" class="hover:text-brand-red transition-colors">Cómo Funciona</a>
 				<a href="#technology" class="hover:text-brand-red transition-colors">Tecnología</a>
+				<a href="/procesos" class="hover:text-brand-red transition-colors">Procesos</a>
 			</nav>
 			<div class="h-6 w-px bg-brand-gray-200 hidden md:block" aria-hidden="true"></div>
 			<Button
