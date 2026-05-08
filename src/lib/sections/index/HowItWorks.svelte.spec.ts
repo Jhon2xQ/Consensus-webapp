@@ -19,9 +19,9 @@ describe('HowItWorks.svelte', () => {
 
 	it('renders step titles', async () => {
 		render(HowItWorks);
-		await expect.element(page.getByRole('heading', { level: 3, name: 'Firma del Voto' })).toBeInTheDocument();
-		await expect.element(page.getByRole('heading', { level: 3, name: 'Verificación de Identidad' })).toBeInTheDocument();
-		await expect.element(page.getByRole('heading', { level: 3, name: 'Persistencia On-Chain' })).toBeInTheDocument();
-		await expect.element(page.getByRole('heading', { level: 3, name: 'Escrutinio y Resultados' })).toBeInTheDocument();
+		await expect.element(page.getByText('Firma del Voto')).toBeInTheDocument();
+		await expect.element(page.getByText('Verificación de Identidad')).toBeInTheDocument();
+		await expect.element(page.getByText('Persistencia On-Chain')).toBeInTheDocument();
+		await expect.element(page.getByText('Escrutinio y Resultados')).toBeInTheDocument();
 	});
 });

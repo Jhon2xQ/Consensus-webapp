@@ -33,20 +33,44 @@ pnpm vitest run src/lib/components/sections/Hero.svelte.spec.ts  # run single te
 
 ```
 src/
-├── routes/
-│   ├── +layout.svelte      # global layout (Header + Footer)
-│   ├── +page.svelte         # landing page (Hero → HowItWorks → Technology → TrustedBy)
-│   └── layout.css           # Tailwind config, CSS variables, brand tokens
 ├── lib/
-│   ├── components/
-│   │   ├── sections/        # page sections (Hero, HowItWorks, Technology, TrustedBy, Footer)
-│   │   ├── layout/          # layout components (Header)
-│   │   └── ui/              # shadcn-svelte primitives (button, card, badge)
-│   └── utils/               # shared utilities
+│   ├── components/              # Componentes reutilizables en toda la app
+│   │   ├── ui/                  # Básicos (Button, Card, Input, Modal, etc.)
+│   │   ├── shared/              # Más complejos pero reutilizables
+│   │   └── layout/              # Header, Footer, Sidebar, etc.
+│   │
+│   ├── sections/                # Secciones grandes que se usan 1 sola vez
+│   │   ├── home/
+│   │   ├── about/
+│   │   └── dashboard/
+│   │
+│   ├── server/                  # Código solo del servidor(es)
 │   ├── assets/
 │   ├── hooks/
-│   └── server/
-└── lib/vitest-examples/     # test examples for reference
+│   ├── services/
+│   ├── stores/                  # Stores de Svelte
+│   ├── utils/                   # Funciones helper
+│   ├── types/                   # Tipos TypeScript
+│   ├── index.ts
+│   └── utils.ts
+│
+├── routes/
+│   ├── +layout.svelte
+│   ├── +layout.ts               # Load function del layout
+│   ├── +error.svelte
+│   │
+│   ├── +page.svelte             # Landing page (Home)
+│   ├── about/
+│   │   └── +page.svelte
+│   │
+│   ├── dashboard/               # Área privada
+│   │   ├── +layout.svelte       # Layout con sidebar
+│   │   ├── +page.svelte
+│   │   ├── profile/
+│   │   └── settings/
+│   │
+
+
 ```
 
 ## Svelte 5 Conventions (MANDATORY)
