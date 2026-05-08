@@ -2,10 +2,10 @@
 	import { Button } from "$lib/components/ui/button";
 </script>
 
-<section class="relative min-h-screen pt-20 flex flex-col justify-center overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(187,0,18,0.05)_0%,transparent_50%)]">
+<section class="relative min-h-screen pt-26 lg:pt20 px-6 flex flex-col justify-center overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(187,0,18,0.05)_0%,transparent_50%)]">
 	<div class="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 		<div class="text-left">
-			<h1 class="text-6xl md:text-7xl font-bold tracking-tighter mb-8 leading-[1.1]">
+			<h1 class="text-4xl md:text-7xl font-bold tracking-tighter mb-8 leading-[1.1]">
 				Votación descentralizada,<br />
 				<span class="text-brand-red">redefinida.</span>
 			</h1>
