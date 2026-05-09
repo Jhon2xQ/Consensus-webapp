@@ -1,11 +1,16 @@
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button";
+	import { page } from '$app/state';
+	import { Button } from '$lib/components/ui/button';
+
+	let user = $derived(page.data.user);
 </script>
 
 <header class="fixed top-0 w-full bg-brand-white/90 backdrop-blur-md z-50 border-b border-brand-gray-100">
 	<div class="container mx-auto px-6 lg:px-20 h-20 flex items-center justify-between">
 		<a href="/" class="flex items-center gap-2 group">
-			<div class="w-8 h-8 bg-brand-red rounded flex items-center justify-center text-white font-bold text-xl group-hover:bg-brand-black transition-colors">
+			<div
+				class="w-8 h-8 bg-brand-red rounded flex items-center justify-center text-white font-bold text-xl group-hover:bg-brand-black transition-colors"
+			>
 				C
 			</div>
 			<span class="text-xl font-bold tracking-tight">Consensus</span>
@@ -15,13 +20,39 @@
 				<a href="/procesos" class="hover:text-brand-red transition-colors">Procesos</a>
 			</nav>
 			<div class="h-6 w-px bg-brand-gray-200 hidden md:block" aria-hidden="true"></div>
-			<Button
-				variant="default"
-				class="rounded-full bg-brand-black hover:bg-brand-red border-0 px-5 shadow-sm"
-			>
-				Iniciar Sesión
-			</Button>
-			<!-- placeholder: Logto Fase 3 -->
+			{#if user}
+				<form method="POST" action="/?/signOut" aria-label="Cerrar sesión">
+					<div class="flex items-center gap-3">
+						{#if user.picture}
+							<img
+								src={user.picture}
+								alt="Avatar de {user.name ?? user.username ?? 'Usuario'}"
+								class="w-8 h-8 rounded-full object-cover"
+							/>
+						{/if}
+						<span class="text-sm font-medium text-brand-gray-800 hidden md:block">
+							{user.name ?? user.username ?? 'Usuario'}
+						</span>
+						<Button
+							variant="outline"
+							type="submit"
+							class="rounded-full border-brand-gray-300 px-4 shadow-sm text-sm"
+						>
+							Cerrar Sesión
+						</Button>
+					</div>
+				</form>
+			{:else}
+				<form method="POST" action="/?/signIn" aria-label="Iniciar sesión">
+					<Button
+						variant="default"
+						type="submit"
+						class="rounded-full bg-brand-black hover:bg-brand-red border-0 px-5 shadow-sm"
+					>
+						Iniciar Sesión
+					</Button>
+				</form>
+			{/if}
 		</div>
 	</div>
 </header>

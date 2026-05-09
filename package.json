@@ -41,6 +41,8 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/space-grotesk": "^5.2.10",
-		"lucide-svelte": "^1.0.1"
+		"@logto/sveltekit": "^0.3.23",
+		"lucide-svelte": "^1.0.1",
+		"zod": "^4.4.3"
 	}
 }
