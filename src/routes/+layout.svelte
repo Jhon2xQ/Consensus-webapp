@@ -1,13 +1,20 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+	import { page } from '$app/state';
 	import Header from '$lib/components/layout/Header.svelte';
 	import Footer from '$lib/components/layout/Footer.svelte';
 
 	let { children } = $props();
+
+	let isDashboard = $derived(page.url.pathname.startsWith('/dashboard'));
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-<Header />
+{#if !isDashboard}
+	<Header />
+{/if}
 {@render children?.()}
-<Footer />
+{#if !isDashboard}
+	<Footer />
+{/if}

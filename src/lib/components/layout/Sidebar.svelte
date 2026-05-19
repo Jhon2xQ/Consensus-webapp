@@ -36,9 +36,7 @@
 
 	const navItems: NavItem[] = [
 		{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-		{ label: 'Procesos', href: '/dashboard/procesos', icon: FileText },
-		{ label: 'Equipos', href: '/dashboard/equipos', icon: Users },
-		{ label: 'Inscripciones', href: '/dashboard/inscripciones', icon: UserCheck }
+		{ label: 'Procesos', href: '/dashboard/procesos', icon: FileText }
 	];
 
 	function isActive(href: string): boolean {

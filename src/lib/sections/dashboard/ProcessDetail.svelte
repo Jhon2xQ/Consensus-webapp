@@ -7,25 +7,31 @@
 	import { Pencil, Trash2, Calendar, MapPin, FileText, Plus } from '@lucide/svelte';
 	import { getStatusLabel, getStatusColor, formatDate } from './process-utils';
 	import TeamTable from './TeamTable.svelte';
+	import EnrollmentTable from './EnrollmentTable.svelte';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
+	import type { Enrollment } from '$lib/types/enrollment';
 
 	type Props = {
 		process: ElectoralProcess;
 		teams?: Team[];
+		enrollments?: Enrollment[];
 		onDelete?: () => void;
 		onCreateTeam?: () => void;
 		onEditTeam?: (team: Team) => void;
 		onDeleteTeam?: (team: Team) => void;
+		onCreateEnrollment?: () => void;
 	};
 
 	let {
 		process,
 		teams = [],
+		enrollments = [],
 		onDelete,
 		onCreateTeam,
 		onEditTeam,
-		onDeleteTeam
+		onDeleteTeam,
+		onCreateEnrollment
 	}: Props = $props();
 </script>
 
@@ -60,7 +66,7 @@
 		<TabsList>
 			<TabsTrigger value="info">Información</TabsTrigger>
 			<TabsTrigger value="equipos">Equipos ({teams.length})</TabsTrigger>
-			<TabsTrigger value="inscripciones">Inscripciones</TabsTrigger>
+			<TabsTrigger value="inscripciones">Inscripciones ({enrollments.length})</TabsTrigger>
 		</TabsList>
 
 		<TabsContent value="info" class="space-y-6 mt-6">
@@ -131,13 +137,19 @@
 
 		<TabsContent value="inscripciones" class="mt-6">
 			<Card>
-				<CardContent class="pt-6">
-					<p class="text-muted-foreground text-center py-8">
-						Las inscripciones se gestionan en la
-						<a href="/dashboard/procesos/{process.id}/inscripciones" class="text-primary underline">
-							página de inscripciones
-						</a>.
-					</p>
+				<CardHeader>
+					<div class="flex items-center justify-between">
+						<CardTitle class="flex items-center gap-2 text-base">
+							Inscripciones del proceso
+						</CardTitle>
+						<Button size="sm" onclick={() => onCreateEnrollment?.()}>
+							<Plus class="size-4 mr-1" />
+							Registrar inscripción
+						</Button>
+					</div>
+				</CardHeader>
+				<CardContent>
+					<EnrollmentTable {enrollments} />
 				</CardContent>
 			</Card>
 		</TabsContent>

@@ -13,6 +13,7 @@
 	import { ArrowLeft } from '@lucide/svelte';
 	import ProcessDetail from '$lib/sections/dashboard/ProcessDetail.svelte';
 	import TeamForm from '$lib/sections/dashboard/TeamForm.svelte';
+	import EnrollmentForm from '$lib/sections/dashboard/EnrollmentForm.svelte';
 	import type { Team } from '$lib/types/team';
 
 	let { data, form } = $props();
@@ -69,6 +70,18 @@
 		deletingTeam = null;
 	}
 
+	// Enrollment create dialog
+	let showCreateEnrollmentDialog = $state(false);
+	let createEnrollmentSubmitting = $state(false);
+
+	function openCreateEnrollmentDialog() {
+		showCreateEnrollmentDialog = true;
+	}
+
+	function closeCreateEnrollmentDialog() {
+		showCreateEnrollmentDialog = false;
+	}
+
 	// Form enhance handlers
 	function handleCreateTeamSubmit() {
 		createTeamSubmitting = true;
@@ -94,6 +107,15 @@
 			closeDeleteTeamDialog();
 		};
 	}
+
+	function handleCreateEnrollmentSubmit() {
+		createEnrollmentSubmitting = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			await update();
+			createEnrollmentSubmitting = false;
+			closeCreateEnrollmentDialog();
+		};
+	}
 </script>
 
 <div class="max-w-7xl mx-auto px-6 lg:px-8 py-8 space-y-6">
@@ -108,10 +130,12 @@
 	<ProcessDetail
 		process={data.process}
 		teams={data.teams}
+		enrollments={data.enrollments}
 		onDelete={handleDeleteClick}
 		onCreateTeam={openCreateTeamDialog}
 		onEditTeam={openEditTeamDialog}
 		onDeleteTeam={openDeleteTeamDialog}
+		onCreateEnrollment={openCreateEnrollmentDialog}
 	/>
 </div>
 
@@ -196,5 +220,24 @@
 				<Button type="submit" variant="destructive">Eliminar</Button>
 			</form>
 		</DialogFooter>
+	</DialogContent>
+</Dialog>
+
+<!-- Enrollment Create Dialog -->
+<Dialog bind:open={showCreateEnrollmentDialog}>
+	<DialogContent>
+		<DialogHeader>
+			<DialogTitle>Registrar inscripción</DialogTitle>
+			<DialogDescription>
+				Agregá una nueva inscripción al proceso electoral "{data.process.name}".
+			</DialogDescription>
+		</DialogHeader>
+		<form method="POST" action="?/createEnrollment" use:enhance={handleCreateEnrollmentSubmit}>
+			<EnrollmentForm
+				errors={form?.action === 'createEnrollment' ? form.errors ?? {} : {}}
+				submitting={createEnrollmentSubmitting}
+				oncancel={closeCreateEnrollmentDialog}
+			/>
+		</form>
 	</DialogContent>
 </Dialog>

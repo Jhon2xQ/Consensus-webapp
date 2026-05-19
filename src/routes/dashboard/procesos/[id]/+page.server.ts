@@ -2,6 +2,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { electoralProcesses } from '$lib/mock/electoral-processes';
 import { teams } from '$lib/mock/teams';
+import { enrollments } from '$lib/mock/enrollments';
 
 type FormErrors = Record<string, string>;
 
@@ -13,8 +14,11 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const processTeams = teams.filter((t) => t.electoralProcessId === params.id);
+	const processEnrollments = enrollments.filter(
+		(e) => e.electoralProcessId === params.id
+	);
 
-	return { process, teams: processTeams };
+	return { process, teams: processTeams, enrollments: processEnrollments };
 };
 
 export const actions = {
@@ -99,6 +103,37 @@ export const actions = {
 		}
 
 		// Mock delete — in production this would call DELETE /api/private/teams/{id}
+		throw redirect(303, `/dashboard/procesos/${params.id}`);
+	},
+
+	// TODO: Replace with real API call — POST /api/private/processes/{pid}/enrollments
+	createEnrollment: async ({ request, params }) => {
+		const formData = await request.formData();
+		const userId = (formData.get('userId') as string)?.trim();
+		const commitment = (formData.get('commitment') as string)?.trim();
+
+		const errors: FormErrors = {};
+
+		if (!userId) {
+			errors.userId = 'El ID de usuario es obligatorio';
+		}
+
+		if (!commitment) {
+			errors.commitment = 'El compromiso criptográfico es obligatorio';
+		} else if (commitment.length < 10) {
+			errors.commitment = 'El compromiso debe tener al menos 10 caracteres';
+		}
+
+		if (Object.keys(errors).length > 0) {
+			return fail(400, {
+				action: 'createEnrollment',
+				errors,
+				values: { userId, commitment }
+			});
+		}
+
+		// Mock create — in production this would call POST /api/private/processes/{pid}/enrollments
+		// For now, redirect back to the same page
 		throw redirect(303, `/dashboard/procesos/${params.id}`);
 	}
 } satisfies Actions;

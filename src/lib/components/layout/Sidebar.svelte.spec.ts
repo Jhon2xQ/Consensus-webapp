@@ -17,8 +17,6 @@ describe('Sidebar.svelte', () => {
 
 		await expect.element(page.getByText('Dashboard')).toBeInTheDocument();
 		await expect.element(page.getByText('Procesos')).toBeInTheDocument();
-		await expect.element(page.getByText('Equipos')).toBeInTheDocument();
-		await expect.element(page.getByText('Inscripciones')).toBeInTheDocument();
 	});
 
 	it('renders logo when not collapsed', async () => {
@@ -51,7 +49,6 @@ describe('Sidebar.svelte', () => {
 		render(Sidebar, { props: { collapsed: true } });
 
 		await expect.element(page.getByText('Procesos')).not.toBeInTheDocument();
-		await expect.element(page.getByText('Equipos')).not.toBeInTheDocument();
 	});
 
 	it('has a toggle button with correct aria-label', async () => {
