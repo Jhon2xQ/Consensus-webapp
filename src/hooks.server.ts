@@ -6,6 +6,7 @@ export const handle = handleLogto(
     endpoint: privateEnv.logtoEndpoint,
     appId: privateEnv.logtoAppId,
     appSecret: privateEnv.logtoAppSecret,
+    resources: [privateEnv.logtoApiResource],
   },
   {
     encryptionKey: privateEnv.logtoCookieEncryptionKey,
