@@ -10,6 +10,7 @@
 	} from '$lib/components/ui/table';
 	import { Pencil, Trash2, Users } from '@lucide/svelte';
 	import { getTeamInitials } from './team-utils';
+	import EmptyState from '$lib/components/shared/EmptyState.svelte';
 	import type { Team } from '$lib/types/team';
 
 	type Props = {
@@ -22,13 +23,14 @@
 </script>
 
 {#if teams.length === 0}
-	<div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
-		<Users class="size-10 mb-3 opacity-50" />
-		<p class="text-sm">No hay equipos registrados en este proceso.</p>
-		<p class="text-xs mt-1">Creá el primer equipo con el botón de arriba.</p>
-	</div>
+	<EmptyState
+		icon={Users}
+		title="No hay equipos registrados"
+		description="Creá el primer equipo para este proceso electoral."
+	/>
 {:else}
-	<div class="rounded-md border">
+	<!-- Desktop table -->
+	<div class="hidden sm:block rounded-md border">
 		<Table>
 			<TableHeader>
 				<TableRow>
@@ -80,5 +82,39 @@
 				{/each}
 			</TableBody>
 		</Table>
+	</div>
+
+	<!-- Mobile card list -->
+	<div class="sm:hidden space-y-2">
+		{#each teams as team (team.id)}
+			<div class="flex items-center justify-between p-3 rounded-lg border bg-card">
+				<div class="flex items-center gap-3 min-w-0">
+					{#if team.avatarUrl}
+						<img
+							src={team.avatarUrl}
+							alt={team.name}
+							class="size-8 rounded-full object-cover shrink-0"
+						/>
+					{:else}
+						<div
+							class="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0"
+						>
+							{getTeamInitials(team.name)}
+						</div>
+					{/if}
+					<p class="text-sm font-medium truncate">{team.name}</p>
+				</div>
+				<div class="flex items-center gap-1 shrink-0 ml-2">
+					<Button variant="ghost" size="icon-sm" onclick={() => onEdit?.(team)}>
+						<Pencil class="size-4" />
+						<span class="sr-only">Editar equipo</span>
+					</Button>
+					<Button variant="ghost" size="icon-sm" onclick={() => onDelete?.(team)}>
+						<Trash2 class="size-4 text-destructive" />
+						<span class="sr-only">Eliminar equipo</span>
+					</Button>
+				</div>
+			</div>
+		{/each}
 	</div>
 {/if}
