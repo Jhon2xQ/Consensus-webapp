@@ -69,12 +69,15 @@ describe('Header.svelte', () => {
 
 		it('renders the logout button inside a signOut form', async () => {
 			render(Header);
+			// Open the user dropdown first
+			const trigger = page.getByRole('button', { name: 'María García' });
+			await trigger.click();
 			const form = page.getByRole('form', { name: 'Cerrar sesión' });
 			await expect.element(form).toBeInTheDocument();
 			await expect.element(form).toHaveAttribute('method', 'POST');
 			await expect.element(form).toHaveAttribute('action', '/?/signOut');
 			await expect
-				.element(page.getByRole('button', { name: 'Cerrar Sesión' }))
+				.element(page.getByRole('menuitem', { name: 'Cerrar Sesión' }))
 				.toBeInTheDocument();
 		});
 

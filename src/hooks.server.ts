@@ -1,5 +1,5 @@
 import { privateEnv } from "$lib/environments/private";
-import { handleLogto } from "@logto/sveltekit";
+import { handleLogto, UserScope } from "@logto/sveltekit";
 
 export const handle = handleLogto(
   {
@@ -7,6 +7,7 @@ export const handle = handleLogto(
     appId: privateEnv.logtoAppId,
     appSecret: privateEnv.logtoAppSecret,
     resources: [privateEnv.logtoApiResource],
+    scopes: [UserScope.Email, UserScope.Roles],
   },
   {
     encryptionKey: privateEnv.logtoCookieEncryptionKey,

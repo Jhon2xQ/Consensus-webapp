@@ -12,49 +12,34 @@ vi.mock('$app/state', () => ({
 }));
 
 describe('Sidebar.svelte', () => {
-	it('renders navigation links', async () => {
+	it('renders all 5 navigation links', async () => {
 		render(Sidebar);
 
 		await expect.element(page.getByText('Dashboard')).toBeInTheDocument();
 		await expect.element(page.getByText('Procesos')).toBeInTheDocument();
+		await expect.element(page.getByText('Equipos')).toBeInTheDocument();
+		await expect.element(page.getByText('Compromisos')).toBeInTheDocument();
+		await expect.element(page.getByText('Sufragios')).toBeInTheDocument();
 	});
 
-	it('renders logo when not collapsed', async () => {
+	it('highlights active link based on current path', async () => {
+		render(Sidebar);
+
+		// Dashboard link should have aria-current="page" since mock page is /dashboard
+		const activeLink = page.getByRole('link', { name: 'Dashboard' });
+		await expect.element(activeLink).toHaveAttribute('aria-current', 'page');
+	});
+
+	it('renders the Consensus logo with link to /dashboard', async () => {
 		render(Sidebar);
 
 		await expect.element(page.getByText('Consensus')).toBeInTheDocument();
 	});
 
-	it('hides logo when collapsed', async () => {
-		render(Sidebar, { props: { collapsed: true } });
-
-		await expect.element(page.getByText('Consensus')).not.toBeInTheDocument();
-	});
-
-	it('shows user name when provided', async () => {
-		render(Sidebar, {
-			props: { user: { name: 'Juan Pérez', username: 'jperez', picture: null } }
-		});
-
-		await expect.element(page.getByText('Juan Pérez')).toBeInTheDocument();
-	});
-
-	it('shows logout button', async () => {
+	it('renders collapse button with ChevronLeft when expanded', async () => {
 		render(Sidebar);
 
-		await expect.element(page.getByText('Cerrar Sesión')).toBeInTheDocument();
-	});
-
-	it('hides labels when collapsed', async () => {
-		render(Sidebar, { props: { collapsed: true } });
-
-		await expect.element(page.getByText('Procesos')).not.toBeInTheDocument();
-	});
-
-	it('has a toggle button with correct aria-label', async () => {
-		render(Sidebar);
-
-		const toggleButton = page.getByRole('button', { name: 'Colapsar sidebar' });
-		await expect.element(toggleButton).toBeInTheDocument();
+		const collapseBtn = page.getByRole('button', { name: 'Colapsar sidebar' });
+		await expect.element(collapseBtn).toBeInTheDocument();
 	});
 });

@@ -1,23 +1,24 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import Sidebar from '$lib/components/layout/Sidebar.svelte';
+	import DashboardHeader from '$lib/sections/dashboard/DashboardHeader.svelte';
 
 	let { children } = $props();
 
-	let user = $derived(page.data.user);
-	let sidebarCollapsed = $state(false);
+	let sidebarCollapsed = $state(true);
 
 	function toggleSidebar() {
 		sidebarCollapsed = !sidebarCollapsed;
 	}
 </script>
 
-<div class="flex h-screen overflow-hidden bg-background">
-	<Sidebar {user} collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-	<main class="flex-1 overflow-y-auto">
-		<!-- Mobile top padding for hamburger button -->
-		<div class="p-4 pt-16 lg:p-6 lg:pt-6 xl:p-8">
-			{@render children?.()}
-		</div>
-	</main>
+<div class="container mx-auto px-6 lg:px-20">
+	<div class="flex h-screen overflow-hidden">
+		<Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+		<main class="flex-1 h-screen overflow-y-auto scrollbar-hide">
+			<DashboardHeader />
+			<div class="p-4 lg:p-6 xl:p-8">
+				{@render children?.()}
+			</div>
+		</main>
+	</div>
 </div>

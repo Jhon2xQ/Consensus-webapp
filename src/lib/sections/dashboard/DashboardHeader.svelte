@@ -29,27 +29,15 @@
 	});
 </script>
 
-<header class="fixed top-0 w-full bg-brand-white/90 backdrop-blur-md z-50 border-b border-brand-gray-100">
-	<div class="container mx-auto px-6 lg:px-20 h-20 flex items-center justify-between">
-		<a href="/" class="flex items-center gap-2 group">
-			<div
-				class="w-8 h-8 bg-brand-red rounded flex items-center justify-center text-white font-bold text-xl group-hover:bg-brand-black transition-colors"
-			>
-				C
-			</div>
-			<span class="text-xl font-bold tracking-tight">Consensus</span>
-		</a>
+<header class="sticky top-0 w-full bg-brand-white/90 backdrop-blur-md border-b border-brand-gray-100">
+	<div class="mx-auto h-20 flex items-center justify-end">
 		<div class="flex items-center gap-6">
-			<nav aria-label="Navegación principal" class="hidden md:flex items-center gap-6 text-sm font-medium">
-				<a href="/procesos" class="hover:text-brand-red transition-colors">Procesos</a>
-			</nav>
-			<div class="h-6 w-px bg-brand-gray-200 hidden md:block" aria-hidden="true"></div>
 			{#if user?.roles?.includes('consensus-creator')}
 				<a
-					href="/dashboard"
+					href="/"
 					class="hidden md:flex bg-brand-black hover:bg-brand-red text-white rounded-full px-4 py-2 text-sm font-medium transition-colors"
 				>
-					Dashboard
+					Home
 				</a>
 			{/if}
 			{#if user}
