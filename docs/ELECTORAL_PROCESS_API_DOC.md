@@ -1,6 +1,7 @@
 # Electoral Process API
 
-Base path: `/api/private/processes`
+Base path (public): `/api/public/processes`
+Base path (private): `/api/private/processes`
 
 ---
 
@@ -8,25 +9,27 @@ Base path: `/api/private/processes`
 
 | Método | Endpoint | Auth | Rol |
 |--------|----------|------|-----|
-| GET | `/api/private/processes` | ❌ Público | — |
-| GET | `/api/private/processes/{id}` | ❌ Público | — |
-| GET | `/api/private/processes/{id}/state` | ❌ Público | — |
-| POST | `/api/private/processes` | ✅ Bearer JWT | `creator` |
-| PUT | `/api/private/processes/{id}` | ✅ Bearer JWT | `creator` |
-| DELETE | `/api/private/processes/{id}` | ✅ Bearer JWT | `creator` |
+| GET | `/api/public/processes` | ❌ Público | — |
+| GET | `/api/public/processes/{id}` | ❌ Público | — |
+| GET | `/api/public/processes/{id}/state` | ❌ Público | — |
+| GET | `/api/private/processes` | ✅ Bearer JWT | `consensus-creator` |
+| POST | `/api/private/processes` | ✅ Bearer JWT | `consensus-creator` |
+| PUT | `/api/private/processes/{id}` | ✅ Bearer JWT | `consensus-creator` |
+| DELETE | `/api/private/processes/{id}` | ✅ Bearer JWT | `consensus-creator` |
 
 Detalle completo debajo.
 
-- [GET /api/private/processes — Listar procesos](#get-apiprivateprocesses-listar)
-- [GET /api/private/processes/{id} — Obtener proceso](#get-apiprivateprocessesid-obtener)
-- [GET /api/private/processes/{id}/state — Estado actual](#get-apiprivateprocessesidstate-estado)
+- [GET /api/public/processes — Listar procesos](#get-apipublicprocesses-listar)
+- [GET /api/public/processes/{id} — Obtener proceso](#get-apipublicprocessesid-obtener)
+- [GET /api/public/processes/{id}/state — Estado actual](#get-apipublicprocessesidstate-estado)
+- [GET /api/private/processes — Listar procesos del creador](#get-apiprivateprocesses-listar-creador)
 - [POST /api/private/processes — Crear proceso](#post-apiprivateprocesses-crear)
 - [PUT /api/private/processes/{id} — Actualizar proceso](#put-apiprivateprocessesid-actualizar)
 - [DELETE /api/private/processes/{id} — Eliminar proceso](#delete-apiprivateprocessesid-eliminar)
 
 ---
 
-## GET /api/private/processes <a name="get-apiprivateprocesses-listar"></a>
+## GET /api/public/processes <a name="get-apipublicprocesses-listar"></a>
 
 Lista todos los procesos electorales con paginación.
 
@@ -53,6 +56,7 @@ Lista todos los procesos electorales con paginación.
         "name": "string",
         "scope": "string",
         "description": "string | null",
+        "createdBy": "string",
         "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
         "commitmentStart": "instant (ISO-8601)",
         "commitmentEnd": "instant (ISO-8601)",
@@ -72,7 +76,7 @@ Lista todos los procesos electorales con paginación.
 
 ---
 
-## GET /api/private/processes/{id} <a name="get-apiprivateprocessesid-obtener"></a>
+## GET /api/public/processes/{id} <a name="get-apipublicprocessesid-obtener"></a>
 
 Obtiene un proceso electoral por su ID.
 
@@ -95,7 +99,8 @@ Obtiene un proceso electoral por su ID.
     "name": "string",
     "scope": "string",
     "description": "string | null",
-    "estatus": "NONE | COMMITMENT | VOTING | CLOSED | PAUSED | CANCELLED",
+    "createdBy": "string",
+    "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
     "votingStart": "instant (ISO-8601)",
@@ -119,9 +124,9 @@ Obtiene un proceso electoral por su ID.
 
 ---
 
-## GET /api/private/processes/{id}/state <a name="get-apiprivateprocessesidstate-estado"></a>
+## GET /api/public/processes/{id}/state <a name="get-apipublicprocessesidstate-estado"></a>
 
-Obtiene el estado del proceso electoral. El estado se calcula en tiempo real basado en sus fechas, excepto PAUSED y CANCELLED que son locks manuales y se devuelven directamente.
+Obtiene el estado del proceso electoral. El estado se calcula en tiempo real basado en sus fechas.
 
 > **Auth**: ❌ Público — No requiere autenticación
 
@@ -139,7 +144,7 @@ Obtiene el estado del proceso electoral. El estado se calcula en tiempo real bas
   "message": "Operation successful",
   "data": {
     "processId": "uuid",
-    "state": "NONE | COMMITMENT | VOTING | CLOSED | PAUSED | CANCELLED"
+    "state": "NONE | COMMITMENT | VOTING | CLOSED"
   },
   "timestamp": 1234567890
 }
@@ -153,8 +158,6 @@ Obtiene el estado del proceso electoral. El estado se calcula en tiempo real bas
 | `COMMITMENT` | `commitmentStart ≤ now ≤ commitmentEnd`                                                            |
 | `VOTING`     | `votingStart ≤ now ≤ votingEnd`                                                                    |
 | `CLOSED`     | `results ≤ now`                                                                                    |
-| `PAUSED`     | Sobreescritura manual — pausa temporal, bloquea inscripciones y resultados                         |
-| `CANCELLED`  | Sobreescritura manual — cancelación irreversible, bloquea todas las operaciones                    |
 
 ### Respuesta `404 Not Found`
 
@@ -169,11 +172,80 @@ Obtiene el estado del proceso electoral. El estado se calcula en tiempo real bas
 
 ---
 
+## GET /api/private/processes <a name="get-apiprivateprocesses-listar-creador"></a>
+
+Lista los procesos electorales creados por el usuario autenticado con paginación.
+
+> **Auth**: ✅ Bearer JWT — Requiere rol `consensus-creator`
+
+### Parámetros (Query)
+
+| Nombre | Tipo    | Requerido | Descripción                         |
+| ------ | ------- | --------- | ----------------------------------- |
+| `page` | integer | No        | Número de página (default: 0)       |
+| `size` | integer | No        | Tamaño de página (default: 20)      |
+| `sort` | string  | No        | Campo de ordenación, ej. `name,asc` |
+
+### Respuesta `200 OK`
+
+```
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "content": [
+      {
+        "id": "uuid",
+        "name": "string",
+        "scope": "string",
+        "description": "string | null",
+        "createdBy": "string",
+        "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
+        "commitmentStart": "instant (ISO-8601)",
+        "commitmentEnd": "instant (ISO-8601)",
+        "votingStart": "instant (ISO-8601)",
+        "votingEnd": "instant (ISO-8601)",
+        "results": "instant (ISO-8601)"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 0,
+    "totalPages": 0
+  },
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `401 Unauthorized`
+
+```
+{
+  "success": false,
+  "message": "Authentication required",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `403 Forbidden`
+
+```
+{
+  "success": false,
+  "message": "Access denied — consensus-creator role required",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+---
+
 ## POST /api/private/processes <a name="post-apiprivateprocesses-crear"></a>
 
 Crea un nuevo proceso electoral.
 
-> **Auth**: ✅ Bearer JWT — Requiere rol `creator`
+> **Auth**: ✅ Bearer JWT — Requiere rol `consensus-creator`
 
 ### Request Body
 
@@ -203,7 +275,8 @@ Crea un nuevo proceso electoral.
     "name": "string",
     "scope": "string",
     "description": "string | null",
-    "estatus": "NONE | COMMITMENT | VOTING | CLOSED | PAUSED | CANCELLED",
+    "createdBy": "string",
+    "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
     "votingStart": "instant (ISO-8601)",
@@ -244,7 +317,7 @@ Crea un nuevo proceso electoral.
 
 Actualiza un proceso electoral existente. Todos los campos son opcionales.
 
-> **Auth**: ✅ Bearer JWT — Requiere rol `creator`
+> **Auth**: ✅ Bearer JWT — Requiere rol `consensus-creator`
 
 ### Parámetros (Path)
 
@@ -252,65 +325,9 @@ Actualiza un proceso electoral existente. Todos los campos son opcionales.
 | ------ | ---- | --------- |
 | `id`   | UUID | Sí        |
 
-### Request Body (todos opcionales)
-
-```
-{
-  "name": "string (opcional)",
-  "description": "string (opcional)",
-  "estatus": "PAUSED | CANCELLED (opcional)",
-  "commitmentStart": "instant (ISO-8601, opcional)",
-  "commitmentEnd": "instant (ISO-8601, opcional)",
-  "votingStart": "instant (ISO-8601, opcional)",
-  "votingEnd": "instant (ISO-8601, opcional)",
-  "results": "instant (ISO-8601, opcional)"
-}
-```
-
-> **Nota sobre `estatus`**: Solo acepta `PAUSED` o `CANCELLED` como override manual.
-> NONE, COMMITMENT, VOTING y CLOSED son gestionados automáticamente por la máquina de estados.
-> Si no se incluye el campo, la máquina de estados transiciona automáticamente según las fechas.
-
-### Respuesta `200 OK`
-
-```
-{
-  "success": true,
-  "message": "Operation successful",
-  "data": {
-    "id": "uuid",
-    "name": "string",
-    "scope": "string",
-    "description": "string | null",
-    "estatus": "NONE | COMMITMENT | VOTING | CLOSED | PAUSED | CANCELLED",
-    "commitmentStart": "instant (ISO-8601)",
-    "commitmentEnd": "instant (ISO-8601)",
-    "votingStart": "instant (ISO-8601)",
-    "votingEnd": "instant (ISO-8601)",
-    "results": "instant (ISO-8601)"
-  },
-  "timestamp": 1234567890
-}
-```
-
-### Respuesta `404 Not Found`
-
-```
-{
-  "success": false,
-  "message": "Process not found",
-  "data": null,
-  "timestamp": 1234567890
-}
-```
-
----
-
-## DELETE /api/private/processes/{id} <a name="delete-apiprivateprocessesid-eliminar"></a>
-
 Elimina un proceso electoral. Solo se puede eliminar si no tiene equipos, inscripciones ni registros de voto asociados.
 
-> **Auth**: ✅ Bearer JWT — Requiere rol `creator`
+> **Auth**: ✅ Bearer JWT — Requiere rol `consensus-creator`
 
 ### Parámetros (Path)
 

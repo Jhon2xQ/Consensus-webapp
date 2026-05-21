@@ -1,6 +1,6 @@
-# Record API (Votos & Resultados)
+# Record API (Votos)
 
-Base path: `/api/private`
+Base path: `/api/private/records`
 
 ---
 
@@ -8,67 +8,85 @@ Base path: `/api/private`
 
 | Método | Endpoint | Auth | Rol |
 |--------|----------|------|-----|
-| GET | `/api/private/processes/{id}/results` | ❌ Público | — |
+| GET | `/api/private/records` | ✅ Bearer JWT | Autenticado |
 | POST | `/api/private/records` | ➖ Exento | Semaphore Relayer |
 
 Detalle completo debajo.
 
-- [GET /api/private/processes/{id}/results — Resultados del proceso](#get-apiprivateprocessesidresults-resultados)
+- [GET /api/private/records — Listar registros de voto](#get-apiprivaterecords-listar)
 - [POST /api/private/records — Ingresar voto](#post-apiprivaterecords-ingresar)
 
 ---
 
-## GET /api/private/processes/{id}/results <a name="get-apiprivateprocessesidresults-resultados"></a>
+## GET /api/private/records <a name="get-apiprivaterecords-listar"></a>
 
-Obtiene los resultados de un proceso electoral. Solo disponible cuando el proceso está en estado `CLOSED`.
+Lista los registros de voto con paginación, o filtra por scope sin paginación.
 
-> **Auth**: ❌ Público — No requiere autenticación
+> **Auth**: ✅ Bearer JWT — Cualquier usuario autenticado
 
-### Parámetros (Path)
+### Parámetros (Query)
 
-| Nombre | Tipo | Requerido |
-|--------|------|-----------|
-| `id` | UUID | Sí |
+| Nombre  | Tipo    | Requerido | Descripción                                                                                     |
+| ------- | ------- | --------- | ----------------------------------------------------------------------------------------------- |
+| `scope` | string  | No        | Filtra por scope del proceso electoral. Cuando se provee, retorna TODOS los registros coincidentes sin paginación. |
+| `page`  | integer | No        | Número de página (default: 0). Solo aplica cuando NO se provee `scope`.                         |
+| `size`  | integer | No        | Tamaño de página (default: 20). Solo aplica cuando NO se provee `scope`.                        |
+| `sort`  | string  | No        | Campo de ordenación, ej. `createdAt,desc`. Solo aplica cuando NO se provee `scope`.             |
 
-### Respuesta `200 OK`
+### Respuesta `200 OK` — Paginada (sin `scope`)
 
 ```
 {
   "success": true,
   "message": "Operation successful",
   "data": {
-    "processId": "uuid",
-    "processName": "string",
-    "teamResults": [
+    "content": [
       {
-        "teamName": "string",
-        "voteCount": 0
+        "id": "uuid",
+        "groupId": "string",
+        "nullifier": "string",
+        "message": "string",
+        "scope": "string",
+        "transactionHash": "string | null",
+        "createdAt": "instant (ISO-8601)"
       }
     ],
-    "totalVotes": 0,
-    "status": "CLOSED"
+    "page": 0,
+    "size": 20,
+    "totalElements": 0,
+    "totalPages": 0
   },
   "timestamp": 1234567890
 }
 ```
 
-### Respuesta `404 Not Found`
+### Respuesta `200 OK` — Por scope (con `scope`)
 
 ```
 {
-  "success": false,
-  "message": "Process not found",
-  "data": null,
+  "success": true,
+  "message": "Operation successful",
+  "data": [
+    {
+      "id": "uuid",
+      "groupId": "string",
+      "nullifier": "string",
+      "message": "string",
+      "scope": "string",
+      "transactionHash": "string | null",
+      "createdAt": "instant (ISO-8601)"
+    }
+  ],
   "timestamp": 1234567890
 }
 ```
 
-### Respuesta `400 Bad Request`
+### Respuesta `401 Unauthorized`
 
 ```
 {
   "success": false,
-  "message": "Results are not available yet. Process is in NONE state",
+  "message": "Authentication required",
   "data": null,
   "timestamp": 1234567890
 }
@@ -94,7 +112,7 @@ Ingresa un voto validado desde el Semaphore Relayer. Endpoint **idempotente** �
 }
 ```
 
-### Respuesta `201 Created`
+### Respuesta `200 OK`
 
 ```
 {

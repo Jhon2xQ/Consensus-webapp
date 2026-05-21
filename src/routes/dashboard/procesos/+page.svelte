@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import {
 		Dialog,
 		DialogContent,
@@ -11,11 +10,20 @@
 		DialogFooter,
 		DialogClose
 	} from '$lib/components/ui/dialog';
-	import { Plus, Pencil, Trash2 } from '@lucide/svelte';
+	import { Plus, Pencil, Trash2, CircleAlert } from '@lucide/svelte';
 	import { getStatusLabel, getStatusColor, formatDate } from '$lib/sections/dashboard/process-utils';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 
 	let { data } = $props();
+
+	const SIZE_OPTIONS = [5, 10, 20] as const;
+
+	const rawSize = $derived(Number(page.url.searchParams.get('size') ?? '5'));
+	const currentSize = $derived(
+		rawSize === 10 ? 10 : rawSize === 20 ? 20 : 5
+	);
 
 	let deleteTarget = $state<ElectoralProcess | null>(null);
 	let showDeleteDialog = $state(false);
@@ -29,6 +37,10 @@
 		showDeleteDialog = false;
 		deleteTarget = null;
 	}
+
+	function changeSize(size: number) {
+		goto(`?size=${size}`);
+	}
 </script>
 
 <div class="space-y-6">
@@ -40,65 +52,87 @@
 				Gestiona los procesos electorales de la plataforma.
 			</p>
 		</div>
-		<Button href="/dashboard/procesos/nuevo">
-			<Plus class="size-4 mr-2" />
-			Crear proceso
-		</Button>
+		<div class="flex items-center gap-3">
+			<!-- Size selector -->
+			<div class="flex items-center gap-0.5 border rounded-lg p-1 bg-muted/50">
+				{#each SIZE_OPTIONS as sizeOption (sizeOption)}
+					<button
+						class="px-3 py-1 text-sm rounded-md transition-colors cursor-pointer
+							{currentSize === sizeOption
+							? 'bg-background shadow-sm font-medium text-foreground'
+							: 'text-muted-foreground hover:text-foreground'}"
+						onclick={() => changeSize(sizeOption)}
+					>
+						{sizeOption}
+					</button>
+				{/each}
+			</div>
+			<Button href="/dashboard/procesos/nuevo">
+				<Plus class="size-4 mr-2" />
+				Crear proceso
+			</Button>
+		</div>
 	</div>
 
-	<!-- Process Cards — vertical stack (table of cards) -->
-	{#if data.processes.length === 0}
+	<!-- Loading skeleton -->
+	{#if !data}
+		<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+			{#each Array(6) as _, i (i)}
+				<div class="h-24 animate-pulse bg-muted rounded-xl"></div>
+			{/each}
+		</div>
+	{:else if data.error}
+		<!-- Error state -->
+		<div class="max-w-md mx-auto">
+			<div class="p-6 rounded-xl border bg-card text-center space-y-4">
+				<CircleAlert class="size-8 text-destructive mx-auto" />
+				<p class="text-sm text-muted-foreground">{data.error}</p>
+				<Button variant="outline" onclick={() => window.location.reload()}>
+					Reintentar
+				</Button>
+			</div>
+		</div>
+	{:else if data.processes.length === 0}
+		<!-- Empty state -->
 		<div class="text-center py-16 text-muted-foreground">
 			<p class="text-lg">No hay procesos electorales</p>
 			<p class="text-sm mt-1">Creá tu primer proceso electoral para comenzar a gestionar votaciones.</p>
 			<Button size="sm" href="/dashboard/procesos/nuevo" class="mt-4">Crear proceso</Button>
 		</div>
 	{:else}
-		<div class="flex flex-col gap-4">
+		<!-- Process Grid -->
+		<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 			{#each data.processes as process (process.id)}
-				<Card class="flex flex-col">
-					<CardHeader class="pb-3">
-						<div class="flex items-start justify-between gap-2">
-							<CardTitle class="text-lg">{process.name}</CardTitle>
-							<Badge variant="outline" class="shrink-0 {getStatusColor(process.estatus)}">
-								{getStatusLabel(process.estatus)}
-							</Badge>
-						</div>
-					</CardHeader>
-					<CardContent class="flex-1 space-y-3 pb-3">
-						<div>
-							<span class="text-xs font-medium text-muted-foreground">Ámbito</span>
-							<p class="text-sm">{process.scope}</p>
-						</div>
-						<div>
-							<span class="text-xs font-medium text-muted-foreground">Compromiso</span>
-							<p class="text-sm">{formatDate(process.commitmentStart)} – {formatDate(process.commitmentEnd)}</p>
-						</div>
-						<div>
-							<span class="text-xs font-medium text-muted-foreground">Votación</span>
-							<p class="text-sm">{formatDate(process.votingStart)} – {formatDate(process.votingEnd)}</p>
-						</div>
-					</CardContent>
-					<CardFooter class="flex items-center justify-end gap-2 pt-3 border-t">
+				<div class="p-4 rounded-xl border bg-card space-y-3">
+					<!-- Row 1: name + badge + edit -->
+					<div class="flex items-center justify-between gap-2">
+						<span class="font-semibold truncate flex-1" title={process.name}>{process.name}</span>
+						<Badge variant="outline" class="shrink-0 {getStatusColor(process.estatus)}">
+							{getStatusLabel(process.estatus)}
+						</Badge>
 						<Button
 							variant="ghost"
-							size="sm"
+							size="icon-sm"
 							href="/dashboard/procesos/{process.id}/editar"
 						>
-							<Pencil class="size-4 mr-1" />
-							Editar
+							<Pencil class="size-4" />
 						</Button>
+					</div>
+					<!-- Row 2: scope · voting dates + delete -->
+					<div class="flex items-center justify-between gap-2">
+						<p class="text-xs text-muted-foreground truncate">
+							{process.scope} · {formatDate(process.votingStart)} – {formatDate(process.votingEnd)}
+						</p>
 						<Button
 							variant="ghost"
-							size="sm"
+							size="icon-sm"
+							class="text-destructive hover:text-destructive shrink-0"
 							onclick={() => handleDeleteClick(process)}
-							class="text-destructive hover:text-destructive"
 						>
-							<Trash2 class="size-4 mr-1" />
-							Eliminar
+							<Trash2 class="size-4" />
 						</Button>
-					</CardFooter>
-				</Card>
+					</div>
+				</div>
 			{/each}
 		</div>
 	{/if}

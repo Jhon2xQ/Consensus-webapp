@@ -8,15 +8,26 @@ Base path: `/api/private`
 
 | Método | Endpoint | Auth | Rol |
 |--------|----------|------|-----|
-| GET | `/api/private/processes/{processId}/enrollments` | ✅ Bearer JWT | `user` |
-| GET | `/api/private/enrollments/{id}` | ✅ Bearer JWT | `user` |
-| POST | `/api/private/processes/{processId}/enrollments` | ✅ Bearer JWT | `user` |
+| GET | `/api/private/processes/{processId}/enrollments` | ✅ Bearer JWT | Authenticated |
+| GET | `/api/private/enrollments/{id}` | ✅ Bearer JWT | Authenticated |
+| POST | `/api/private/processes/{processId}/enrollments` | ✅ Bearer JWT | `consensus-creator` |
+| PUT | `/api/private/enrollments/{id}/commitment` | ✅ Bearer JWT | `consensus-user` |
+| DELETE | `/api/private/enrollments/{id}` | ✅ Bearer JWT | `consensus-creator` |
 
 Detalle completo debajo.
 
 - [GET /api/private/processes/{processId}/enrollments — Listar inscripciones](#get-apiprivateprocessesprocessidenrollments-listar)
 - [GET /api/private/enrollments/{id} — Obtener inscripción](#get-apiprivateenrollmentsid-obtener)
-- [POST /api/private/processes/{processId}/enrollments — Crear inscripción](#post-apiprivateprocessesprocessidenrollments-crear)
+- [POST /api/private/processes/{processId}/enrollments — Crear inscripción (Fase 1)](#post-apiprivateprocessesprocessidenrollments-crear)
+- [PUT /api/private/enrollments/{id}/commitment — Reclamar inscripción (Fase 2)](#put-apiprivateenrollmentsidcommitment-reclamar)
+- [DELETE /api/private/enrollments/{id} — Eliminar inscripción](#delete-apiprivateenrollmentsid-eliminar)
+
+---
+
+## Flujo de dos fases
+
+1. **Fase 1 — Creator registra emails**: Un usuario con rol `consensus-creator` crea una inscripción proporcionando solo el email del votante. La inscripción queda con `userId: null` y `commitment: null`.
+2. **Fase 2 — Usuario reclama su slot**: Un usuario con rol `consensus-user` autenticado vía JWT reclama la inscripción. El email del JWT debe coincidir con el email registrado. El `sub` del JWT se guarda como `userId` y el commitment de Semaphore se guarda desde el body.
 
 ---
 
@@ -24,7 +35,7 @@ Detalle completo debajo.
 
 Lista todas las inscripciones de un proceso electoral.
 
-> **Auth**: ✅ Bearer JWT — Requiere rol `user`
+> **Auth**: ✅ Bearer JWT — Requiere autenticación (cualquier rol)
 
 ### Parámetros (Path)
 
@@ -42,9 +53,10 @@ Lista todas las inscripciones de un proceso electoral.
     {
       "id": "uuid",
       "electoralProcessId": "uuid",
-      "userId": "string",
-      "commitment": "string",
-      "hasVoted": true
+      "email": "string",
+      "userId": "string | null",
+      "commitment": "string | null",
+      "hasVoted": boolean
     }
   ],
   "timestamp": 1234567890
@@ -68,7 +80,7 @@ Lista todas las inscripciones de un proceso electoral.
 
 Obtiene una inscripción por su ID.
 
-> **Auth**: ✅ Bearer JWT — Requiere rol `user`
+> **Auth**: ✅ Bearer JWT — Requiere autenticación (cualquier rol)
 
 ### Parámetros (Path)
 
@@ -85,9 +97,10 @@ Obtiene una inscripción por su ID.
   "data": {
     "id": "uuid",
     "electoralProcessId": "uuid",
-    "userId": "string",
-    "commitment": "string",
-    "hasVoted": true
+    "email": "string",
+    "userId": "string | null",
+    "commitment": "string | null",
+    "hasVoted": boolean
   },
   "timestamp": 1234567890
 }
@@ -108,11 +121,11 @@ Obtiene una inscripción por su ID.
 
 ## POST /api/private/processes/{processId}/enrollments <a name="post-apiprivateprocessesprocessidenrollments-crear"></a>
 
-Inscribe un votante en un proceso electoral mediante su commitment de Semaphore.
+**Fase 1 — Creator**: Registra un votante en el proceso electoral mediante su email.
 
-Solo se permite inscribir cuando el proceso está en estado `NONE` o `COMMITMENT`.
+Solo se permite crear inscripciones cuando el proceso está en estado `NONE` o `COMMITMENT`.
 
-> **Auth**: ✅ Bearer JWT — Requiere rol `user`
+> **Auth**: ✅ Bearer JWT — Requiere rol `consensus-creator`
 
 ### Parámetros (Path)
 
@@ -124,14 +137,13 @@ Solo se permite inscribir cuando el proceso está en estado `NONE` o `COMMITMENT
 
 ```
 {
-  "userId": "string (requerido)",
-  "commitment": "string (requerido)"
+  "email": "string (requerido)"
 }
 ```
 
-> Nota: `electoralProcessId` se setea automáticamente desde el path parameter.
+> Nota: `electoralProcessId` se setea automáticamente desde el path parameter. `userId` y `commitment` no se envían en esta fase — se setean cuando el usuario reclama la inscripción en la fase 2.
 
-### Respuesta `201 Created`
+### Respuesta `200 OK`
 
 ```
 {
@@ -140,8 +152,9 @@ Solo se permite inscribir cuando el proceso está en estado `NONE` o `COMMITMENT
   "data": {
     "id": "uuid",
     "electoralProcessId": "uuid",
-    "userId": "string",
-    "commitment": "string",
+    "email": "string",
+    "userId": null,
+    "commitment": null,
     "hasVoted": false
   },
   "timestamp": 1234567890
@@ -153,7 +166,18 @@ Solo se permite inscribir cuando el proceso está en estado `NONE` o `COMMITMENT
 ```
 {
   "success": false,
-  "message": "Validation error description",
+  "message": "Enrollment not open for this process",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `403 Forbidden`
+
+```
+{
+  "success": false,
+  "message": "Access denied: insufficient permissions",
   "data": null,
   "timestamp": 1234567890
 }
@@ -175,7 +199,160 @@ Solo se permite inscribir cuando el proceso está en estado `NONE` o `COMMITMENT
 ```
 {
   "success": false,
-  "message": "Enrollment already exists for this user in this process",
+  "message": "Email already registered in this process",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+---
+
+## PUT /api/private/enrollments/{id}/commitment <a name="put-apiprivateenrollmentsidcommitment-reclamar"></a>
+
+**Fase 2 — Usuario**: Reclama una inscripción existente. El email del JWT debe coincidir con el email registrado en la inscripción. El `sub` del JWT se guarda como `userId` y el commitment de Semaphore se guarda desde el body.
+
+Solo se permite reclamar inscripciones cuando el proceso está en estado `NONE` o `COMMITMENT`.
+
+> **Auth**: ✅ Bearer JWT — Requiere rol `consensus-user` y claim `email` en el JWT
+
+### Parámetros (Path)
+
+| Nombre | Tipo | Requerido |
+|--------|------|-----------|
+| `id` | UUID | Sí |
+
+### Request Body
+
+```
+{
+  "electoralProcessId": "uuid (requerido)",
+  "commitment": "string (requerido)"
+}
+```
+
+### Respuesta `200 OK`
+
+```
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "id": "uuid",
+    "electoralProcessId": "uuid",
+    "email": "string",
+    "userId": "string",
+    "commitment": "string",
+    "hasVoted": false
+  },
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `400 Bad Request`
+
+```
+{
+  "success": false,
+  "message": "Enrollment not open for this process",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `401 Unauthorized`
+
+```
+{
+  "success": false,
+  "message": "Missing email claim in JWT",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `403 Forbidden`
+
+```
+{
+  "success": false,
+  "message": "Access denied: insufficient permissions",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `404 Not Found`
+
+```
+{
+  "success": false,
+  "message": "Enrollment not found",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `409 Conflict`
+
+```
+{
+  "success": false,
+  "message": "A commitment with this value already exists in the process",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+```
+{
+  "success": false,
+  "message": "Enrollment with userId already exists",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+---
+
+## DELETE /api/private/enrollments/{id} <a name="delete-apiprivateenrollmentsid-eliminar"></a>
+
+Elimina una inscripción por su ID.
+
+> **Auth**: ✅ Bearer JWT — Requiere rol `consensus-creator`
+
+### Parámetros (Path)
+
+| Nombre | Tipo | Requerido |
+|--------|------|-----------|
+| `id` | UUID | Sí |
+
+### Respuesta `200 OK`
+
+```
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `403 Forbidden`
+
+```
+{
+  "success": false,
+  "message": "Access denied: insufficient permissions",
+  "data": null,
+  "timestamp": 1234567890
+}
+```
+
+### Respuesta `404 Not Found`
+
+```
+{
+  "success": false,
+  "message": "Enrollment not found",
   "data": null,
   "timestamp": 1234567890
 }
