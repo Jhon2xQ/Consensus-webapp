@@ -11,6 +11,7 @@ const privateEnvSchema = z.object({
   logtoCookieEncryptionKey: z.string().min(32),
   logtoApiResource: z.url(),
   databaseUrl: z.url().optional(),
+  redisUrl: z.string().optional(),
   resendApiKey: z.string().optional(),
   stripeSecretKey: z.string().optional(),
 });
@@ -24,6 +25,7 @@ export const privateEnv = privateEnvSchema.parse({
   logtoCookieEncryptionKey: dynamicPrivate.LOGTO_COOKIE_ENCRYPTION_KEY,
   logtoApiResource: dynamicPrivate.LOGTO_API_RESOURCE,
   databaseUrl: dynamicPrivate.DATABASE_URL,
+  redisUrl: dynamicPrivate.REDIS_URL,
   resendApiKey: dynamicPrivate.RESEND_API_KEY,
   stripeSecretKey: dynamicPrivate.STRIPE_SECRET_KEY,
 });

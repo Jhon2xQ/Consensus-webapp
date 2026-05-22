@@ -45,6 +45,7 @@
 		"@logto/sveltekit": "^0.3.23",
 		"bits-ui": "^2.8.10",
 		"lucide-svelte": "^1.0.1",
+		"redis": "^5.12.1",
 		"zod": "^4.4.3"
 	}
 }
