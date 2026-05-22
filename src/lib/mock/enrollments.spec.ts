@@ -13,10 +13,16 @@ describe('enrollments mock data', () => {
 			expect(enrollment.id.length).toBeGreaterThan(0);
 			expect(typeof enrollment.electoralProcessId).toBe('string');
 			expect(enrollment.electoralProcessId.length).toBeGreaterThan(0);
-			expect(typeof enrollment.userId).toBe('string');
-			expect(enrollment.userId.length).toBeGreaterThan(0);
-			expect(typeof enrollment.commitment).toBe('string');
-			expect(enrollment.commitment.length).toBeGreaterThan(0);
+			expect(typeof enrollment.email).toBe('string');
+			expect(enrollment.email.length).toBeGreaterThan(0);
+			if (enrollment.userId !== null) {
+				expect(typeof enrollment.userId).toBe('string');
+				expect(enrollment.userId.length).toBeGreaterThan(0);
+			}
+			if (enrollment.commitment !== null) {
+				expect(typeof enrollment.commitment).toBe('string');
+				expect(enrollment.commitment.length).toBeGreaterThan(0);
+			}
 			expect(typeof enrollment.hasVoted).toBe('boolean');
 		}
 	});

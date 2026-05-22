@@ -10,6 +10,7 @@ const mockEnrollments: Enrollment[] = [
 	{
 		id: 'enr-1',
 		electoralProcessId: '1',
+		email: 'user-101@example.com',
 		userId: 'user-101',
 		commitment: '0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890',
 		hasVoted: false
@@ -17,6 +18,7 @@ const mockEnrollments: Enrollment[] = [
 	{
 		id: 'enr-2',
 		electoralProcessId: '1',
+		email: 'user-102@example.com',
 		userId: 'user-102',
 		commitment: '0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab',
 		hasVoted: false
@@ -24,6 +26,7 @@ const mockEnrollments: Enrollment[] = [
 	{
 		id: 'enr-3',
 		electoralProcessId: '2',
+		email: 'user-201@example.com',
 		userId: 'user-201',
 		commitment: '0x4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
 		hasVoted: true

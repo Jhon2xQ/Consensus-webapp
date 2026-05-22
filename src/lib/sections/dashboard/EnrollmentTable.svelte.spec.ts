@@ -8,6 +8,7 @@ const mockEnrollments: Enrollment[] = [
 	{
 		id: 'enr-1',
 		electoralProcessId: '1',
+		email: 'user-101@example.com',
 		userId: 'user-101',
 		commitment: '0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890',
 		hasVoted: false
@@ -15,6 +16,7 @@ const mockEnrollments: Enrollment[] = [
 	{
 		id: 'enr-2',
 		electoralProcessId: '1',
+		email: 'user-102@example.com',
 		userId: 'user-102',
 		commitment: '0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab',
 		hasVoted: true
@@ -34,11 +36,10 @@ describe('EnrollmentTable.svelte', () => {
 		expect(rows.length).toBe(3);
 	});
 
-	it('displays userId for each enrollment', async () => {
+	it('displays email for each enrollment', async () => {
 		render(EnrollmentTable, { enrollments: mockEnrollments });
-		// Use cell role to target desktop table specifically
-		await expect.element(page.getByRole('cell', { name: 'user-101' })).toBeInTheDocument();
-		await expect.element(page.getByRole('cell', { name: 'user-102' })).toBeInTheDocument();
+		await expect.element(page.getByRole('cell', { name: 'user-101@example.com' })).toBeInTheDocument();
+		await expect.element(page.getByRole('cell', { name: 'user-102@example.com' })).toBeInTheDocument();
 	});
 
 	it('displays truncated commitment', async () => {

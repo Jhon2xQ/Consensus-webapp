@@ -1,27 +1,30 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { electoralProcesses } from '$lib/mock/electoral-processes';
+import { getProcessById, updateProcess, deleteProcess, type CreateProcessBody } from '$lib/server/process.service';
+import { getTeams } from '$lib/server/team.service';
+import { getEnrollments } from '$lib/server/enrollment.service';
+import { ApiError } from '$lib/server/api';
 
 type FormErrors = Record<string, string>;
 
-export const load: PageServerLoad = async ({ params }) => {
-	const process = electoralProcesses.find((p) => p.id === params.id);
-
-	if (!process) {
-		error(404, 'Proceso electoral no encontrado');
+export const load: PageServerLoad = async ({ params, locals }) => {
+	try {
+		const [process, teams, enrollments] = await Promise.all([
+			getProcessById(locals, params.id),
+			getTeams(locals, params.id).catch(() => []),
+			getEnrollments(locals, params.id).catch(() => [])
+		]);
+		return { process, teams, enrollments };
+	} catch (err) {
+		if (err instanceof ApiError && err.status === 404) {
+			error(404, 'Proceso electoral no encontrado');
+		}
+		throw err;
 	}
-
-	return { process };
 };
 
 export const actions = {
-	default: async ({ request, params }) => {
-		const process = electoralProcesses.find((p) => p.id === params.id);
-
-		if (!process) {
-			error(404, 'Proceso electoral no encontrado');
-		}
-
+	default: async ({ request, params, locals }) => {
 		const formData = await request.formData();
 
 		const name = formData.get('name') as string;
@@ -100,8 +103,56 @@ export const actions = {
 			});
 		}
 
-		// Simulate update — in production this would call the backend API
-		// Mock: just redirect to the process detail page
-		throw redirect(303, `/dashboard/procesos/${params.id}`);
+		const body: Partial<CreateProcessBody> = {
+			name: name.trim(),
+			scope: scope.trim(),
+			description: description?.trim() || undefined,
+			commitmentStart,
+			commitmentEnd,
+			votingStart,
+			votingEnd,
+			results
+		};
+
+		try {
+			await updateProcess(locals, params.id, body);
+		} catch (err) {
+			if (err instanceof ApiError) {
+				if (err.status === 404) {
+					error(404, 'Proceso electoral no encontrado');
+				}
+				if (err.status === 409) {
+					return fail(409, {
+						errors: { name: 'Ya existe un proceso con ese nombre' },
+						values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+					});
+				}
+				return fail(err.status, {
+					errors: { _form: err.message },
+					values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+				});
+			}
+			throw err;
+		}
+
+		throw redirect(303, `/dashboard/procesos/${params.id}?success=Proceso+actualizado+exitosamente`);
+	},
+
+	eliminar: async ({ params, locals }) => {
+		try {
+			await deleteProcess(locals, params.id);
+		} catch (err) {
+			if (err instanceof ApiError) {
+				if (err.status === 404) {
+					error(404, 'Proceso electoral no encontrado');
+				}
+				return fail(err.status, {
+					errors: { _form: err.message }
+				});
+			}
+			throw err;
+		}
+
+		throw redirect(303, '/dashboard/procesos?success=Proceso+eliminado+exitosamente');
 	}
 } satisfies Actions;

@@ -17,7 +17,8 @@ vi.mock('$lib/server/api', async (importOriginal) => {
 });
 
 // ── Import after mocks ──
-import { getMyProcesses } from './process.service';
+import { getMyProcesses, createProcess, updateProcess, deleteProcess } from './process.service';
+import type { CreateProcessBody } from './process.service';
 
 // ── Helpers ──
 const mockLocals = {} as App.Locals;
@@ -103,5 +104,113 @@ describe('getMyProcesses', () => {
 		mockFetchBackendJson.mockRejectedValue(apiError);
 
 		await expect(getMyProcesses(mockLocals)).rejects.toThrow(ApiError);
+	});
+});
+
+// ── createProcess tests ──
+describe('createProcess', () => {
+	const createBody: CreateProcessBody = {
+		name: 'Nuevo Proceso',
+		scope: 'Nacional',
+		description: 'Descripción de prueba',
+		commitmentStart: '2026-06-01',
+		commitmentEnd: '2026-06-15',
+		votingStart: '2026-07-01',
+		votingEnd: '2026-07-15',
+		results: '2026-07-20'
+	};
+
+	it('calls POST /api/private/processes with correct body', async () => {
+		const mockProcess = createMockProcess({ name: 'Nuevo Proceso' });
+		mockFetchBackendJson.mockResolvedValue(mockProcess);
+
+		const result = await createProcess(mockLocals, createBody);
+
+		expect(mockFetchBackendJson).toHaveBeenCalledWith(mockLocals, '/api/private/processes', {
+			method: 'POST',
+			body: createBody
+		});
+		expect(result).toEqual(mockProcess);
+	});
+
+	it('returns the created ElectoralProcess', async () => {
+		const mockProcess = createMockProcess({ id: 'new-id', name: 'Nuevo Proceso' });
+		mockFetchBackendJson.mockResolvedValue(mockProcess);
+
+		const result = await createProcess(mockLocals, createBody);
+
+		expect(result.id).toBe('new-id');
+		expect(result.name).toBe('Nuevo Proceso');
+	});
+
+	it('propagates ApiError (e.g. 409 conflict)', async () => {
+		const apiError = new ApiError(409, 'CONFLICT', 'Ya existe un proceso con ese nombre');
+		mockFetchBackendJson.mockRejectedValue(apiError);
+
+		await expect(createProcess(mockLocals, createBody)).rejects.toThrow(ApiError);
+	});
+});
+
+// ── updateProcess tests ──
+describe('updateProcess', () => {
+	const updateBody: Partial<CreateProcessBody> = {
+		name: 'Proceso Actualizado',
+		scope: 'Provincial'
+	};
+
+	it('calls PUT /api/private/processes/{id} with correct path and body', async () => {
+		const mockProcess = createMockProcess({ id: 'proc-1', name: 'Proceso Actualizado' });
+		mockFetchBackendJson.mockResolvedValue(mockProcess);
+
+		const result = await updateProcess(mockLocals, 'proc-1', updateBody);
+
+		expect(mockFetchBackendJson).toHaveBeenCalledWith(
+			mockLocals,
+			'/api/private/processes/proc-1',
+			{
+				method: 'PUT',
+				body: updateBody
+			}
+		);
+		expect(result).toEqual(mockProcess);
+	});
+
+	it('propagates ApiError (e.g. 404 not found)', async () => {
+		const apiError = new ApiError(404, 'NOT_FOUND', 'Proceso no encontrado');
+		mockFetchBackendJson.mockRejectedValue(apiError);
+
+		await expect(updateProcess(mockLocals, 'no-existe', updateBody)).rejects.toThrow(ApiError);
+	});
+});
+
+// ── deleteProcess tests ──
+describe('deleteProcess', () => {
+	it('calls DELETE /api/private/processes/{id} with correct path', async () => {
+		mockFetchBackendJson.mockResolvedValue(undefined);
+
+		await deleteProcess(mockLocals, 'proc-1');
+
+		expect(mockFetchBackendJson).toHaveBeenCalledWith(
+			mockLocals,
+			'/api/private/processes/proc-1',
+			{
+				method: 'DELETE'
+			}
+		);
+	});
+
+	it('returns void on success', async () => {
+		mockFetchBackendJson.mockResolvedValue(undefined);
+
+		const result = await deleteProcess(mockLocals, 'proc-1');
+
+		expect(result).toBeUndefined();
+	});
+
+	it('propagates ApiError (e.g. 403 forbidden)', async () => {
+		const apiError = new ApiError(403, 'FORBIDDEN', 'No tienes permisos');
+		mockFetchBackendJson.mockRejectedValue(apiError);
+
+		await expect(deleteProcess(mockLocals, 'proc-1')).rejects.toThrow(ApiError);
 	});
 });

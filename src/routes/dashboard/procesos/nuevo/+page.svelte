@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { ArrowLeft, CalendarDays } from '@lucide/svelte';
-	import ProcessForm from '$lib/sections/dashboard/ProcessForm.svelte';
+	import ProcessStepper from '$lib/sections/dashboard/ProcessStepper.svelte';
 
 	let { form } = $props();
 
@@ -27,12 +27,12 @@
 		<div>
 			<h1 class="text-3xl font-bold tracking-tight">Crear Proceso Electoral</h1>
 			<p class="text-muted-foreground mt-1">
-				Completa el formulario para crear un nuevo proceso electoral.
+				Completa los pasos para crear un nuevo proceso electoral.
 			</p>
 		</div>
 	</div>
 
-	<!-- Form Card -->
+	<!-- Stepper Card -->
 	<Card>
 		<CardHeader>
 			<CardTitle class="flex items-center gap-2">
@@ -42,7 +42,7 @@
 		</CardHeader>
 		<CardContent>
 			<form method="POST" use:enhance={handleSubmit}>
-				<ProcessForm
+				<ProcessStepper
 					errors={form?.errors ?? {}}
 					submitting={isSubmitting}
 				/>

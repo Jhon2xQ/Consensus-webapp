@@ -6,6 +6,17 @@ export type ProcessQueryParams = {
 	size?: number;
 };
 
+export type CreateProcessBody = {
+	name: string;
+	scope: string;
+	description?: string;
+	commitmentStart: string;
+	commitmentEnd: string;
+	votingStart: string;
+	votingEnd: string;
+	results: string;
+};
+
 /**
  * Fetch the current user's electoral processes from the backend API.
  * Default page size is 5. Supported sizes: 5, 10, 20.
@@ -22,4 +33,61 @@ export async function getMyProcesses(
 
 	const response = await fetchBackendJson<PaginatedResponse<ElectoralProcess>>(locals, path);
 	return response.data.content;
+}
+
+/**
+ * Fetch a single electoral process by ID from the backend API.
+ *
+ * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 401, 404).
+ */
+export async function getProcessById(
+	locals: App.Locals,
+	id: string
+): Promise<ElectoralProcess> {
+	return fetchBackendJson<ElectoralProcess>(locals, `/api/private/processes/${id}`);
+}
+
+/**
+ * Create a new electoral process via the backend API.
+ *
+ * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 401, 409 conflict).
+ */
+export async function createProcess(
+	locals: App.Locals,
+	body: CreateProcessBody
+): Promise<ElectoralProcess> {
+	return fetchBackendJson<ElectoralProcess>(locals, '/api/private/processes', {
+		method: 'POST',
+		body
+	});
+}
+
+/**
+ * Update an existing electoral process via the backend API.
+ *
+ * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 401, 404).
+ */
+export async function updateProcess(
+	locals: App.Locals,
+	id: string,
+	body: Partial<CreateProcessBody>
+): Promise<ElectoralProcess> {
+	return fetchBackendJson<ElectoralProcess>(locals, `/api/private/processes/${id}`, {
+		method: 'PUT',
+		body
+	});
+}
+
+/**
+ * Delete an electoral process via the backend API.
+ *
+ * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 401, 403, 404).
+ */
+export async function deleteProcess(
+	locals: App.Locals,
+	id: string
+): Promise<void> {
+	await fetchBackendJson<ElectoralProcess>(locals, `/api/private/processes/${id}`, {
+		method: 'DELETE'
+	});
 }

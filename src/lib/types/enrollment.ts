@@ -1,12 +1,12 @@
 export type Enrollment = {
 	id: string;
 	electoralProcessId: string;
-	userId: string;
-	commitment: string;
+	email: string;
+	userId: string | null;
+	commitment: string | null;
 	hasVoted: boolean;
 };
 
 export type CreateEnrollmentBody = {
-	userId: string;
-	commitment: string;
+	email: string;
 };

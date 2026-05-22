@@ -70,9 +70,9 @@ const mockTeams: Team[] = [
 ];
 
 const mockEnrollments: Enrollment[] = [
-	{ id: 'e1', electoralProcessId: '1', userId: 'u1', commitment: '0xabc', hasVoted: true },
-	{ id: 'e2', electoralProcessId: '1', userId: 'u2', commitment: '0xdef', hasVoted: false },
-	{ id: 'e3', electoralProcessId: '2', userId: 'u3', commitment: '0xghi', hasVoted: true }
+	{ id: 'e1', electoralProcessId: '1', email: 'u1@test.com', userId: 'u1', commitment: '0xabc', hasVoted: true },
+	{ id: 'e2', electoralProcessId: '1', email: 'u2@test.com', userId: 'u2', commitment: '0xdef', hasVoted: false },
+	{ id: 'e3', electoralProcessId: '2', email: 'u3@test.com', userId: 'u3', commitment: '0xghi', hasVoted: true }
 ];
 
 describe('dashboard-utils', () => {

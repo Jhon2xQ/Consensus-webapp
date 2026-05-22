@@ -34,7 +34,7 @@
 		<Table>
 			<TableHeader>
 				<TableRow>
-					<TableHead>Usuario</TableHead>
+					<TableHead>Email</TableHead>
 					<TableHead>Compromiso</TableHead>
 					<TableHead class="text-center">Votó</TableHead>
 				</TableRow>
@@ -42,9 +42,9 @@
 			<TableBody>
 				{#each enrollments as enrollment (enrollment.id)}
 					<TableRow>
-						<TableCell class="font-medium">{enrollment.userId}</TableCell>
+						<TableCell class="font-medium">{enrollment.email}</TableCell>
 						<TableCell class="font-mono text-xs">
-							{truncateCommitment(enrollment.commitment)}
+							{enrollment.commitment ? truncateCommitment(enrollment.commitment) : '—'}
 						</TableCell>
 						<TableCell class="text-center">
 							{#if enrollment.hasVoted}
@@ -64,9 +64,9 @@
 		{#each enrollments as enrollment (enrollment.id)}
 			<div class="flex items-center justify-between p-3 rounded-lg border bg-card">
 				<div class="min-w-0 flex-1">
-					<p class="text-sm font-medium">{enrollment.userId}</p>
+					<p class="text-sm font-medium">{enrollment.email}</p>
 					<p class="text-xs font-mono text-muted-foreground mt-0.5 truncate">
-						{truncateCommitment(enrollment.commitment, 30)}
+						{enrollment.commitment ? truncateCommitment(enrollment.commitment, 30) : '—'}
 					</p>
 				</div>
 				<div class="shrink-0 ml-3">

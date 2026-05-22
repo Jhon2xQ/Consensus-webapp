@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { ArrowLeft, CalendarDays } from '@lucide/svelte';
-	import ProcessForm from '$lib/sections/dashboard/ProcessForm.svelte';
+	import ProcessStepper from '$lib/sections/dashboard/ProcessStepper.svelte';
 
 	let { data, form } = $props();
 
@@ -32,7 +32,7 @@
 		</div>
 	</div>
 
-	<!-- Form Card -->
+	<!-- Stepper Card -->
 	<Card>
 		<CardHeader>
 			<CardTitle class="flex items-center gap-2">
@@ -42,8 +42,10 @@
 		</CardHeader>
 		<CardContent>
 			<form method="POST" use:enhance={handleSubmit}>
-				<ProcessForm
+				<ProcessStepper
 					process={data.process}
+					existingTeams={data.teams}
+					existingEnrollments={data.enrollments}
 					errors={form?.errors ?? {}}
 					submitting={isSubmitting}
 				/>

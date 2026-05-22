@@ -62,6 +62,8 @@ async function _request(
 		);
 	}
 
+	console.log('[JWT]', token);
+
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/json',
 		Authorization: `Bearer ${token}`,
