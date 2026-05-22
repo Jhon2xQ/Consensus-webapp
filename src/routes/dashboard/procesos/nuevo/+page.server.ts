@@ -12,7 +12,6 @@ export const actions = {
 		const formData = await request.formData();
 
 		const name = formData.get('name') as string;
-		const scope = formData.get('scope') as string;
 		const description = formData.get('description') as string;
 		const commitmentStart = formData.get('commitmentStart') as string;
 		const commitmentEnd = formData.get('commitmentEnd') as string;
@@ -26,10 +25,6 @@ export const actions = {
 		// Required field validation
 		if (!name?.trim()) {
 			errors.name = 'El nombre es obligatorio';
-		}
-
-		if (!scope?.trim()) {
-			errors.scope = 'El ámbito es obligatorio';
 		}
 
 		if (!commitmentStart) {
@@ -77,7 +72,6 @@ export const actions = {
 				errors,
 				values: {
 					name,
-					scope,
 					description,
 					commitmentStart,
 					commitmentEnd,
@@ -90,7 +84,7 @@ export const actions = {
 
 		const body: CreateProcessBody = {
 			name: name.trim(),
-			scope: scope.trim(),
+			scope: name.trim(),
 			description: description?.trim() || undefined,
 			commitmentStart,
 			commitmentEnd,
@@ -114,7 +108,7 @@ export const actions = {
 			} catch {
 				return fail(400, {
 					errors: { _form: 'Error al procesar los datos de equipos o votantes' },
-					values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+					values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 				});
 			}
 
@@ -122,7 +116,7 @@ export const actions = {
 			if (teams.length === 0) {
 				return fail(400, {
 					errors: { _form: 'Debe agregar al menos un equipo al proceso electoral' },
-					values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+					values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 				});
 			}
 
@@ -130,7 +124,7 @@ export const actions = {
 			if (enrollments.length === 0) {
 				return fail(400, {
 					errors: { _form: 'Debe agregar al menos un votante al proceso electoral' },
-					values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+					values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 				});
 			}
 
@@ -143,12 +137,12 @@ export const actions = {
 					if (err.status === 409) {
 						return fail(409, {
 							errors: { name: 'Ya existe un proceso con ese nombre' },
-							values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+							values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 						});
 					}
 					return fail(err.status, {
 						errors: { _form: err.message },
-						values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+						values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 					});
 				}
 				throw err;
@@ -165,7 +159,7 @@ export const actions = {
 					if (err instanceof ApiError) {
 						return fail(err.status, {
 							errors: { _form: `Error al crear el equipo "${team.name}": ${err.message}` },
-							values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+							values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 						});
 					}
 					throw err;
@@ -182,7 +176,7 @@ export const actions = {
 					if (err instanceof ApiError) {
 						return fail(err.status, {
 							errors: { _form: `Error al registrar el votante "${enrollment.email}": ${err.message}` },
-							values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+							values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 						});
 					}
 					throw err;
@@ -200,12 +194,12 @@ export const actions = {
 				if (err.status === 409) {
 					return fail(409, {
 						errors: { name: 'Ya existe un proceso con ese nombre' },
-						values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+						values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 					});
 				}
 				return fail(err.status, {
 					errors: { _form: err.message },
-					values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+					values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 				});
 			}
 			throw err;

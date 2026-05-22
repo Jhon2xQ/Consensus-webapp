@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
@@ -53,7 +54,6 @@
 
 	// ── Step 1 form state ──
 	let name = $state(process?.name ?? '');
-	let scope = $state(process?.scope ?? '');
 	let description = $state(process?.description ?? '');
 	let commitmentStart = $state(process?.commitmentStart ?? '');
 	let commitmentEnd = $state(process?.commitmentEnd ?? '');
@@ -62,6 +62,14 @@
 	let results = $state(process?.results ?? '');
 
 	let localErrors = $state<Record<string, string>>({});
+
+	// Sync existing data from server in edit mode
+	$effect(() => {
+		if (isEditMode) {
+			allTeams = [...existingTeams];
+			allEnrollments = [...existingEnrollments];
+		}
+	});
 
 	// ── Step 2 — Teams state ──
 	let allTeams = $state<Team[]>([...existingTeams]);
@@ -101,20 +109,25 @@
 		if (isEditMode && processId) {
 			teamSubmitting = true;
 			try {
-				const res = await fetch(`/api/processes/${processId}/teams`, {
+				const formData = new FormData();
+				formData.append('teamName', newTeamName.trim());
+				if (newTeamAvatarUrl.trim()) {
+					formData.append('avatarUrl', newTeamAvatarUrl.trim());
+				}
+
+				const res = await fetch('?/agregarEquipo', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						name: newTeamName.trim(),
-						avatarUrl: newTeamAvatarUrl.trim() || null
-					})
+					body: formData
 				});
 				const json = await res.json();
-				if (json.success) {
-					allTeams = [...allTeams, json.data as Team];
+
+				if (json.type === 'failure') {
+					teamFormErrors = { name: json.data?.errors?.teamName ?? json.data?.errors?._form ?? 'Error al crear el equipo' };
+				} else if (json.success) {
 					closeAddTeamDialog();
+					await invalidateAll();
 				} else {
-					teamFormErrors = { name: json.message ?? 'Error al crear el equipo' };
+					teamFormErrors = { name: 'Error inesperado al crear el equipo' };
 				}
 			} catch {
 				teamFormErrors = { name: 'Error de conexión al crear el equipo' };
@@ -137,16 +150,20 @@
 	async function handleDeleteTeam(team: Team) {
 		if (isEditMode && processId && !team.id.startsWith('local-')) {
 			try {
-				await fetch(`/api/processes/${processId}/teams`, {
-					method: 'DELETE',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ teamId: team.id })
+				const formData = new FormData();
+				formData.append('teamId', team.id);
+
+				await fetch('?/eliminarEquipo', {
+					method: 'POST',
+					body: formData
 				});
+				await invalidateAll();
 			} catch {
 				// Silently fail — the deletion on the backend is best-effort for now
 			}
+		} else {
+			allTeams = allTeams.filter((t) => t.id !== team.id);
 		}
-		allTeams = allTeams.filter((t) => t.id !== team.id);
 	}
 
 	// ── Step 3 — Enrollments state ──
@@ -185,17 +202,22 @@
 		if (isEditMode && processId) {
 			enrollmentSubmitting = true;
 			try {
-				const res = await fetch(`/api/processes/${processId}/enrollments`, {
+				const formData = new FormData();
+				formData.append('email', email);
+
+				const res = await fetch('?/agregarVotante', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ email })
+					body: formData
 				});
 				const json = await res.json();
-				if (json.success) {
-					allEnrollments = [...allEnrollments, json.data as Enrollment];
+
+				if (json.type === 'failure') {
+					enrollmentFormErrors = { email: json.data?.errors?.email ?? json.data?.errors?._form ?? 'Error al registrar el votante' };
+				} else if (json.success) {
 					closeAddEnrollmentDialog();
+					await invalidateAll();
 				} else {
-					enrollmentFormErrors = { email: json.message ?? 'Error al registrar el votante' };
+					enrollmentFormErrors = { email: 'Error inesperado al registrar el votante' };
 				}
 			} catch {
 				enrollmentFormErrors = { email: 'Error de conexión al registrar el votante' };
@@ -220,16 +242,20 @@
 	async function handleDeleteEnrollment(enrollment: Enrollment) {
 		if (isEditMode && processId && !enrollment.id.startsWith('local-')) {
 			try {
-				await fetch(`/api/processes/${processId}/enrollments`, {
-					method: 'DELETE',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ enrollmentId: enrollment.id })
+				const formData = new FormData();
+				formData.append('enrollmentId', enrollment.id);
+
+				await fetch('?/eliminarVotante', {
+					method: 'POST',
+					body: formData
 				});
+				await invalidateAll();
 			} catch {
 				// Silently fail
 			}
+		} else {
+			allEnrollments = allEnrollments.filter((e) => e.id !== enrollment.id);
 		}
-		allEnrollments = allEnrollments.filter((e) => e.id !== enrollment.id);
 	}
 
 	// ── Navigation ──
@@ -239,7 +265,6 @@
 		const e: Record<string, string> = {};
 
 		if (!name.trim()) e.name = 'El nombre es obligatorio';
-		if (!scope.trim()) e.scope = 'El ámbito es obligatorio';
 		if (!commitmentStart) e.commitmentStart = 'La fecha de inicio de compromiso es obligatoria';
 		if (!commitmentEnd) e.commitmentEnd = 'La fecha de fin de compromiso es obligatoria';
 		if (!votingStart) e.votingStart = 'La fecha de inicio de votación es obligatoria';
@@ -351,16 +376,22 @@
 		confirmError = '';
 
 		try {
-			const res = await fetch(`/api/processes/${processId}`, {
-				method: 'DELETE'
+			const res = await fetch('?/eliminar', {
+				method: 'POST',
+				redirect: 'manual'
 			});
 
-			if (res.status === 204 || res.ok) {
-				window.location.href = '/dashboard/procesos?success=Proceso+eliminado+exitosamente';
+			if (res.status === 303) {
+				const location = res.headers.get('Location');
+				if (location) {
+					window.location.href = location;
+				} else {
+					window.location.href = '/dashboard/procesos?success=Proceso+eliminado+exitosamente';
+				}
 			} else {
 				try {
 					const json = await res.json();
-					confirmError = json.message ?? 'Error al eliminar el proceso';
+					confirmError = json.data?.errors?._form ?? json.message ?? 'Error al eliminar el proceso';
 				} catch {
 					confirmError = 'Error al eliminar el proceso';
 				}
@@ -445,20 +476,6 @@
 						<p class="text-sm text-destructive">{allErrors.name}</p>
 					{/if}
 				</div>
-
-				<div class="space-y-2">
-					<Label for="scope">Ámbito *</Label>
-					<Input
-						id="scope"
-						name="scope"
-						bind:value={scope}
-						placeholder="Ej: Nacional, Provincial, Municipal"
-						aria-invalid={!!allErrors.scope}
-					/>
-					{#if allErrors.scope}
-						<p class="text-sm text-destructive">{allErrors.scope}</p>
-					{/if}
-				</div>
 			</div>
 
 			<div class="space-y-2">
@@ -476,75 +493,82 @@
 
 			<h3 class="text-lg font-semibold pt-2">Fechas del Proceso</h3>
 
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div class="space-y-2">
-					<Label for="commitmentStart">Inicio de Compromiso *</Label>
-					<Input
-						id="commitmentStart"
-						name="commitmentStart"
-						type="date"
-						bind:value={commitmentStart}
-						aria-invalid={!!allErrors.commitmentStart}
-					/>
-					{#if allErrors.commitmentStart}
-						<p class="text-sm text-destructive">{allErrors.commitmentStart}</p>
-					{/if}
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+				<div class="space-y-3">
+					<p class="text-sm font-medium text-muted-foreground uppercase tracking-wide">Compromiso</p>
+					<div class="space-y-2">
+						<Label for="commitmentStart">Inicio de Compromiso *</Label>
+						<Input
+							id="commitmentStart"
+							name="commitmentStart"
+							type="date"
+							bind:value={commitmentStart}
+							aria-invalid={!!allErrors.commitmentStart}
+						/>
+						{#if allErrors.commitmentStart}
+							<p class="text-sm text-destructive">{allErrors.commitmentStart}</p>
+						{/if}
+					</div>
+					<div class="space-y-2">
+						<Label for="commitmentEnd">Fin de Compromiso *</Label>
+						<Input
+							id="commitmentEnd"
+							name="commitmentEnd"
+							type="date"
+							bind:value={commitmentEnd}
+							aria-invalid={!!allErrors.commitmentEnd}
+						/>
+						{#if allErrors.commitmentEnd}
+							<p class="text-sm text-destructive">{allErrors.commitmentEnd}</p>
+						{/if}
+					</div>
 				</div>
 
-				<div class="space-y-2">
-					<Label for="commitmentEnd">Fin de Compromiso *</Label>
-					<Input
-						id="commitmentEnd"
-						name="commitmentEnd"
-						type="date"
-						bind:value={commitmentEnd}
-						aria-invalid={!!allErrors.commitmentEnd}
-					/>
-					{#if allErrors.commitmentEnd}
-						<p class="text-sm text-destructive">{allErrors.commitmentEnd}</p>
-					{/if}
+				<div class="space-y-3">
+					<p class="text-sm font-medium text-muted-foreground uppercase tracking-wide">Votación</p>
+					<div class="space-y-2">
+						<Label for="votingStart">Inicio de Votación *</Label>
+						<Input
+							id="votingStart"
+							name="votingStart"
+							type="date"
+							bind:value={votingStart}
+							aria-invalid={!!allErrors.votingStart}
+						/>
+						{#if allErrors.votingStart}
+							<p class="text-sm text-destructive">{allErrors.votingStart}</p>
+						{/if}
+					</div>
+					<div class="space-y-2">
+						<Label for="votingEnd">Fin de Votación *</Label>
+						<Input
+							id="votingEnd"
+							name="votingEnd"
+							type="date"
+							bind:value={votingEnd}
+							aria-invalid={!!allErrors.votingEnd}
+						/>
+						{#if allErrors.votingEnd}
+							<p class="text-sm text-destructive">{allErrors.votingEnd}</p>
+						{/if}
+					</div>
 				</div>
 
-				<div class="space-y-2">
-					<Label for="votingStart">Inicio de Votación *</Label>
-					<Input
-						id="votingStart"
-						name="votingStart"
-						type="date"
-						bind:value={votingStart}
-						aria-invalid={!!allErrors.votingStart}
-					/>
-					{#if allErrors.votingStart}
-						<p class="text-sm text-destructive">{allErrors.votingStart}</p>
-					{/if}
-				</div>
-
-				<div class="space-y-2">
-					<Label for="votingEnd">Fin de Votación *</Label>
-					<Input
-						id="votingEnd"
-						name="votingEnd"
-						type="date"
-						bind:value={votingEnd}
-						aria-invalid={!!allErrors.votingEnd}
-					/>
-					{#if allErrors.votingEnd}
-						<p class="text-sm text-destructive">{allErrors.votingEnd}</p>
-					{/if}
-				</div>
-
-				<div class="space-y-2">
-					<Label for="results">Fecha de Resultados *</Label>
-					<Input
-						id="results"
-						name="results"
-						type="date"
-						bind:value={results}
-						aria-invalid={!!allErrors.results}
-					/>
-					{#if allErrors.results}
-						<p class="text-sm text-destructive">{allErrors.results}</p>
-					{/if}
+				<div class="space-y-3">
+					<p class="text-sm font-medium text-muted-foreground uppercase tracking-wide">Resultados</p>
+					<div class="space-y-2">
+						<Label for="results">Fecha de Resultados *</Label>
+						<Input
+							id="results"
+							name="results"
+							type="date"
+							bind:value={results}
+							aria-invalid={!!allErrors.results}
+						/>
+						{#if allErrors.results}
+							<p class="text-sm text-destructive">{allErrors.results}</p>
+						{/if}
+					</div>
 				</div>
 			</div>
 		</div>

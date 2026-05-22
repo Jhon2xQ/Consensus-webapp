@@ -19,7 +19,6 @@ const mockProcess: ElectoralProcess = {
 
 async function fillStep1Valid() {
 	await page.getByLabelText(/nombre/i).fill('Mi Proceso');
-	await page.getByLabelText(/ámbito/i).fill('Nacional');
 	await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
 	await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
 	await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
@@ -46,7 +45,7 @@ describe('ProcessStepper.svelte — Step Navigation', () => {
 		render(ProcessStepper);
 
 		await expect.element(page.getByLabelText(/nombre/i)).toBeInTheDocument();
-		await expect.element(page.getByLabelText(/ámbito/i)).toBeInTheDocument();
+		await expect.element(page.getByLabelText(/inicio de compromiso/i)).toBeInTheDocument();
 	});
 
 	it('only renders current step content (not hidden steps)', async () => {
@@ -96,9 +95,6 @@ describe('ProcessStepper.svelte — Step Navigation', () => {
 		await expect
 			.element(page.getByLabelText(/nombre/i))
 			.toHaveValue('Elecciones Generales 2026');
-		await expect
-			.element(page.getByLabelText(/ámbito/i))
-			.toHaveValue('Nacional');
 		await expect
 			.element(page.getByLabelText(/descripción/i))
 			.toHaveValue('Elecciones presidenciales y legislativas');
@@ -559,6 +555,92 @@ describe('ProcessStepper.svelte — Cancelar button', () => {
 		// We verify the step content is still visible
 		await expect
 			.element(page.getByLabelText(/nombre/i))
+			.toBeInTheDocument();
+	});
+});
+
+describe('ProcessStepper.svelte — scope removal', () => {
+	it('does NOT render Ámbito input or label', async () => {
+		render(ProcessStepper);
+
+		expect(page.getByLabelText(/ámbito/i).all().length).toBe(0);
+	});
+
+	it('advances to next step without filling scope', async () => {
+		render(ProcessStepper);
+
+		await fillStep1Valid();
+		await advanceToStep(1);
+
+		await expect
+			.element(page.getByRole('button', { name: /agregar equipo/i }))
+			.toBeInTheDocument();
+	});
+
+	it('shows no scope validation error when fields are empty', async () => {
+		render(ProcessStepper);
+
+		await page.getByRole('button', { name: /siguiente/i }).click();
+
+		await expect
+			.element(page.getByText('El nombre es obligatorio'))
+			.toBeInTheDocument();
+
+		// Scope validation error text should NOT appear
+		expect(page.getByText(/ámbito/i).all().length).toBe(0);
+	});
+});
+
+describe('ProcessStepper.svelte — 3-column date layout', () => {
+	it('renders date grid with three columns and headers', async () => {
+		render(ProcessStepper);
+
+		await expect
+			.element(page.getByText('Compromiso', { exact: true }))
+			.toBeInTheDocument();
+		await expect
+			.element(page.getByText('Votación', { exact: true }))
+			.toBeInTheDocument();
+		await expect
+			.element(page.getByText('Resultados', { exact: true }))
+			.toBeInTheDocument();
+	});
+
+	it('renders Compromiso dates (start + end) in the first column', async () => {
+		render(ProcessStepper);
+
+		await expect
+			.element(page.getByLabelText(/inicio de compromiso/i))
+			.toBeInTheDocument();
+		await expect
+			.element(page.getByLabelText(/fin de compromiso/i))
+			.toBeInTheDocument();
+	});
+
+	it('renders Votación dates (start + end) in the second column', async () => {
+		render(ProcessStepper);
+
+		await expect
+			.element(page.getByLabelText(/inicio de votación/i))
+			.toBeInTheDocument();
+		await expect
+			.element(page.getByLabelText(/fin de votación/i))
+			.toBeInTheDocument();
+	});
+
+	it('renders Resultados date in the third column', async () => {
+		render(ProcessStepper);
+
+		await expect
+			.element(page.getByLabelText(/resultados/i))
+			.toBeInTheDocument();
+	});
+
+	it('renders "Fechas del Proceso" section heading', async () => {
+		render(ProcessStepper);
+
+		await expect
+			.element(page.getByText('Fechas del Proceso'))
 			.toBeInTheDocument();
 	});
 });

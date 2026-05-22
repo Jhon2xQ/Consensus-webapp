@@ -1,8 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { getProcessById, updateProcess, deleteProcess, type CreateProcessBody } from '$lib/server/process.service';
-import { getTeams } from '$lib/server/team.service';
-import { getEnrollments } from '$lib/server/enrollment.service';
+import { getTeams, createTeam, deleteTeam } from '$lib/server/team.service';
+import { getEnrollments, createEnrollment, deleteEnrollment } from '$lib/server/enrollment.service';
 import { ApiError } from '$lib/server/api';
 
 type FormErrors = Record<string, string>;
@@ -28,7 +28,6 @@ export const actions = {
 		const formData = await request.formData();
 
 		const name = formData.get('name') as string;
-		const scope = formData.get('scope') as string;
 		const description = formData.get('description') as string;
 		const commitmentStart = formData.get('commitmentStart') as string;
 		const commitmentEnd = formData.get('commitmentEnd') as string;
@@ -41,10 +40,6 @@ export const actions = {
 		// Required field validation
 		if (!name?.trim()) {
 			errors.name = 'El nombre es obligatorio';
-		}
-
-		if (!scope?.trim()) {
-			errors.scope = 'El ámbito es obligatorio';
 		}
 
 		if (!commitmentStart) {
@@ -92,7 +87,6 @@ export const actions = {
 				errors,
 				values: {
 					name,
-					scope,
 					description,
 					commitmentStart,
 					commitmentEnd,
@@ -105,7 +99,7 @@ export const actions = {
 
 		const body: Partial<CreateProcessBody> = {
 			name: name.trim(),
-			scope: scope.trim(),
+			scope: name.trim(),
 			description: description?.trim() || undefined,
 			commitmentStart,
 			commitmentEnd,
@@ -124,18 +118,108 @@ export const actions = {
 				if (err.status === 409) {
 					return fail(409, {
 						errors: { name: 'Ya existe un proceso con ese nombre' },
-						values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+						values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 					});
 				}
 				return fail(err.status, {
 					errors: { _form: err.message },
-					values: { name, scope, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
+					values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 				});
 			}
 			throw err;
 		}
 
 		throw redirect(303, `/dashboard/procesos/${params.id}?success=Proceso+actualizado+exitosamente`);
+	},
+
+	agregarEquipo: async ({ request, params, locals }) => {
+		const formData = await request.formData();
+		const teamName = formData.get('teamName') as string;
+		const avatarUrl = formData.get('avatarUrl') as string;
+
+		// Validate
+		if (!teamName?.trim()) {
+			return fail(400, { errors: { teamName: 'El nombre del equipo es obligatorio' } });
+		}
+		if (teamName.trim().length < 2) {
+			return fail(400, { errors: { teamName: 'El nombre debe tener al menos 2 caracteres' } });
+		}
+		if (teamName.trim().length > 100) {
+			return fail(400, { errors: { teamName: 'El nombre no puede exceder 100 caracteres' } });
+		}
+
+		try {
+			await createTeam(locals, params.id, {
+				name: teamName.trim(),
+				avatarUrl: avatarUrl?.trim() || undefined
+			});
+			return { success: true };
+		} catch (err) {
+			if (err instanceof ApiError) {
+				return fail(err.status, { errors: { _form: err.message } });
+			}
+			throw err;
+		}
+	},
+
+	eliminarEquipo: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const teamId = formData.get('teamId') as string;
+
+		if (!teamId?.trim()) {
+			return fail(400, { errors: { _form: 'ID de equipo requerido' } });
+		}
+
+		try {
+			await deleteTeam(locals, teamId.trim());
+			return { success: true };
+		} catch (err) {
+			if (err instanceof ApiError) {
+				return fail(err.status, { errors: { _form: err.message } });
+			}
+			throw err;
+		}
+	},
+
+	agregarVotante: async ({ request, params, locals }) => {
+		const formData = await request.formData();
+		const email = (formData.get('email') as string)?.trim();
+
+		if (!email) {
+			return fail(400, { errors: { email: 'El email es obligatorio' } });
+		}
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+			return fail(400, { errors: { email: 'El email no es válido' } });
+		}
+
+		try {
+			await createEnrollment(locals, params.id, { email });
+			return { success: true };
+		} catch (err) {
+			if (err instanceof ApiError) {
+				return fail(err.status, { errors: { _form: err.message } });
+			}
+			throw err;
+		}
+	},
+
+	eliminarVotante: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const enrollmentId = formData.get('enrollmentId') as string;
+
+		if (!enrollmentId?.trim()) {
+			return fail(400, { errors: { _form: 'ID de inscripción requerido' } });
+		}
+
+		try {
+			await deleteEnrollment(locals, enrollmentId.trim());
+			return { success: true };
+		} catch (err) {
+			if (err instanceof ApiError) {
+				return fail(err.status, { errors: { _form: err.message } });
+			}
+			throw err;
+		}
 	},
 
 	eliminar: async ({ params, locals }) => {
