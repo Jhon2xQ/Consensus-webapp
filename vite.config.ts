@@ -27,6 +27,7 @@ export default defineConfig({
 				test: {
 					name: 'server',
 					environment: 'node',
+					env: { TZ: 'America/Lima' },
 					include: ['src/**/*.{test,spec}.{js,ts}'],
 					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
 				}

@@ -10,7 +10,7 @@
 		TableRow
 	} from '$lib/components/ui/table';
 	import { Eye, Pencil, Trash2, FileText } from '@lucide/svelte';
-	import { getStatusLabel, getStatusColor, formatDate } from './process-utils';
+	import { getStatusLabel, getStatusColor, formatDateTime } from './process-utils';
 	import EmptyState from '$lib/components/shared/EmptyState.svelte';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 
@@ -57,10 +57,10 @@
 							</Badge>
 						</TableCell>
 						<TableCell class="hidden lg:table-cell text-sm text-muted-foreground">
-							{formatDate(process.commitmentStart)} - {formatDate(process.commitmentEnd)}
+							{formatDateTime(process.commitmentStart)} - {formatDateTime(process.commitmentEnd)}
 						</TableCell>
 						<TableCell class="hidden xl:table-cell text-sm text-muted-foreground">
-							{formatDate(process.votingStart)} - {formatDate(process.votingEnd)}
+							{formatDateTime(process.votingStart)} - {formatDateTime(process.votingEnd)}
 						</TableCell>
 						<TableCell class="text-right">
 							<div class="flex items-center justify-end gap-1">
@@ -108,11 +108,11 @@
 				<div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
 					<div>
 						<span class="font-medium text-foreground">Compromiso:</span>
-						<p>{formatDate(process.commitmentStart)} - {formatDate(process.commitmentEnd)}</p>
+						<p>{formatDateTime(process.commitmentStart)} - {formatDateTime(process.commitmentEnd)}</p>
 					</div>
 					<div>
 						<span class="font-medium text-foreground">Votación:</span>
-						<p>{formatDate(process.votingStart)} - {formatDate(process.votingEnd)}</p>
+						<p>{formatDateTime(process.votingStart)} - {formatDateTime(process.votingEnd)}</p>
 					</div>
 				</div>
 				<div class="flex items-center gap-2 pt-1 border-t">

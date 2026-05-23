@@ -5,6 +5,9 @@ import {
 	parseLocalDate,
 	formatDate,
 	formatDateRange,
+	toISO8601,
+	toDatetimeLocal,
+	formatDateTime,
 	STATUS_LABELS,
 	STATUS_COLORS
 } from './process-utils';
@@ -103,6 +106,76 @@ describe('process-utils', () => {
 		it('includes both dates in the output', () => {
 			const range = formatDateRange('2026-03-01', '2026-04-30');
 			expect(range).toContain('2026');
+		});
+	});
+
+	// ── REQ-5: DateTime conversion utilities ──
+	describe('toISO8601', () => {
+		it('converts datetime-local string to ISO-8601 UTC (America/Lima UTC-5)', () => {
+			const result = toISO8601('2026-05-25T14:30');
+			expect(result).toBe('2026-05-25T19:30:00.000Z');
+		});
+
+		it('handles midnight datetime-local', () => {
+			const result = toISO8601('2026-05-25T00:00');
+			expect(result).toContain('T');
+			expect(result).toContain('Z');
+		});
+	});
+
+	describe('toDatetimeLocal', () => {
+		it('converts ISO-8601 UTC to datetime-local format (America/Lima UTC-5)', () => {
+			const result = toDatetimeLocal('2026-05-25T19:30:00Z');
+			expect(result).toBe('2026-05-25T14:30');
+		});
+
+		it('handles midnight ISO to datetime-local', () => {
+			const result = toDatetimeLocal('2026-05-25T05:00:00Z');
+			expect(result).toBe('2026-05-25T00:00');
+		});
+	});
+
+	describe('formatDateTime', () => {
+		it('renders localized date and time from ISO-8601', () => {
+			const result = formatDateTime('2026-05-25T19:30:00Z');
+			expect(result).toContain('2026');
+			expect(result).toContain('may');
+			expect(result).toContain('25');
+			// es-AR locale uses 12-hour format: "14:30" → "2:30 p. m."
+			expect(result).toContain(':30');
+			expect(result).toContain('p.');
+		});
+
+		it('does not throw with legacy date-only string (backward compat)', () => {
+			expect(() => formatDateTime('2026-05-25')).not.toThrow();
+			const result = formatDateTime('2026-05-25');
+			expect(result).toBeTruthy();
+			expect(result).toContain('2026');
+		});
+	});
+
+	describe('roundtrip conversion', () => {
+		it('toDatetimeLocal(toISO8601(dt)) preserves original datetime-local', () => {
+			const original = '2026-05-25T14:30';
+			const iso = toISO8601(original);
+			const back = toDatetimeLocal(iso);
+			expect(back).toBe(original);
+		});
+	});
+
+	describe('parseLocalDate backward compat', () => {
+		it('parses ISO-8601 datetime strings without throwing', () => {
+			const date = parseLocalDate('2026-05-25T14:30:00Z');
+			expect(date.getFullYear()).toBe(2026);
+			expect(date.getMonth()).toBe(4); // May = 4 in local time
+			expect(date.getDate()).toBe(25);
+		});
+
+		it('still parses date-only strings correctly', () => {
+			const date = parseLocalDate('2026-03-15');
+			expect(date.getFullYear()).toBe(2026);
+			expect(date.getMonth()).toBe(2);
+			expect(date.getDate()).toBe(15);
 		});
 	});
 });

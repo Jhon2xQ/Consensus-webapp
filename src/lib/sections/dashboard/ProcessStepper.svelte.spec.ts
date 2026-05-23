@@ -10,20 +10,20 @@ const mockProcess: ElectoralProcess = {
 	scope: 'Nacional',
 	description: 'Elecciones presidenciales y legislativas',
 	estatus: 'COMMITMENT',
-	commitmentStart: '2026-06-01',
-	commitmentEnd: '2026-06-15',
-	votingStart: '2026-07-01',
-	votingEnd: '2026-07-15',
-	results: '2026-07-20'
+	commitmentStart: '2026-06-01T00:00:00Z',
+	commitmentEnd: '2026-06-15T00:00:00Z',
+	votingStart: '2026-07-01T00:00:00Z',
+	votingEnd: '2026-07-15T00:00:00Z',
+	results: '2026-07-20T00:00:00Z'
 };
 
 async function fillStep1Valid() {
 	await page.getByLabelText(/nombre/i).fill('Mi Proceso');
-	await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
-	await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
-	await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
-	await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
-	await page.getByLabelText(/resultados/i).fill('2026-07-20');
+	await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01T00:00');
+	await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15T00:00');
+	await page.getByLabelText(/inicio de votación/i).fill('2026-07-01T00:00');
+	await page.getByLabelText(/fin de votación/i).fill('2026-07-15T00:00');
+	await page.getByLabelText(/resultados/i).fill('2026-07-20T00:00');
 }
 
 async function advanceToStep(steps: number) {
@@ -599,11 +599,11 @@ describe('ProcessStepper.svelte — Date validation (= alignment)', () => {
 		render(ProcessStepper);
 
 		await page.getByLabelText(/nombre/i).fill('Test');
-		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
-		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-01');
-		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
-		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
-		await page.getByLabelText(/resultados/i).fill('2026-07-20');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01T00:00');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-01T00:00');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01T00:00');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15T00:00');
+		await page.getByLabelText(/resultados/i).fill('2026-07-20T00:00');
 
 		await page.getByRole('button', { name: /siguiente/i }).click();
 
@@ -618,11 +618,11 @@ describe('ProcessStepper.svelte — Date validation (= alignment)', () => {
 		render(ProcessStepper);
 
 		await page.getByLabelText(/nombre/i).fill('Test');
-		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
-		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
-		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
-		await page.getByLabelText(/fin de votación/i).fill('2026-07-01');
-		await page.getByLabelText(/resultados/i).fill('2026-07-20');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01T00:00');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15T00:00');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01T00:00');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-01T00:00');
+		await page.getByLabelText(/resultados/i).fill('2026-07-20T00:00');
 
 		await page.getByRole('button', { name: /siguiente/i }).click();
 
@@ -637,11 +637,11 @@ describe('ProcessStepper.svelte — Date validation (= alignment)', () => {
 		render(ProcessStepper);
 
 		await page.getByLabelText(/nombre/i).fill('Test');
-		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
-		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
-		await page.getByLabelText(/inicio de votación/i).fill('2026-06-15');
-		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
-		await page.getByLabelText(/resultados/i).fill('2026-07-20');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01T00:00');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15T00:00');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-06-15T00:00');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15T00:00');
+		await page.getByLabelText(/resultados/i).fill('2026-07-20T00:00');
 
 		await page.getByRole('button', { name: /siguiente/i }).click();
 
@@ -663,11 +663,11 @@ describe('ProcessStepper.svelte — Results date vs votingEnd validation (SPEC-4
 		render(ProcessStepper);
 
 		await page.getByLabelText(/nombre/i).fill('Test');
-		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
-		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
-		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
-		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
-		await page.getByLabelText(/resultados/i).fill('2026-07-15');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01T00:00');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15T00:00');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01T00:00');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15T00:00');
+		await page.getByLabelText(/resultados/i).fill('2026-07-15T00:00');
 
 		await page.getByRole('button', { name: /siguiente/i }).click();
 
@@ -684,11 +684,11 @@ describe('ProcessStepper.svelte — Results date vs votingEnd validation (SPEC-4
 		render(ProcessStepper);
 
 		await page.getByLabelText(/nombre/i).fill('Test');
-		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
-		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
-		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
-		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
-		await page.getByLabelText(/resultados/i).fill('2026-07-10');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01T00:00');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15T00:00');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01T00:00');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15T00:00');
+		await page.getByLabelText(/resultados/i).fill('2026-07-10T00:00');
 
 		await page.getByRole('button', { name: /siguiente/i }).click();
 
@@ -705,11 +705,11 @@ describe('ProcessStepper.svelte — Results date vs votingEnd validation (SPEC-4
 		render(ProcessStepper);
 
 		await page.getByLabelText(/nombre/i).fill('Test');
-		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
-		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
-		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
-		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
-		await page.getByLabelText(/resultados/i).fill('2026-07-20');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01T00:00');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15T00:00');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01T00:00');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15T00:00');
+		await page.getByLabelText(/resultados/i).fill('2026-07-20T00:00');
 
 		await page.getByRole('button', { name: /siguiente/i }).click();
 
@@ -782,11 +782,11 @@ describe('ProcessStepper.svelte — values prop (SPEC-3)', () => {
 		const values = {
 			name: 'Proceso Recuperado',
 			description: 'Desc recuperada',
-			commitmentStart: '2026-01-01',
-			commitmentEnd: '2026-02-01',
-			votingStart: '2026-03-01',
-			votingEnd: '2026-04-01',
-			results: '2026-05-01'
+			commitmentStart: '2026-01-01T00:00',
+			commitmentEnd: '2026-02-01T00:00',
+			votingStart: '2026-03-01T00:00',
+			votingEnd: '2026-04-01T00:00',
+			results: '2026-05-01T00:00'
 		};
 
 		render(ProcessStepper, { values });
@@ -799,19 +799,19 @@ describe('ProcessStepper.svelte — values prop (SPEC-3)', () => {
 			.toHaveValue('Desc recuperada');
 		await expect
 			.element(page.getByLabelText(/inicio de compromiso/i))
-			.toHaveValue('2026-01-01');
+			.toHaveValue('2026-01-01T00:00');
 		await expect
 			.element(page.getByLabelText(/fin de compromiso/i))
-			.toHaveValue('2026-02-01');
+			.toHaveValue('2026-02-01T00:00');
 		await expect
 			.element(page.getByLabelText(/inicio de votación/i))
-			.toHaveValue('2026-03-01');
+			.toHaveValue('2026-03-01T00:00');
 		await expect
 			.element(page.getByLabelText(/fin de votación/i))
-			.toHaveValue('2026-04-01');
+			.toHaveValue('2026-04-01T00:00');
 		await expect
 			.element(page.getByLabelText(/resultados/i))
-			.toHaveValue('2026-05-01');
+			.toHaveValue('2026-05-01T00:00');
 	});
 
 	it('handles empty values prop gracefully', async () => {
@@ -826,11 +826,11 @@ describe('ProcessStepper.svelte — values prop (SPEC-3)', () => {
 	it('values prop takes priority over process prop', async () => {
 		const values = {
 			name: 'From Values',
-			commitmentStart: '2026-01-01',
-			commitmentEnd: '2026-02-01',
-			votingStart: '2026-03-01',
-			votingEnd: '2026-04-01',
-			results: '2026-05-01'
+			commitmentStart: '2026-01-01T00:00',
+			commitmentEnd: '2026-02-01T00:00',
+			votingStart: '2026-03-01T00:00',
+			votingEnd: '2026-04-01T00:00',
+			results: '2026-05-01T00:00'
 		};
 
 		render(ProcessStepper, {

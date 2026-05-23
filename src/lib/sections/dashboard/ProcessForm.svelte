@@ -4,6 +4,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
+	import { toDatetimeLocal } from './process-utils';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 
 	type Props = {
@@ -18,11 +19,11 @@
 	let name = $state(process?.name ?? '');
 	let scope = $state(process?.scope ?? '');
 	let description = $state(process?.description ?? '');
-	let commitmentStart = $state(process?.commitmentStart ?? '');
-	let commitmentEnd = $state(process?.commitmentEnd ?? '');
-	let votingStart = $state(process?.votingStart ?? '');
-	let votingEnd = $state(process?.votingEnd ?? '');
-	let results = $state(process?.results ?? '');
+	let commitmentStart = $state(process?.commitmentStart ? toDatetimeLocal(process.commitmentStart) : '');
+	let commitmentEnd = $state(process?.commitmentEnd ? toDatetimeLocal(process.commitmentEnd) : '');
+	let votingStart = $state(process?.votingStart ? toDatetimeLocal(process.votingStart) : '');
+	let votingEnd = $state(process?.votingEnd ? toDatetimeLocal(process.votingEnd) : '');
+	let results = $state(process?.results ? toDatetimeLocal(process.results) : '');
 
 	let localErrors = $state<Record<string, string>>({});
 
@@ -120,7 +121,7 @@
 				<Input
 					id="commitmentStart"
 					name="commitmentStart"
-					type="date"
+					type="datetime-local"
 					bind:value={commitmentStart}
 					aria-invalid={!!allErrors.commitmentStart}
 				/>
@@ -134,7 +135,7 @@
 				<Input
 					id="commitmentEnd"
 					name="commitmentEnd"
-					type="date"
+					type="datetime-local"
 					bind:value={commitmentEnd}
 					aria-invalid={!!allErrors.commitmentEnd}
 				/>
@@ -148,7 +149,7 @@
 				<Input
 					id="votingStart"
 					name="votingStart"
-					type="date"
+					type="datetime-local"
 					bind:value={votingStart}
 					aria-invalid={!!allErrors.votingStart}
 				/>
@@ -162,7 +163,7 @@
 				<Input
 					id="votingEnd"
 					name="votingEnd"
-					type="date"
+					type="datetime-local"
 					bind:value={votingEnd}
 					aria-invalid={!!allErrors.votingEnd}
 				/>
@@ -176,7 +177,7 @@
 				<Input
 					id="results"
 					name="results"
-					type="date"
+					type="datetime-local"
 					bind:value={results}
 					aria-invalid={!!allErrors.results}
 				/>

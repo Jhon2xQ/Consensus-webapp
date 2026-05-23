@@ -27,15 +27,17 @@
 	};
 
 	function parseLocalDate(iso: string): Date {
+		if (iso.includes('T')) {
+			return new Date(iso);
+		}
 		const [y, m, d] = iso.split('-').map(Number);
 		return new Date(y, (m as number) - 1, d);
 	}
 
 	function formatDate(iso: string): string {
 		return new Intl.DateTimeFormat('es-AR', {
-			day: '2-digit',
-			month: 'short',
-			year: 'numeric',
+			dateStyle: 'medium',
+			timeStyle: 'short'
 		}).format(parseLocalDate(iso));
 	}
 

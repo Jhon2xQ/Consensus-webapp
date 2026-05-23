@@ -5,7 +5,7 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Pencil, Trash2, Calendar, MapPin, FileText, Plus } from '@lucide/svelte';
-	import { getStatusLabel, getStatusColor, formatDate } from './process-utils';
+	import { getStatusLabel, getStatusColor, formatDateTime } from './process-utils';
 	import TeamTable from './TeamTable.svelte';
 	import EnrollmentTable from './EnrollmentTable.svelte';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
@@ -98,18 +98,18 @@
 						<div class="space-y-1">
 							<p class="text-sm font-medium text-muted-foreground">Compromiso</p>
 							<p class="text-sm">
-								{formatDate(process.commitmentStart)} - {formatDate(process.commitmentEnd)}
+								{formatDateTime(process.commitmentStart)} - {formatDateTime(process.commitmentEnd)}
 							</p>
 						</div>
 						<div class="space-y-1">
 							<p class="text-sm font-medium text-muted-foreground">Votación</p>
 							<p class="text-sm">
-								{formatDate(process.votingStart)} - {formatDate(process.votingEnd)}
+								{formatDateTime(process.votingStart)} - {formatDateTime(process.votingEnd)}
 							</p>
 						</div>
 						<div class="space-y-1">
 							<p class="text-sm font-medium text-muted-foreground">Resultados</p>
-							<p class="text-sm">{formatDate(process.results)}</p>
+							<p class="text-sm">{formatDateTime(process.results)}</p>
 						</div>
 					</div>
 				</CardContent>

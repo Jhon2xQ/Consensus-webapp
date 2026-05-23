@@ -4,6 +4,7 @@ import { getProcessById, updateProcess, deleteProcess, type CreateProcessBody } 
 import { getTeams, createTeam, deleteTeam } from '$lib/server/team.service';
 import { getEnrollments, createEnrollment, deleteEnrollment } from '$lib/server/enrollment.service';
 import { ApiError } from '$lib/server/api';
+import { toISO8601 } from '$lib/sections/dashboard/process-utils';
 
 type FormErrors = Record<string, string>;
 
@@ -103,15 +104,22 @@ export const actions = {
 			});
 		}
 
+		// Convert datetime-local strings to ISO-8601 UTC for API (REQ-2)
+		const isoCommitmentStart = toISO8601(commitmentStart);
+		const isoCommitmentEnd = toISO8601(commitmentEnd);
+		const isoVotingStart = toISO8601(votingStart);
+		const isoVotingEnd = toISO8601(votingEnd);
+		const isoResults = toISO8601(results);
+
 		const body: Partial<CreateProcessBody> = {
 			name: name.trim(),
 			scope: name.trim(),
 			description: description?.trim() || undefined,
-			commitmentStart,
-			commitmentEnd,
-			votingStart,
-			votingEnd,
-			results
+			commitmentStart: isoCommitmentStart,
+			commitmentEnd: isoCommitmentEnd,
+			votingStart: isoVotingStart,
+			votingEnd: isoVotingEnd,
+			results: isoResults
 		};
 
 		try {
