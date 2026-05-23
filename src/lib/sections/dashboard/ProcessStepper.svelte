@@ -29,8 +29,8 @@
 		existingTeams?: Team[];
 		existingEnrollments?: Enrollment[];
 		errors?: Record<string, string>;
-		enhance?: import('svelte/elements').FormEventHandler<HTMLFormElement>;
 		submitting?: boolean;
+		values?: Record<string, string>;
 	};
 
 	let {
@@ -38,8 +38,8 @@
 		existingTeams = [],
 		existingEnrollments = [],
 		errors = {},
-		enhance,
-		submitting = false
+		submitting = false,
+		values = {}
 	}: Props = $props();
 
 	const steps: Step[] = [
@@ -53,18 +53,36 @@
 	let isEditMode = $derived(processId !== null);
 
 	// ── Step 1 form state ──
-	let name = $state(process?.name ?? '');
-	let description = $state(process?.description ?? '');
-	let commitmentStart = $state(process?.commitmentStart ?? '');
-	let commitmentEnd = $state(process?.commitmentEnd ?? '');
-	let votingStart = $state(process?.votingStart ?? '');
-	let votingEnd = $state(process?.votingEnd ?? '');
-	let results = $state(process?.results ?? '');
+	let name = $state('');
+	let description = $state('');
+	let commitmentStart = $state('');
+	let commitmentEnd = $state('');
+	let votingStart = $state('');
+	let votingEnd = $state('');
+	let results = $state('');
 
 	let localErrors = $state<Record<string, string>>({});
 
-	// Sync existing data from server in edit mode
+	// Sync process data and existing teams/enrollments from server in edit mode
 	$effect(() => {
+		// Sync from values prop (takes priority — data recovery on failed submission)
+		if (values && Object.keys(values).length > 0) {
+			name = values.name ?? '';
+			description = values.description ?? '';
+			commitmentStart = values.commitmentStart ?? '';
+			commitmentEnd = values.commitmentEnd ?? '';
+			votingStart = values.votingStart ?? '';
+			votingEnd = values.votingEnd ?? '';
+			results = values.results ?? '';
+		} else if (process) {
+			name = process.name ?? '';
+			description = process.description ?? '';
+			commitmentStart = process.commitmentStart ?? '';
+			commitmentEnd = process.commitmentEnd ?? '';
+			votingStart = process.votingStart ?? '';
+			votingEnd = process.votingEnd ?? '';
+			results = process.results ?? '';
+		}
 		if (isEditMode) {
 			allTeams = [...existingTeams];
 			allEnrollments = [...existingEnrollments];
@@ -72,7 +90,7 @@
 	});
 
 	// ── Step 2 — Teams state ──
-	let allTeams = $state<Team[]>([...existingTeams]);
+	let allTeams = $state<Team[]>([]);
 	let showAddTeamDialog = $state(false);
 	let newTeamName = $state('');
 	let newTeamAvatarUrl = $state('');
@@ -167,7 +185,7 @@
 	}
 
 	// ── Step 3 — Enrollments state ──
-	let allEnrollments = $state<Enrollment[]>([...existingEnrollments]);
+	let allEnrollments = $state<Enrollment[]>([]);
 	let showAddEnrollmentDialog = $state(false);
 	let newEnrollmentEmail = $state('');
 	let enrollmentSubmitting = $state(false);
@@ -271,14 +289,17 @@
 		if (!votingEnd) e.votingEnd = 'La fecha de fin de votación es obligatoria';
 		if (!results) e.results = 'La fecha de resultados es obligatoria';
 
-		if (commitmentStart && commitmentEnd && commitmentStart > commitmentEnd) {
+		if (commitmentStart && commitmentEnd && commitmentStart >= commitmentEnd) {
 			e.commitmentEnd = 'La fecha de fin debe ser posterior al inicio del compromiso';
 		}
-		if (votingStart && votingEnd && votingStart > votingEnd) {
+		if (votingStart && votingEnd && votingStart >= votingEnd) {
 			e.votingEnd = 'La fecha de fin debe ser posterior al inicio de la votación';
 		}
-		if (commitmentEnd && votingStart && commitmentEnd > votingStart) {
+		if (commitmentEnd && votingStart && commitmentEnd >= votingStart) {
 			e.votingStart = 'La votación debe comenzar después del período de compromiso';
+		}
+		if (votingEnd && results && votingEnd >= results) {
+			e.results = 'La fecha de resultados debe ser posterior al fin de la votación';
 		}
 
 		localErrors = e;
@@ -693,6 +714,15 @@
 			<p class="text-sm text-destructive">{formError}</p>
 		</div>
 	{/if}
+
+	<!-- Hidden fields for step 1 data preservation across all steps -->
+	<input type="hidden" name="name" value={name} />
+	<input type="hidden" name="description" value={description} />
+	<input type="hidden" name="commitmentStart" value={commitmentStart} />
+	<input type="hidden" name="commitmentEnd" value={commitmentEnd} />
+	<input type="hidden" name="votingStart" value={votingStart} />
+	<input type="hidden" name="votingEnd" value={votingEnd} />
+	<input type="hidden" name="results" value={results} />
 
 	<!-- Hidden fields for create-mode submission -->
 	{#if !isEditMode}

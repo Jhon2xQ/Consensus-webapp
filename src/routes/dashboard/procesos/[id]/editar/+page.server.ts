@@ -81,6 +81,12 @@ export const actions = {
 			}
 		}
 
+		if (votingEnd && results) {
+			if (new Date(votingEnd) >= new Date(results)) {
+				errors.results = 'La fecha de resultados debe ser posterior al fin de la votación';
+			}
+		}
+
 		// If there are errors, return them with the submitted values
 		if (Object.keys(errors).length > 0) {
 			return fail(400, {

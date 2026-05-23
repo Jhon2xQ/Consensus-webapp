@@ -591,6 +591,259 @@ describe('ProcessStepper.svelte — scope removal', () => {
 	});
 });
 
+// ============================================================
+// SPEC-2: Date validation alignment (> → >=)
+// ============================================================
+describe('ProcessStepper.svelte — Date validation (= alignment)', () => {
+	it('rejects equal commitmentStart and commitmentEnd dates (SPEC-2)', async () => {
+		render(ProcessStepper);
+
+		await page.getByLabelText(/nombre/i).fill('Test');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-01');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
+		await page.getByLabelText(/resultados/i).fill('2026-07-20');
+
+		await page.getByRole('button', { name: /siguiente/i }).click();
+
+		await expect
+			.element(
+				page.getByText('La fecha de fin debe ser posterior al inicio del compromiso')
+			)
+			.toBeInTheDocument();
+	});
+
+	it('rejects equal votingStart and votingEnd dates (SPEC-2)', async () => {
+		render(ProcessStepper);
+
+		await page.getByLabelText(/nombre/i).fill('Test');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-01');
+		await page.getByLabelText(/resultados/i).fill('2026-07-20');
+
+		await page.getByRole('button', { name: /siguiente/i }).click();
+
+		await expect
+			.element(
+				page.getByText('La fecha de fin debe ser posterior al inicio de la votación')
+			)
+			.toBeInTheDocument();
+	});
+
+	it('rejects equal commitmentEnd and votingStart dates (SPEC-2)', async () => {
+		render(ProcessStepper);
+
+		await page.getByLabelText(/nombre/i).fill('Test');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-06-15');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
+		await page.getByLabelText(/resultados/i).fill('2026-07-20');
+
+		await page.getByRole('button', { name: /siguiente/i }).click();
+
+		await expect
+			.element(
+				page.getByText(
+					'La votación debe comenzar después del período de compromiso'
+				)
+			)
+			.toBeInTheDocument();
+	});
+});
+
+// ============================================================
+// SPEC-4 client: votingEnd >= results validation
+// ============================================================
+describe('ProcessStepper.svelte — Results date vs votingEnd validation (SPEC-4)', () => {
+	it('rejects results date equal to votingEnd (SPEC-4)', async () => {
+		render(ProcessStepper);
+
+		await page.getByLabelText(/nombre/i).fill('Test');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
+		await page.getByLabelText(/resultados/i).fill('2026-07-15');
+
+		await page.getByRole('button', { name: /siguiente/i }).click();
+
+		await expect
+			.element(
+				page.getByText(
+					'La fecha de resultados debe ser posterior al fin de la votación'
+				)
+			)
+			.toBeInTheDocument();
+	});
+
+	it('rejects results date before votingEnd (SPEC-4)', async () => {
+		render(ProcessStepper);
+
+		await page.getByLabelText(/nombre/i).fill('Test');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
+		await page.getByLabelText(/resultados/i).fill('2026-07-10');
+
+		await page.getByRole('button', { name: /siguiente/i }).click();
+
+		await expect
+			.element(
+				page.getByText(
+					'La fecha de resultados debe ser posterior al fin de la votación'
+				)
+			)
+			.toBeInTheDocument();
+	});
+
+	it('accepts results date properly after votingEnd', async () => {
+		render(ProcessStepper);
+
+		await page.getByLabelText(/nombre/i).fill('Test');
+		await page.getByLabelText(/inicio de compromiso/i).fill('2026-06-01');
+		await page.getByLabelText(/fin de compromiso/i).fill('2026-06-15');
+		await page.getByLabelText(/inicio de votación/i).fill('2026-07-01');
+		await page.getByLabelText(/fin de votación/i).fill('2026-07-15');
+		await page.getByLabelText(/resultados/i).fill('2026-07-20');
+
+		await page.getByRole('button', { name: /siguiente/i }).click();
+
+		// Should advance to step 2 without date validation errors
+		await expect
+			.element(page.getByRole('button', { name: /agregar equipo/i }))
+			.toBeInTheDocument();
+	});
+});
+
+// ============================================================
+// SPEC-1: Hidden inputs for step 1 fields
+// ============================================================
+describe('ProcessStepper.svelte — Hidden step-1 inputs (SPEC-1)', () => {
+	it('renders hidden input for name field in all steps', async () => {
+		render(ProcessStepper);
+
+		await page.getByLabelText(/nombre/i).fill('Mi Proceso');
+		await fillStep1Valid();
+
+		// On step 1, the visible input exists
+		await expect
+			.element(page.getByLabelText(/nombre/i))
+			.toHaveValue('Mi Proceso');
+
+		// Advance to step 2 — hidden inputs should still exist in DOM
+		await advanceToStep(1);
+
+		// Check hidden inputs are present by looking for the hidden type
+		// The hidden input for name should be in the form
+		const hiddenInputs = document.querySelectorAll('input[type="hidden"][name="name"]');
+		expect(hiddenInputs.length).toBeGreaterThan(0);
+	});
+
+	it('renders hidden inputs for all 7 step-1 fields (SPEC-1)', async () => {
+		render(ProcessStepper);
+
+		await page.getByLabelText(/nombre/i).fill('Mi Proceso');
+		await page.getByLabelText(/descripción/i).fill('Mi descripción');
+		await fillStep1Valid();
+
+		// Advance to step 3
+		await advanceToStep(2);
+
+		const fieldNames = [
+			'name',
+			'description',
+			'commitmentStart',
+			'commitmentEnd',
+			'votingStart',
+			'votingEnd',
+			'results'
+		];
+
+		for (const fieldName of fieldNames) {
+			const hiddenInput = document.querySelector(
+				`input[type="hidden"][name="${fieldName}"]`
+			);
+			expect(hiddenInput).not.toBeNull();
+			expect((hiddenInput as HTMLInputElement).value).toBeTruthy();
+		}
+	});
+});
+
+// ============================================================
+// SPEC-3: Data recovery on failed submission (values prop)
+// ============================================================
+describe('ProcessStepper.svelte — values prop (SPEC-3)', () => {
+	it('populates fields from values prop when provided', async () => {
+		const values = {
+			name: 'Proceso Recuperado',
+			description: 'Desc recuperada',
+			commitmentStart: '2026-01-01',
+			commitmentEnd: '2026-02-01',
+			votingStart: '2026-03-01',
+			votingEnd: '2026-04-01',
+			results: '2026-05-01'
+		};
+
+		render(ProcessStepper, { values });
+
+		await expect
+			.element(page.getByLabelText(/nombre/i))
+			.toHaveValue('Proceso Recuperado');
+		await expect
+			.element(page.getByLabelText(/descripción/i))
+			.toHaveValue('Desc recuperada');
+		await expect
+			.element(page.getByLabelText(/inicio de compromiso/i))
+			.toHaveValue('2026-01-01');
+		await expect
+			.element(page.getByLabelText(/fin de compromiso/i))
+			.toHaveValue('2026-02-01');
+		await expect
+			.element(page.getByLabelText(/inicio de votación/i))
+			.toHaveValue('2026-03-01');
+		await expect
+			.element(page.getByLabelText(/fin de votación/i))
+			.toHaveValue('2026-04-01');
+		await expect
+			.element(page.getByLabelText(/resultados/i))
+			.toHaveValue('2026-05-01');
+	});
+
+	it('handles empty values prop gracefully', async () => {
+		render(ProcessStepper, { values: {} });
+
+		// All fields should be empty (no crash)
+		await expect
+			.element(page.getByLabelText(/nombre/i))
+			.toHaveValue('');
+	});
+
+	it('values prop takes priority over process prop', async () => {
+		const values = {
+			name: 'From Values',
+			commitmentStart: '2026-01-01',
+			commitmentEnd: '2026-02-01',
+			votingStart: '2026-03-01',
+			votingEnd: '2026-04-01',
+			results: '2026-05-01'
+		};
+
+		render(ProcessStepper, {
+			process: mockProcess,
+			values
+		});
+
+		await expect
+			.element(page.getByLabelText(/nombre/i))
+			.toHaveValue('From Values');
+	});
+});
+
 describe('ProcessStepper.svelte — 3-column date layout', () => {
 	it('renders date grid with three columns and headers', async () => {
 		render(ProcessStepper);
