@@ -163,10 +163,10 @@ export const actions = {
 		}
 
 		try {
-			await createTeam(locals, params.id, {
+			await createTeam(locals, params.id, [{
 				name: teamName.trim(),
 				avatarUrl: avatarUrl?.trim() || undefined
-			});
+			}]);
 			return { success: true };
 		} catch (err) {
 			if (err instanceof ApiError) {
@@ -207,7 +207,7 @@ export const actions = {
 		}
 
 		try {
-			await createEnrollment(locals, params.id, { email });
+			await createEnrollment(locals, params.id, [{ email }]);
 			return { success: true };
 		} catch (err) {
 			if (err instanceof ApiError) {

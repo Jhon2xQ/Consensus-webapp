@@ -89,10 +89,10 @@ describe('agregarEquipo action', () => {
 			locals: mockLocals
 		} as any);
 
-		expect(mockCreateTeam).toHaveBeenCalledWith(mockLocals, 'proc-123', {
+		expect(mockCreateTeam).toHaveBeenCalledWith(mockLocals, 'proc-123', [{
 			name: 'Frente Nacional',
 			avatarUrl: 'https://example.com/avatar.png'
-		});
+		}]);
 		expect(result).toEqual({ success: true });
 	});
 
@@ -222,9 +222,9 @@ describe('agregarVotante action', () => {
 			locals: mockLocals
 		} as any);
 
-		expect(mockCreateEnrollment).toHaveBeenCalledWith(mockLocals, 'proc-123', {
+		expect(mockCreateEnrollment).toHaveBeenCalledWith(mockLocals, 'proc-123', [{
 			email: 'votante@example.com'
-		});
+		}]);
 		expect(result).toEqual({ success: true });
 	});
 

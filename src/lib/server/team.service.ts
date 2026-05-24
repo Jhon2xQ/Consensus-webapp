@@ -14,9 +14,9 @@ type ApiResponse<T> = {
 export async function createTeam(
 	locals: App.Locals,
 	processId: string,
-	body: { name: string; avatarUrl?: string | null }
-): Promise<Team> {
-	const response = await fetchBackendJson<ApiResponse<Team>>(
+	body: { name: string; avatarUrl?: string | null }[]
+): Promise<Team[]> {
+	const response = await fetchBackendJson<ApiResponse<Team[]>>(
 		locals,
 		`/api/private/processes/${processId}/teams`,
 		{ method: 'POST', body }

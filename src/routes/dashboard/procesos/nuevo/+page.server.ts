@@ -162,39 +162,32 @@ export const actions = {
 				throw err;
 			}
 
-			// 2. Create teams
-			for (const team of teams) {
-				try {
-					await createTeam(locals, process.id, {
-						name: team.name,
-						avatarUrl: team.avatarUrl || null
+			// 2. Create teams — batch call (strip id and electoralProcessId)
+			const teamsPayload = teams.map((t) => ({ name: t.name, avatarUrl: t.avatarUrl || null }));
+			try {
+				await createTeam(locals, process.id, teamsPayload);
+			} catch (err) {
+				if (err instanceof ApiError) {
+					return fail(err.status, {
+						errors: { _form: `Error al crear equipos: ${err.message}` },
+						values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 					});
-				} catch (err) {
-					if (err instanceof ApiError) {
-						return fail(err.status, {
-							errors: { _form: `Error al crear el equipo "${team.name}": ${err.message}` },
-							values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-						});
-					}
-					throw err;
 				}
+				throw err;
 			}
 
-			// 3. Create enrollments
-			for (const enrollment of enrollments) {
-				try {
-					await createEnrollment(locals, process.id, {
-						email: enrollment.email
+			// 3. Create enrollments — batch call (strip all except email)
+			const enrollmentsPayload = enrollments.map((e) => ({ email: e.email }));
+			try {
+				await createEnrollment(locals, process.id, enrollmentsPayload);
+			} catch (err) {
+				if (err instanceof ApiError) {
+					return fail(err.status, {
+						errors: { _form: `Error al registrar votantes: ${err.message}` },
+						values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
 					});
-				} catch (err) {
-					if (err instanceof ApiError) {
-						return fail(err.status, {
-							errors: { _form: `Error al registrar el votante "${enrollment.email}": ${err.message}` },
-							values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-						});
-					}
-					throw err;
 				}
+				throw err;
 			}
 
 			throw redirect(303, '/dashboard/procesos?success=Proceso+creado+exitosamente');

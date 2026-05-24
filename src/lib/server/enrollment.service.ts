@@ -14,9 +14,9 @@ type ApiResponse<T> = {
 export async function createEnrollment(
 	locals: App.Locals,
 	processId: string,
-	body: { email: string }
-): Promise<Enrollment> {
-	const response = await fetchBackendJson<ApiResponse<Enrollment>>(
+	body: { email: string }[]
+): Promise<Enrollment[]> {
+	const response = await fetchBackendJson<ApiResponse<Enrollment[]>>(
 		locals,
 		`/api/private/processes/${processId}/enrollments`,
 		{ method: 'POST', body }

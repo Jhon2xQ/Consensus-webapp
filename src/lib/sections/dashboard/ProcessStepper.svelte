@@ -1,11 +1,7 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Textarea } from '$lib/components/ui/textarea';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
-	import { Check, Mail, Trash2, Plus, AlertTriangle } from '@lucide/svelte';
+	import { Check, AlertTriangle } from '@lucide/svelte';
 	import {
 		Dialog,
 		DialogContent,
@@ -14,9 +10,10 @@
 		DialogDescription,
 		DialogFooter
 	} from '$lib/components/ui/dialog';
-	import TeamTable from './TeamTable.svelte';
-	import EmptyState from '$lib/components/shared/EmptyState.svelte';
-	import { toDatetimeLocal } from './process-utils';
+	import { toDatetimeLocal, normalizeDatetime } from './process-utils';
+	import StepGeneralInfo from './StepGeneralInfo.svelte';
+	import StepTeams from './StepTeams.svelte';
+	import StepEnrollments from './StepEnrollments.svelte';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
 	import type { Enrollment } from '$lib/types/enrollment';
@@ -70,19 +67,19 @@
 		if (values && Object.keys(values).length > 0) {
 			name = values.name ?? '';
 			description = values.description ?? '';
-			commitmentStart = values.commitmentStart ?? '';
-			commitmentEnd = values.commitmentEnd ?? '';
-			votingStart = values.votingStart ?? '';
-			votingEnd = values.votingEnd ?? '';
-			results = values.results ?? '';
+			commitmentStart = normalizeDatetime(values.commitmentStart ?? '');
+			commitmentEnd = normalizeDatetime(values.commitmentEnd ?? '');
+			votingStart = normalizeDatetime(values.votingStart ?? '');
+			votingEnd = normalizeDatetime(values.votingEnd ?? '');
+			results = normalizeDatetime(values.results ?? '');
 		} else if (process) {
 			name = process.name ?? '';
 			description = process.description ?? '';
-			commitmentStart = process.commitmentStart ? toDatetimeLocal(process.commitmentStart) : '';
-			commitmentEnd = process.commitmentEnd ? toDatetimeLocal(process.commitmentEnd) : '';
-			votingStart = process.votingStart ? toDatetimeLocal(process.votingStart) : '';
-			votingEnd = process.votingEnd ? toDatetimeLocal(process.votingEnd) : '';
-			results = process.results ? toDatetimeLocal(process.results) : '';
+			commitmentStart = process.commitmentStart ? normalizeDatetime(toDatetimeLocal(process.commitmentStart)) : '';
+			commitmentEnd = process.commitmentEnd ? normalizeDatetime(toDatetimeLocal(process.commitmentEnd)) : '';
+			votingStart = process.votingStart ? normalizeDatetime(toDatetimeLocal(process.votingStart)) : '';
+			votingEnd = process.votingEnd ? normalizeDatetime(toDatetimeLocal(process.votingEnd)) : '';
+			results = process.results ? normalizeDatetime(toDatetimeLocal(process.results)) : '';
 		}
 		if (isEditMode) {
 			allTeams = [...existingTeams];
@@ -90,192 +87,9 @@
 		}
 	});
 
-	// ── Step 2 — Teams state ──
+	// ── Step 2 & 3 state (data lives here, rendering delegated) ──
 	let allTeams = $state<Team[]>([]);
-	let showAddTeamDialog = $state(false);
-	let newTeamName = $state('');
-	let newTeamAvatarUrl = $state('');
-	let teamSubmitting = $state(false);
-	let teamFormErrors = $state<Record<string, string>>({});
-
-	function openAddTeamDialog() {
-		newTeamName = '';
-		newTeamAvatarUrl = '';
-		teamFormErrors = {};
-		showAddTeamDialog = true;
-	}
-
-	function closeAddTeamDialog() {
-		showAddTeamDialog = false;
-	}
-
-	async function handleAddTeam() {
-		const e: Record<string, string> = {};
-		if (!newTeamName.trim()) {
-			e.name = 'El nombre del equipo es obligatorio';
-		} else if (newTeamName.trim().length < 2) {
-			e.name = 'El nombre debe tener al menos 2 caracteres';
-		} else if (newTeamName.trim().length > 100) {
-			e.name = 'El nombre no puede exceder 100 caracteres';
-		}
-
-		if (Object.keys(e).length > 0) {
-			teamFormErrors = e;
-			return;
-		}
-		teamFormErrors = {};
-
-		if (isEditMode && processId) {
-			teamSubmitting = true;
-			try {
-				const formData = new FormData();
-				formData.append('teamName', newTeamName.trim());
-				if (newTeamAvatarUrl.trim()) {
-					formData.append('avatarUrl', newTeamAvatarUrl.trim());
-				}
-
-				const res = await fetch('?/agregarEquipo', {
-					method: 'POST',
-					body: formData
-				});
-				const json = await res.json();
-
-				if (json.type === 'failure') {
-					teamFormErrors = { name: json.data?.errors?.teamName ?? json.data?.errors?._form ?? 'Error al crear el equipo' };
-				} else if (json.success) {
-					closeAddTeamDialog();
-					await invalidateAll();
-				} else {
-					teamFormErrors = { name: 'Error inesperado al crear el equipo' };
-				}
-			} catch {
-				teamFormErrors = { name: 'Error de conexión al crear el equipo' };
-			} finally {
-				teamSubmitting = false;
-			}
-		} else {
-			// Create mode: store locally
-			const localTeam: Team = {
-				id: `local-${crypto.randomUUID()}`,
-				name: newTeamName.trim(),
-				avatarUrl: newTeamAvatarUrl.trim() || undefined,
-				electoralProcessId: ''
-			};
-			allTeams = [...allTeams, localTeam];
-			closeAddTeamDialog();
-		}
-	}
-
-	async function handleDeleteTeam(team: Team) {
-		if (isEditMode && processId && !team.id.startsWith('local-')) {
-			try {
-				const formData = new FormData();
-				formData.append('teamId', team.id);
-
-				await fetch('?/eliminarEquipo', {
-					method: 'POST',
-					body: formData
-				});
-				await invalidateAll();
-			} catch {
-				// Silently fail — the deletion on the backend is best-effort for now
-			}
-		} else {
-			allTeams = allTeams.filter((t) => t.id !== team.id);
-		}
-	}
-
-	// ── Step 3 — Enrollments state ──
 	let allEnrollments = $state<Enrollment[]>([]);
-	let showAddEnrollmentDialog = $state(false);
-	let newEnrollmentEmail = $state('');
-	let enrollmentSubmitting = $state(false);
-	let enrollmentFormErrors = $state<Record<string, string>>({});
-
-	function openAddEnrollmentDialog() {
-		newEnrollmentEmail = '';
-		enrollmentFormErrors = {};
-		showAddEnrollmentDialog = true;
-	}
-
-	function closeAddEnrollmentDialog() {
-		showAddEnrollmentDialog = false;
-	}
-
-	async function handleAddEnrollment() {
-		const e: Record<string, string> = {};
-		const email = newEnrollmentEmail.trim();
-
-		if (!email) {
-			e.email = 'El email es obligatorio';
-		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-			e.email = 'El email no es válido';
-		}
-
-		if (Object.keys(e).length > 0) {
-			enrollmentFormErrors = e;
-			return;
-		}
-		enrollmentFormErrors = {};
-
-		if (isEditMode && processId) {
-			enrollmentSubmitting = true;
-			try {
-				const formData = new FormData();
-				formData.append('email', email);
-
-				const res = await fetch('?/agregarVotante', {
-					method: 'POST',
-					body: formData
-				});
-				const json = await res.json();
-
-				if (json.type === 'failure') {
-					enrollmentFormErrors = { email: json.data?.errors?.email ?? json.data?.errors?._form ?? 'Error al registrar el votante' };
-				} else if (json.success) {
-					closeAddEnrollmentDialog();
-					await invalidateAll();
-				} else {
-					enrollmentFormErrors = { email: 'Error inesperado al registrar el votante' };
-				}
-			} catch {
-				enrollmentFormErrors = { email: 'Error de conexión al registrar el votante' };
-			} finally {
-				enrollmentSubmitting = false;
-			}
-		} else {
-			// Create mode: store locally
-			const localEnrollment: Enrollment = {
-				id: `local-${crypto.randomUUID()}`,
-				electoralProcessId: '',
-				email,
-				userId: null,
-				commitment: null,
-				hasVoted: false
-			};
-			allEnrollments = [...allEnrollments, localEnrollment];
-			closeAddEnrollmentDialog();
-		}
-	}
-
-	async function handleDeleteEnrollment(enrollment: Enrollment) {
-		if (isEditMode && processId && !enrollment.id.startsWith('local-')) {
-			try {
-				const formData = new FormData();
-				formData.append('enrollmentId', enrollment.id);
-
-				await fetch('?/eliminarVotante', {
-					method: 'POST',
-					body: formData
-				});
-				await invalidateAll();
-			} catch {
-				// Silently fail
-			}
-		} else {
-			allEnrollments = allEnrollments.filter((e) => e.id !== enrollment.id);
-		}
-	}
 
 	// ── Navigation ──
 	let allErrors = $derived({ ...errors, ...localErrors });
@@ -350,10 +164,6 @@
 			currentStep--;
 		}
 	}
-
-	// ── Derived counts ──
-	let teamCount = $derived(allTeams.length);
-	let enrollmentCount = $derived(allEnrollments.length);
 
 	// ── Serialized data for form submission ──
 	let serializedTeams = $derived(JSON.stringify(allTeams));
@@ -478,224 +288,22 @@
 
 	<Separator />
 
-	<!-- Step Content -->
+	<!-- Step Content — delegated to step components -->
 	{#if currentStep === 0}
-		<!-- Datos Generales -->
-		<div class="space-y-4">
-			<h3 class="text-lg font-semibold">Información General</h3>
-
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div class="space-y-2">
-					<Label for="name">Nombre *</Label>
-					<Input
-						id="name"
-						name="name"
-						bind:value={name}
-						placeholder="Ej: Elecciones Nacionales 2026"
-						aria-invalid={!!allErrors.name}
-					/>
-					{#if allErrors.name}
-						<p class="text-sm text-destructive">{allErrors.name}</p>
-					{/if}
-				</div>
-			</div>
-
-			<div class="space-y-2">
-				<Label for="description">Descripción</Label>
-				<Textarea
-					id="description"
-					name="description"
-					bind:value={description}
-					placeholder="Descripción opcional del proceso electoral"
-					rows={3}
-				/>
-			</div>
-
-			<Separator />
-
-			<h3 class="text-lg font-semibold pt-2">Fechas del Proceso</h3>
-
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-				<div class="space-y-3">
-					<p class="text-sm font-medium text-muted-foreground uppercase tracking-wide">Compromiso</p>
-					<div class="space-y-2">
-						<Label for="commitmentStart">Inicio de Compromiso *</Label>
-						<Input
-							id="commitmentStart"
-							name="commitmentStart"
-							type="datetime-local"
-							bind:value={commitmentStart}
-							aria-invalid={!!allErrors.commitmentStart}
-						/>
-						{#if allErrors.commitmentStart}
-							<p class="text-sm text-destructive">{allErrors.commitmentStart}</p>
-						{/if}
-					</div>
-					<div class="space-y-2">
-						<Label for="commitmentEnd">Fin de Compromiso *</Label>
-						<Input
-							id="commitmentEnd"
-							name="commitmentEnd"
-							type="datetime-local"
-							bind:value={commitmentEnd}
-							aria-invalid={!!allErrors.commitmentEnd}
-						/>
-						{#if allErrors.commitmentEnd}
-							<p class="text-sm text-destructive">{allErrors.commitmentEnd}</p>
-						{/if}
-					</div>
-				</div>
-
-				<div class="space-y-3">
-					<p class="text-sm font-medium text-muted-foreground uppercase tracking-wide">Votación</p>
-					<div class="space-y-2">
-						<Label for="votingStart">Inicio de Votación *</Label>
-						<Input
-							id="votingStart"
-							name="votingStart"
-							type="datetime-local"
-							bind:value={votingStart}
-							aria-invalid={!!allErrors.votingStart}
-						/>
-						{#if allErrors.votingStart}
-							<p class="text-sm text-destructive">{allErrors.votingStart}</p>
-						{/if}
-					</div>
-					<div class="space-y-2">
-						<Label for="votingEnd">Fin de Votación *</Label>
-						<Input
-							id="votingEnd"
-							name="votingEnd"
-							type="datetime-local"
-							bind:value={votingEnd}
-							aria-invalid={!!allErrors.votingEnd}
-						/>
-						{#if allErrors.votingEnd}
-							<p class="text-sm text-destructive">{allErrors.votingEnd}</p>
-						{/if}
-					</div>
-				</div>
-
-				<div class="space-y-3">
-					<p class="text-sm font-medium text-muted-foreground uppercase tracking-wide">Resultados</p>
-					<div class="space-y-2">
-						<Label for="results">Fecha de Resultados *</Label>
-						<Input
-							id="results"
-							name="results"
-							type="datetime-local"
-							bind:value={results}
-							aria-invalid={!!allErrors.results}
-						/>
-						{#if allErrors.results}
-							<p class="text-sm text-destructive">{allErrors.results}</p>
-						{/if}
-					</div>
-				</div>
-			</div>
-		</div>
+		<StepGeneralInfo
+			bind:name
+			bind:description
+			bind:commitmentStart
+			bind:commitmentEnd
+			bind:votingStart
+			bind:votingEnd
+			bind:results
+			{allErrors}
+		/>
 	{:else if currentStep === 1}
-		<!-- Equipos -->
-		<div class="space-y-4">
-			<div class="flex items-center justify-between">
-				<h3 class="text-lg font-semibold">Equipos del Proceso</h3>
-				<span class="text-sm text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">
-					{teamCount} equipo{teamCount !== 1 ? 's' : ''}
-				</span>
-			</div>
-
-			<TeamTable teams={allTeams} onDelete={handleDeleteTeam} />
-
-			<div>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onclick={openAddTeamDialog}
-				>
-					<Plus class="size-4" />
-					Agregar equipo
-				</Button>
-			</div>
-		</div>
+		<StepTeams bind:allTeams {isEditMode} {processId} />
 	{:else if currentStep === 2}
-		<!-- Votantes -->
-		<div class="space-y-4">
-			<div class="flex items-center justify-between">
-				<h3 class="text-lg font-semibold">Votantes Inscriptos</h3>
-				<span class="text-sm text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">
-					{enrollmentCount} votante{enrollmentCount !== 1 ? 's' : ''}
-				</span>
-			</div>
-
-			{#if allEnrollments.length === 0}
-				<EmptyState
-					icon={Mail}
-					title="No hay inscripciones registradas"
-					description="Agregá votantes para este proceso electoral."
-				/>
-			{:else}
-				<!-- Desktop table -->
-				<div class="hidden sm:block rounded-md border">
-					<table class="w-full">
-						<thead>
-							<tr class="border-b bg-muted/50">
-								<th class="h-10 px-4 text-left text-xs font-medium text-muted-foreground">Email</th>
-								<th class="h-10 px-4 text-right text-xs font-medium text-muted-foreground">Acciones</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each allEnrollments as enrollment (enrollment.id)}
-								<tr class="border-b">
-									<td class="p-3 px-4 text-sm font-medium">{enrollment.email}</td>
-									<td class="p-3 px-4 text-right">
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon-sm"
-											onclick={() => handleDeleteEnrollment(enrollment)}
-										>
-											<Trash2 class="size-4 text-destructive" />
-											<span class="sr-only">Eliminar inscripción</span>
-										</Button>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-
-				<!-- Mobile card list -->
-				<div class="sm:hidden space-y-2">
-					{#each allEnrollments as enrollment (enrollment.id)}
-						<div class="flex items-center justify-between p-3 rounded-lg border bg-card">
-							<p class="text-sm font-medium truncate">{enrollment.email}</p>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								onclick={() => handleDeleteEnrollment(enrollment)}
-							>
-								<Trash2 class="size-4 text-destructive" />
-								<span class="sr-only">Eliminar inscripción</span>
-							</Button>
-						</div>
-					{/each}
-				</div>
-			{/if}
-
-			<div>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onclick={openAddEnrollmentDialog}
-				>
-					<Plus class="size-4" />
-					Agregar votante
-				</Button>
-			</div>
-		</div>
+		<StepEnrollments bind:allEnrollments {isEditMode} {processId} />
 	{/if}
 
 	<Separator />
@@ -774,92 +382,6 @@
 		</div>
 	</div>
 </div>
-
-<!-- Team Add Dialog -->
-<Dialog bind:open={showAddTeamDialog}>
-	<DialogContent>
-		<DialogHeader>
-			<DialogTitle>Crear equipo</DialogTitle>
-			<DialogDescription>
-				Agregá un nuevo equipo al proceso electoral.
-			</DialogDescription>
-		</DialogHeader>
-		<div class="space-y-4">
-			<div class="space-y-2">
-				<Label for="stepper-team-name">Nombre del equipo *</Label>
-				<Input
-					id="stepper-team-name"
-					bind:value={newTeamName}
-					placeholder="Ej: Frente Nacional"
-					aria-invalid={!!teamFormErrors.name}
-				/>
-				{#if teamFormErrors.name}
-					<p class="text-sm text-destructive">{teamFormErrors.name}</p>
-				{/if}
-			</div>
-			<div class="space-y-2">
-				<Label for="stepper-team-avatar">URL del avatar (opcional)</Label>
-				<Input
-					id="stepper-team-avatar"
-					bind:value={newTeamAvatarUrl}
-					placeholder="https://ejemplo.com/avatar.png"
-					type="url"
-				/>
-			</div>
-		</div>
-		<DialogFooter>
-			<Button type="button" variant="outline" onclick={closeAddTeamDialog}>
-				Cancelar
-			</Button>
-			<Button type="button" onclick={handleAddTeam} disabled={teamSubmitting}>
-				{#if teamSubmitting}
-					Creando...
-				{:else}
-					Crear equipo
-				{/if}
-			</Button>
-		</DialogFooter>
-	</DialogContent>
-</Dialog>
-
-<!-- Enrollment Add Dialog -->
-<Dialog bind:open={showAddEnrollmentDialog}>
-	<DialogContent>
-		<DialogHeader>
-			<DialogTitle>Registrar votante</DialogTitle>
-			<DialogDescription>
-				Agregá un nuevo votante al proceso electoral.
-			</DialogDescription>
-		</DialogHeader>
-		<div class="space-y-4">
-			<div class="space-y-2">
-				<Label for="stepper-enrollment-email">Email *</Label>
-				<Input
-					id="stepper-enrollment-email"
-					type="email"
-					bind:value={newEnrollmentEmail}
-					placeholder="votante@example.com"
-					aria-invalid={!!enrollmentFormErrors.email}
-				/>
-				{#if enrollmentFormErrors.email}
-					<p class="text-sm text-destructive">{enrollmentFormErrors.email}</p>
-				{/if}
-			</div>
-		</div>
-		<DialogFooter>
-			<Button type="button" variant="outline" onclick={closeAddEnrollmentDialog}>
-				Cancelar
-			</Button>
-			<Button type="button" onclick={handleAddEnrollment} disabled={enrollmentSubmitting}>
-				{#if enrollmentSubmitting}
-					Registrando...
-				{:else}
-					Registrar votante
-				{/if}
-			</Button>
-		</DialogFooter>
-	</DialogContent>
-</Dialog>
 
 <!-- Cancel / Delete Confirmation Dialog -->
 <Dialog bind:open={showConfirmDialog}>
