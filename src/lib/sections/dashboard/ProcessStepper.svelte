@@ -10,7 +10,7 @@
 		DialogDescription,
 		DialogFooter
 	} from '$lib/components/ui/dialog';
-	import { toDatetimeLocal, normalizeDatetime } from './process-utils';
+	import { toDatetimeLocal } from './process-utils';
 	import StepGeneralInfo from './StepGeneralInfo.svelte';
 	import StepTeams from './StepTeams.svelte';
 	import StepEnrollments from './StepEnrollments.svelte';
@@ -67,19 +67,19 @@
 		if (values && Object.keys(values).length > 0) {
 			name = values.name ?? '';
 			description = values.description ?? '';
-			commitmentStart = normalizeDatetime(values.commitmentStart ?? '');
-			commitmentEnd = normalizeDatetime(values.commitmentEnd ?? '');
-			votingStart = normalizeDatetime(values.votingStart ?? '');
-			votingEnd = normalizeDatetime(values.votingEnd ?? '');
-			results = normalizeDatetime(values.results ?? '');
+			commitmentStart = values.commitmentStart ?? '';
+			commitmentEnd = values.commitmentEnd ?? '';
+			votingStart = values.votingStart ?? '';
+			votingEnd = values.votingEnd ?? '';
+			results = values.results ?? '';
 		} else if (process) {
 			name = process.name ?? '';
 			description = process.description ?? '';
-			commitmentStart = process.commitmentStart ? normalizeDatetime(toDatetimeLocal(process.commitmentStart)) : '';
-			commitmentEnd = process.commitmentEnd ? normalizeDatetime(toDatetimeLocal(process.commitmentEnd)) : '';
-			votingStart = process.votingStart ? normalizeDatetime(toDatetimeLocal(process.votingStart)) : '';
-			votingEnd = process.votingEnd ? normalizeDatetime(toDatetimeLocal(process.votingEnd)) : '';
-			results = process.results ? normalizeDatetime(toDatetimeLocal(process.results)) : '';
+			commitmentStart = process.commitmentStart ? toDatetimeLocal(process.commitmentStart) : '';
+			commitmentEnd = process.commitmentEnd ? toDatetimeLocal(process.commitmentEnd) : '';
+			votingStart = process.votingStart ? toDatetimeLocal(process.votingStart) : '';
+			votingEnd = process.votingEnd ? toDatetimeLocal(process.votingEnd) : '';
+			results = process.results ? toDatetimeLocal(process.results) : '';
 		}
 		if (isEditMode) {
 			allTeams = [...existingTeams];

@@ -57,29 +57,6 @@ export function toDatetimeLocal(iso: string): string {
 	return `${yyyy}-${MM}-${dd}T${HH}:${mm}`;
 }
 
-/**
- * Normalize a datetime value to YYYY-MM-DDTHH:MM format.
- * - If already in YYYY-MM-DDTHH:MM → return as-is
- * - If date-only YYYY-MM-DD → append T00:00
- * - If ISO 8601 with Z or offset → convert to local datetime
- * - If empty → return empty string (no forced default)
- */
-export function normalizeDatetime(value: string): string {
-	if (!value) return '';
-	// Already in datetime-local format
-	if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
-	// ISO 8601 with timezone info → convert to local
-	if (value.includes('T') && (value.includes('Z') || value.includes('+') || value.includes('-'))) {
-		return toDatetimeLocal(value);
-	}
-	// Date-only YYYY-MM-DD → append T00:00
-	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T00:00`;
-	// Fallback: try parsing
-	const d = new Date(value);
-	if (isNaN(d.getTime())) return value;
-	return toDatetimeLocal(value);
-}
-
 /** Format an ISO-8601 string as localized date and time using es-AR locale */
 export function formatDateTime(iso: string): string {
 	return new Intl.DateTimeFormat('es-AR', {
