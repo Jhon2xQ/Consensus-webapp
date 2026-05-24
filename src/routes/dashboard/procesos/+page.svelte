@@ -20,12 +20,14 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
-	let { data } = $props();
+	let { data, form } = $props();
 
 	const SIZE_OPTIONS = [5, 10, 20] as const;
 
 	const rawSize = $derived(Number(page.url.searchParams.get('size') ?? '5'));
 	const currentSize = $derived(rawSize === 10 ? 10 : rawSize === 20 ? 20 : 5);
+
+	const successMessage = $derived(page.url.searchParams.get('success'));
 
 	let deleteTarget = $state<ElectoralProcess | null>(null);
 	let showDeleteDialog = $state(false);
@@ -75,6 +77,20 @@
 			</Button>
 		</div>
 	</div>
+
+	<!-- Form action errors -->
+	{#if form?.error}
+		<div class="p-4 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive text-sm">
+			{form.error}
+		</div>
+	{/if}
+
+	<!-- Action success message (from redirect query param) -->
+	{#if successMessage}
+		<div class="p-4 rounded-lg border border-green-200 bg-green-50 text-green-700 text-sm">
+			{successMessage}
+		</div>
+	{/if}
 
 	<!-- Loading skeleton -->
 	{#if !data}
@@ -235,8 +251,8 @@
 			<DialogClose>
 				<Button variant="outline" onclick={closeDeleteDialog}>Cancelar</Button>
 			</DialogClose>
-			<form method="POST" action="?/delete" onsubmit={closeDeleteDialog}>
-				<input type="hidden" name="id" value={deleteTarget?.id} />
+			<form method="POST" action="?/delete" class="space-y-4">
+				<input type="hidden" name="id" value={deleteTarget?.id ?? ''} />
 				<Button type="submit" variant="destructive">Eliminar</Button>
 			</form>
 		</DialogFooter>

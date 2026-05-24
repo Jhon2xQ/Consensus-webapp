@@ -1,4 +1,4 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { getMyProcesses, deleteProcess } from '$lib/server/process.service';
 import { ApiError } from '$lib/server/api';
@@ -31,7 +31,6 @@ export const actions = {
 
 		try {
 			await deleteProcess(locals, id);
-			return { success: true };
 		} catch (e) {
 			if (e instanceof ApiError) {
 				if (e.status === 401) {
@@ -43,5 +42,7 @@ export const actions = {
 			}
 			return fail(500, { error: 'Error al eliminar el proceso' });
 		}
+
+		throw redirect(303, '/dashboard/procesos?success=Proceso+eliminado+exitosamente');
 	}
 } satisfies Actions;
