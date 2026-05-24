@@ -6,9 +6,19 @@
 	import { Button } from '$lib/components/ui/button';
 	import { toDatetimeLocal } from '$lib/sections/dashboard/process-utils';
 
+	type ProcessData = {
+		name: string;
+		description: string | null;
+		commitmentStart: string;
+		commitmentEnd: string;
+		votingStart: string;
+		votingEnd: string;
+		results: string;
+	};
+
 	type Props = {
 		mode: 'create' | 'edit';
-		process?: Record<string, string> | null;
+		process?: ProcessData | null;
 		errors?: Record<string, string>;
 		values?: Record<string, string>;
 		submitting?: boolean;
@@ -25,10 +35,10 @@
 	}: Props = $props();
 
 	// Snapshot initial form data: values takes priority over process.
-	// We snap props to locals first to avoid Svelte 5 state_referenced_locally
-	// warnings — these are initializers, not reactive bindings.
-	const v = rawValues ?? {};
-	const p = (process ?? {}) as Record<string, string>;
+	// $state.snapshot() explicitly tells Svelte 5 these are one-time initializers,
+	// not reactive bindings — subsequent prop changes should NOT reset the form.
+	const v = $state.snapshot(rawValues) ?? {};
+	const p: Partial<ProcessData> = $state.snapshot(process) ?? {};
 
 	// In edit mode, convert ISO dates from process prop to datetime-local format.
 	// Values from a previous fail() are already datetime-local — skip conversion.
