@@ -187,6 +187,7 @@ describe('default action', () => {
 		} catch (err: any) {
 			// Redirect is expected — body was set before redirect
 			expect(err).toHaveProperty('status', 303);
+			expect(err).toHaveProperty('location', '/dashboard/procesos?success=Proceso+actualizado+exitosamente');
 		}
 
 		expect(mockUpdateProcess).toHaveBeenCalled();
@@ -217,6 +218,7 @@ describe('default action', () => {
 			} as any);
 		} catch (err: any) {
 			expect(err).toHaveProperty('status', 303);
+			expect(err).toHaveProperty('location', '/dashboard/procesos?success=Proceso+actualizado+exitosamente');
 		}
 
 		expect(mockUpdateProcess).toHaveBeenCalledWith(mockLocals, 'proc-456', expect.objectContaining({
@@ -306,6 +308,7 @@ describe('default action', () => {
 		} catch (err: any) {
 			// Redirect means validation passed (no fail() returned)
 			expect(err).toHaveProperty('status', 303);
+			expect(err).toHaveProperty('location', '/dashboard/procesos?success=Proceso+actualizado+exitosamente');
 		}
 
 		// Should NOT have returned fail due to missing scope

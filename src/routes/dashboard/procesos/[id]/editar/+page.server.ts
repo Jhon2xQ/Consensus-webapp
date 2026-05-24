@@ -137,7 +137,7 @@ export const actions = {
 			throw err;
 		}
 
-		throw redirect(303, `/dashboard/procesos/${params.id}?success=Proceso+actualizado+exitosamente`);
+		throw redirect(303, `/dashboard/procesos?success=Proceso+actualizado+exitosamente`);
 	},
 
 	eliminar: async ({ params, locals }) => {

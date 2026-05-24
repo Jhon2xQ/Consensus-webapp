@@ -199,7 +199,81 @@ describe('ProcessForm.svelte', () => {
 		});
 	});
 
-	// ── 8. form method ──
+	// ── 8. T00:00 datetime-local defaults (create mode) ──
+	describe('datetime-local defaults in create mode', () => {
+		it('sets datetime-local inputs to T00:00 time in create mode when no process/values provided', async () => {
+			render(ProcessForm, { mode: 'create' });
+
+			// Each datetime-local input should have T00:00 in its value
+			// HTML datetime-local requires full YYYY-MM-DDTHH:MM format
+			const today = new Date().toISOString().split('T')[0];
+			const expectedDefault = `${today}T00:00`;
+
+			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue(expectedDefault);
+			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue(expectedDefault);
+			await expect.element(page.getByLabelText('Inicio de Votación *')).toHaveValue(expectedDefault);
+			await expect.element(page.getByLabelText('Fin de Votación *')).toHaveValue(expectedDefault);
+			await expect.element(page.getByLabelText('Fecha de Resultados *')).toHaveValue(expectedDefault);
+		});
+
+		it('does NOT override datetime values with T00:00 in edit mode', async () => {
+			render(ProcessForm, { mode: 'edit', process: mockProcess });
+
+			// Edit mode must use process data values, not T00:00
+			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue('2026-01-01T10:00');
+			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue('2026-01-15T18:00');
+			await expect.element(page.getByLabelText('Inicio de Votación *')).toHaveValue('2026-02-01T08:00');
+			await expect.element(page.getByLabelText('Fin de Votación *')).toHaveValue('2026-02-05T20:00');
+			await expect.element(page.getByLabelText('Fecha de Resultados *')).toHaveValue('2026-02-10T12:00');
+		});
+
+		it('values prop overrides T00:00 default in create mode', async () => {
+			const customValues = {
+				commitmentStart: '2026-06-01T09:00',
+				commitmentEnd: '2026-06-15T17:00',
+				votingStart: '2026-07-01T08:30',
+				votingEnd: '2026-07-05T20:00',
+				results: '2026-07-10T12:00'
+			};
+			render(ProcessForm, { mode: 'create', values: customValues });
+
+			// values prop takes priority — no T00:00 override
+			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue('2026-06-01T09:00');
+			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue('2026-06-15T17:00');
+			await expect.element(page.getByLabelText('Inicio de Votación *')).toHaveValue('2026-07-01T08:30');
+			await expect.element(page.getByLabelText('Fin de Votación *')).toHaveValue('2026-07-05T20:00');
+			await expect.element(page.getByLabelText('Fecha de Resultados *')).toHaveValue('2026-07-10T12:00');
+		});
+
+		it('applies T00:00 default in create mode even when process prop has empty datetime fields', async () => {
+			// Process with name only (no datetime fields) — still in create mode
+			const minimalProcess = { name: 'Solo Nombre' };
+			render(ProcessForm, { mode: 'create', process: minimalProcess });
+
+			const today = new Date().toISOString().split('T')[0];
+			const expectedDefault = `${today}T00:00`;
+
+			// Datetime fields fall back to T00:00 since process has none
+			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue(expectedDefault);
+			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue(expectedDefault);
+			// Name from process, description from default (empty)
+			await expect.element(page.getByLabelText('Nombre *')).toHaveValue('Solo Nombre');
+			await expect.element(page.getByLabelText('Descripción')).toHaveValue('');
+		});
+
+		it('keeps empty string fallback in edit mode when process has no datetime fields', async () => {
+			// Edit mode with no datetime fields — should NOT add T00:00
+			const minimalProcess = { name: 'Editar Sin Fechas' };
+			render(ProcessForm, { mode: 'edit', process: minimalProcess });
+
+			// Edit mode: empty datetime fields, no T00:00 override
+			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue('');
+			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue('');
+			await expect.element(page.getByLabelText('Nombre *')).toHaveValue('Editar Sin Fechas');
+		});
+	});
+
+	// ── 9. form method ──
 	describe('form structure', () => {
 		it('contains a submit button inside a form', async () => {
 			render(ProcessForm, { mode: 'create' });

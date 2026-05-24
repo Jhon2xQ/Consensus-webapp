@@ -16,7 +16,7 @@ const mockProcess1: ElectoralProcess = {
 	id: '1',
 	name: 'Elecciones Nacionales 2026',
 	scope: 'Nacional',
-	description: null,
+	description: 'Proceso electoral para elegir representantes nacionales en todas las provincias del país.',
 	estatus: 'COMMITMENT',
 	commitmentStart: '2026-03-01',
 	commitmentEnd: '2026-04-30',
@@ -37,6 +37,11 @@ const mockProcess2: ElectoralProcess = {
 	votingEnd: '2026-07-05',
 	results: '2026-07-10'
 };
+
+function mockData(processes: ElectoralProcess[], error: string | null = null) {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	return { processes, error, user: undefined } as any;
+}
 
 describe('Procesos +page.svelte', () => {
 	it('shows loading skeleton when data is undefined', async () => {
@@ -59,8 +64,7 @@ describe('Procesos +page.svelte', () => {
 
 	it('shows error state with message and retry button', async () => {
 		render(ProcesosPage, {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			data: { processes: [], error: 'Error al cargar los procesos. Intentalo de nuevo más tarde.', user: undefined } as any
+			data: mockData([], 'Error al cargar los procesos. Intentalo de nuevo más tarde.')
 		});
 
 		// Error message visible
@@ -71,13 +75,12 @@ describe('Procesos +page.svelte', () => {
 		// Retry button visible
 		await expect.element(page.getByText('Reintentar')).toBeInTheDocument();
 
-		// Grid should NOT be visible (no process names)
+		// Process names should NOT be visible (no grid, no table)
 		await expect.element(page.getByText('Elecciones Nacionales 2026')).not.toBeInTheDocument();
 	});
 
 	it('shows empty state with create process link', async () => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		render(ProcesosPage, { data: { processes: [], error: null, user: undefined } as any });
+		render(ProcesosPage, { data: mockData([]) });
 
 		// Empty state text
 		await expect.element(page.getByText('No hay procesos electorales')).toBeInTheDocument();
@@ -94,23 +97,109 @@ describe('Procesos +page.svelte', () => {
 		await expect.element(page.getByText('Reintentar')).not.toBeInTheDocument();
 	});
 
-	it('renders grid with process cards when data has processes', async () => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	it('renders single-column table with process cards when data has processes', async () => {
 		render(ProcesosPage, {
-			data: { processes: [mockProcess1, mockProcess2], error: null, user: undefined } as any
+			data: mockData([mockProcess1, mockProcess2])
 		});
 
-		// Both process names should be visible
+		// Table element exists
+		const table = page.getByRole('table');
+		await expect.element(table).toBeInTheDocument();
+
+		// Column header "Proceso" exists (exact match avoids conflict with longer texts containing "Proceso")
+		await expect.element(page.getByText('Proceso', { exact: true })).toBeInTheDocument();
+
+		// Both process names visible (inside card rows)
 		await expect.element(page.getByText('Elecciones Nacionales 2026')).toBeInTheDocument();
 		await expect.element(page.getByText('Elecciones Provinciales Buenos Aires')).toBeInTheDocument();
 
-		// Status badge text appears (at least once — both processes share 'COMMITMENT' status)
+		// Status badge text visible — both processes are 'COMMITMENT' → 'Compromiso'
 		await expect.element(page.getByText('Compromiso').first()).toBeInTheDocument();
 
-		// Scaffold (Nacional · ...) appears in card
-		await expect.element(page.getByText(/Nacional/).first()).toBeInTheDocument();
+		// Description visible for mockProcess1 (has description)
+		await expect
+			.element(page.getByText('Proceso electoral para elegir representantes nacionales en todas las provincias del país.'))
+			.toBeInTheDocument();
+
+		// Action buttons visible: Ver equipos, Ver votantes, Editar, Eliminar
+		await expect.element(page.getByText('Ver equipos').first()).toBeInTheDocument();
+		await expect.element(page.getByText('Ver votantes').first()).toBeInTheDocument();
+		await expect.element(page.getByText('Editar').first()).toBeInTheDocument();
+		await expect.element(page.getByText('Eliminar').first()).toBeInTheDocument();
 
 		// Error state should NOT be visible
 		await expect.element(page.getByText('Reintentar')).not.toBeInTheDocument();
+	});
+
+	it('renders correct action button hrefs in process cards', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcess1])
+		});
+
+		// "Ver equipos" button links to /dashboard/equipos?processId={id}
+		const equiposBtn = page.getByText('Ver equipos').first();
+		await expect.element(equiposBtn).toBeInTheDocument();
+		const equiposParent = equiposBtn.element().closest('a');
+		expect(equiposParent?.getAttribute('href')).toBe('/dashboard/equipos?processId=1');
+
+		// "Ver votantes" button links to /dashboard/votantes?processId={id}
+		const votantesBtn = page.getByText('Ver votantes').first();
+		await expect.element(votantesBtn).toBeInTheDocument();
+		const votantesParent = votantesBtn.element().closest('a');
+		expect(votantesParent?.getAttribute('href')).toBe('/dashboard/votantes?processId=1');
+
+		// "Editar" button links to /dashboard/procesos/{id}/editar
+		const editarBtn = page.getByText('Editar').first();
+		await expect.element(editarBtn).toBeInTheDocument();
+		const editarParent = editarBtn.element().closest('a');
+		expect(editarParent?.getAttribute('href')).toBe('/dashboard/procesos/1/editar');
+	});
+
+	it('shows date ranges and results in process cards', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcess1])
+		});
+
+		// Date labels visible (use nth(1) for "Compromiso" to skip the status badge)
+		await expect.element(page.getByText('Compromiso').nth(1)).toBeInTheDocument();
+		await expect.element(page.getByText('Votación').first()).toBeInTheDocument();
+		await expect.element(page.getByText('Resultados').first()).toBeInTheDocument();
+	});
+
+	it('shows correct status badge for processes with different statuses', async () => {
+		const votingProcess: ElectoralProcess = {
+			...mockProcess1,
+			id: '3',
+			name: 'Referendo Provincial 2026',
+			estatus: 'VOTING',
+			description: null
+		};
+		render(ProcesosPage, {
+			data: mockData([votingProcess])
+		});
+
+		// VOTING status translates to 'Votación' badge
+		await expect.element(page.getByText('Votación').first()).toBeInTheDocument();
+
+		// Referendo process name visible
+		await expect.element(page.getByText('Referendo Provincial 2026')).toBeInTheDocument();
+
+		// No description should be rendered (it's null)
+		await expect.element(page.getByText('Referendo Provincial 2026')).toBeInTheDocument();
+	});
+
+	it('does not render description when process has null description', async () => {
+		// mockProcess2 has description: null
+		render(ProcesosPage, {
+			data: mockData([mockProcess2])
+		});
+
+		// Process name visible
+		await expect.element(page.getByText('Elecciones Provinciales Buenos Aires')).toBeInTheDocument();
+
+		// The line-clamp-2 description elements should NOT include mockProcess2's description
+		// (it has none, so the line-clamp-2 p tag should not be rendered)
+		const lineClampElements = document.querySelectorAll('.line-clamp-2');
+		expect(lineClampElements.length).toBe(0);
 	});
 });

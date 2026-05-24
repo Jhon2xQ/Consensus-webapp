@@ -10,7 +10,7 @@
 <div class="space-y-6">
 	<!-- Page Header -->
 	<div class="flex items-center gap-4">
-		<Button variant="outline" size="icon" href="/dashboard/procesos/{data.process.id}">
+		<Button variant="outline" size="icon" href="/dashboard/procesos">
 			<ArrowLeft class="size-4" />
 		</Button>
 		<div>

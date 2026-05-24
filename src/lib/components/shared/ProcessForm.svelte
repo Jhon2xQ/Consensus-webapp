@@ -27,13 +27,18 @@
 	const v = rawValues ?? {};
 	const p = (process ?? {}) as Record<string, string>;
 
+	// T00:00 default for create mode: datetime-local inputs show 00:00 AM
+	// Date portion uses today (HTML datetime-local requires full YYYY-MM-DDTHH:MM)
+	const today = new Date().toISOString().split('T')[0];
+	const defaultTime = mode === 'create' ? `${today}T00:00` : '';
+
 	let name = $state(v.name ?? p.name ?? '');
 	let description = $state(v.description ?? p.description ?? '');
-	let commitmentStart = $state(v.commitmentStart ?? p.commitmentStart ?? '');
-	let commitmentEnd = $state(v.commitmentEnd ?? p.commitmentEnd ?? '');
-	let votingStart = $state(v.votingStart ?? p.votingStart ?? '');
-	let votingEnd = $state(v.votingEnd ?? p.votingEnd ?? '');
-	let results = $state(v.results ?? p.results ?? '');
+	let commitmentStart = $state(v.commitmentStart ?? p.commitmentStart ?? defaultTime);
+	let commitmentEnd = $state(v.commitmentEnd ?? p.commitmentEnd ?? defaultTime);
+	let votingStart = $state(v.votingStart ?? p.votingStart ?? defaultTime);
+	let votingEnd = $state(v.votingEnd ?? p.votingEnd ?? defaultTime);
+	let results = $state(v.results ?? p.results ?? defaultTime);
 </script>
 
 <form method="POST" class="space-y-6">

@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { getMyProcesses } from '$lib/server/process.service';
+import { getMyProcesses, deleteProcess } from '$lib/server/process.service';
 import { ApiError } from '$lib/server/api';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions = {
-	delete: async ({ request }) => {
+	delete: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const id = formData.get('id') as string;
 
@@ -29,7 +29,19 @@ export const actions = {
 			return fail(400, { error: 'ID de proceso requerido' });
 		}
 
-		// Mock delete — in production this would call the backend API
-		return { success: true };
+		try {
+			await deleteProcess(locals, id);
+			return { success: true };
+		} catch (e) {
+			if (e instanceof ApiError) {
+				if (e.status === 401) {
+					return fail(401, { error: 'No estás autenticado' });
+				}
+				if (e.status === 404) {
+					return fail(404, { error: 'Proceso no encontrado' });
+				}
+			}
+			return fail(500, { error: 'Error al eliminar el proceso' });
+		}
 	}
 } satisfies Actions;

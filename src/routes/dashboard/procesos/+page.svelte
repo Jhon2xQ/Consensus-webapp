@@ -10,8 +10,13 @@
 		DialogFooter,
 		DialogClose
 	} from '$lib/components/ui/dialog';
-	import { Plus, Pencil, Trash2, CircleAlert } from '@lucide/svelte';
-	import { getStatusLabel, getStatusColor, formatDate } from '$lib/sections/dashboard/process-utils';
+	import { Plus, Pencil, Trash2, CircleAlert, Users, UserCheck } from '@lucide/svelte';
+	import {
+		getStatusLabel,
+		getStatusColor,
+		formatDate,
+		formatDateRange
+	} from '$lib/sections/dashboard/process-utils';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -21,9 +26,7 @@
 	const SIZE_OPTIONS = [5, 10, 20] as const;
 
 	const rawSize = $derived(Number(page.url.searchParams.get('size') ?? '5'));
-	const currentSize = $derived(
-		rawSize === 10 ? 10 : rawSize === 20 ? 20 : 5
-	);
+	const currentSize = $derived(rawSize === 10 ? 10 : rawSize === 20 ? 20 : 5);
 
 	let deleteTarget = $state<ElectoralProcess | null>(null);
 	let showDeleteDialog = $state(false);
@@ -76,9 +79,9 @@
 
 	<!-- Loading skeleton -->
 	{#if !data}
-		<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+		<div class="space-y-2">
 			{#each Array(6) as _, i (i)}
-				<div class="h-24 animate-pulse bg-muted rounded-xl"></div>
+				<div class="h-36 animate-pulse bg-muted rounded-lg"></div>
 			{/each}
 		</div>
 	{:else if data.error}
@@ -100,40 +103,107 @@
 			<Button size="sm" href="/dashboard/procesos/nuevo" class="mt-4">Crear proceso</Button>
 		</div>
 	{:else}
-		<!-- Process Grid -->
-		<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-			{#each data.processes as process (process.id)}
-				<div class="p-4 rounded-xl border bg-card space-y-3">
-					<!-- Row 1: name + badge + edit -->
-					<div class="flex items-center justify-between gap-2">
-						<span class="font-semibold truncate flex-1" title={process.name}>{process.name}</span>
-						<Badge variant="outline" class="shrink-0 {getStatusColor(process.estatus)}">
-							{getStatusLabel(process.estatus)}
-						</Badge>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							href="/dashboard/procesos/{process.id}/editar"
-						>
-							<Pencil class="size-4" />
-						</Button>
-					</div>
-					<!-- Row 2: scope · voting dates + delete -->
-					<div class="flex items-center justify-between gap-2">
-						<p class="text-xs text-muted-foreground truncate">
-							{process.scope} · {formatDate(process.votingStart)} – {formatDate(process.votingEnd)}
-						</p>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							class="text-destructive hover:text-destructive shrink-0"
-							onclick={() => handleDeleteClick(process)}
-						>
-							<Trash2 class="size-4" />
-						</Button>
-					</div>
-				</div>
-			{/each}
+		<!-- Single-column table with card rows -->
+		<div class="overflow-x-auto">
+			<table class="w-full border-separate border-spacing-y-2">
+				<thead>
+					<tr>
+						<th class="text-left px-4 py-2 text-sm font-medium text-muted-foreground">Proceso</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each data.processes as process (process.id)}
+						<tr>
+							<td class="border rounded-lg p-4 space-y-3 bg-card">
+								<!-- Row 1: name + status badge -->
+								<div class="flex items-center justify-between gap-2">
+									<span
+										class="text-lg font-semibold truncate flex-1"
+										title={process.name}
+									>
+										{process.name}
+									</span>
+									<Badge
+										variant="outline"
+										class="shrink-0 {getStatusColor(process.estatus)}"
+									>
+										{getStatusLabel(process.estatus)}
+									</Badge>
+								</div>
+
+								<!-- Row 2: description (truncated, 2 lines) -->
+								{#if process.description}
+									<p class="text-sm text-muted-foreground line-clamp-2">
+										{process.description}
+									</p>
+								{/if}
+
+								<!-- Row 3: date rows -->
+								<div class="space-y-1">
+									<div class="flex gap-2">
+										<span class="text-xs text-muted-foreground font-medium w-24 shrink-0"
+											>Compromiso</span
+										>
+										<span class="text-sm">
+											{formatDateRange(process.commitmentStart, process.commitmentEnd)}
+										</span>
+									</div>
+									<div class="flex gap-2">
+										<span class="text-xs text-muted-foreground font-medium w-24 shrink-0"
+											>Votación</span
+										>
+										<span class="text-sm">
+											{formatDateRange(process.votingStart, process.votingEnd)}
+										</span>
+									</div>
+									<div class="flex gap-2">
+										<span class="text-xs text-muted-foreground font-medium w-24 shrink-0"
+											>Resultados</span
+										>
+										<span class="text-sm">{formatDate(process.results)}</span>
+									</div>
+								</div>
+
+								<!-- Row 4: action buttons -->
+								<div class="flex flex-wrap items-center gap-2 pt-2">
+									<Button
+										variant="outline"
+										size="sm"
+										href="/dashboard/equipos?processId={process.id}"
+									>
+										<Users class="size-3.5 mr-1" />
+										Ver equipos
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										href="/dashboard/votantes?processId={process.id}"
+									>
+										<UserCheck class="size-3.5 mr-1" />
+										Ver votantes
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										href="/dashboard/procesos/{process.id}/editar"
+									>
+										<Pencil class="size-3.5 mr-1" />
+										Editar
+									</Button>
+									<Button
+										variant="destructive"
+										size="sm"
+										onclick={() => handleDeleteClick(process)}
+									>
+										<Trash2 class="size-3.5 mr-1" />
+										Eliminar
+									</Button>
+								</div>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		</div>
 	{/if}
 </div>
