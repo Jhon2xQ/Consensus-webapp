@@ -24,9 +24,9 @@ describe('teams mock data', () => {
 		expect(uniqueIds.size).toBe(ids.length);
 	});
 
-	it('avatarUrl is either undefined or a non-empty string', () => {
+	it('avatarUrl is either undefined, null, or a non-empty string', () => {
 		for (const team of teams) {
-			if (team.avatarUrl !== undefined) {
+			if (team.avatarUrl != null) {
 				expect(typeof team.avatarUrl).toBe('string');
 				expect(team.avatarUrl.length).toBeGreaterThan(0);
 			}

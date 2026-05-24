@@ -3,44 +3,27 @@ import { ApiError } from '$lib/server/api';
 
 // ── Hoisted mocks (required for vi.mock factory to reference them) ──
 const {
-	mockCreateTeam,
-	mockDeleteTeam,
-	mockCreateEnrollment,
-	mockDeleteEnrollment,
+	mockGetProcessById,
 	mockUpdateProcess,
 	mockDeleteProcess
 } = vi.hoisted(() => ({
-	mockCreateTeam: vi.fn(),
-	mockDeleteTeam: vi.fn(),
-	mockCreateEnrollment: vi.fn(),
-	mockDeleteEnrollment: vi.fn(),
+	mockGetProcessById: vi.fn(),
 	mockUpdateProcess: vi.fn(),
 	mockDeleteProcess: vi.fn()
-}));
-
-vi.mock('$lib/server/team.service', () => ({
-	createTeam: mockCreateTeam,
-	deleteTeam: mockDeleteTeam,
-	getTeams: vi.fn()
-}));
-
-vi.mock('$lib/server/enrollment.service', () => ({
-	createEnrollment: mockCreateEnrollment,
-	deleteEnrollment: mockDeleteEnrollment,
-	getEnrollments: vi.fn()
 }));
 
 vi.mock('$lib/server/process.service', async (importOriginal) => {
 	const actual = (await importOriginal()) as object;
 	return {
 		...actual,
+		getProcessById: mockGetProcessById,
 		updateProcess: mockUpdateProcess,
 		deleteProcess: mockDeleteProcess
 	};
 });
 
 // ── Import after mocks ──
-import { actions } from './+page.server';
+import { actions, load } from './+page.server';
 
 const mockLocals = {} as App.Locals;
 const mockParams = { id: 'proc-123' };
@@ -65,250 +48,78 @@ beforeEach(() => {
 });
 
 // ============================================================
-// agregarEquipo action
+// load function
 // ============================================================
-describe('agregarEquipo action', () => {
-	it('returns { success: true } and calls createTeam with correct params', async () => {
-		const mockTeam = {
-			id: 'team-1',
-			name: 'Frente Nacional',
-			avatarUrl: undefined,
-			electoralProcessId: 'proc-123'
+describe('load function', () => {
+	it('returns process without teams/enrollments', async () => {
+		const mockProcess = {
+			id: 'proc-123',
+			name: 'Elecciones 2026',
+			description: 'Proceso de prueba',
+			commitmentStart: '2026-01-01T00:00:00Z',
+			commitmentEnd: '2026-02-01T00:00:00Z',
+			votingStart: '2026-03-01T00:00:00Z',
+			votingEnd: '2026-03-15T00:00:00Z',
+			results: '2026-04-01T00:00:00Z',
+			scope: 'Elecciones 2026',
+			status: 'draft',
+			createdBy: 'user-1'
 		};
-		mockCreateTeam.mockResolvedValue(mockTeam);
+		mockGetProcessById.mockResolvedValue(mockProcess);
 
-		const formData = createFormData({
-			teamName: 'Frente Nacional',
-			avatarUrl: 'https://example.com/avatar.png'
-		});
-		const request = createRequest(formData);
-
-		const result = await actions.agregarEquipo({
-			request,
+		const result = await load({
 			params: mockParams,
 			locals: mockLocals
 		} as any);
 
-		expect(mockCreateTeam).toHaveBeenCalledWith(mockLocals, 'proc-123', [{
-			name: 'Frente Nacional',
-			avatarUrl: 'https://example.com/avatar.png'
-		}]);
-		expect(result).toEqual({ success: true });
+		expect(mockGetProcessById).toHaveBeenCalledWith(mockLocals, 'proc-123');
+		expect(result).toEqual({ process: mockProcess });
+		expect(result).not.toHaveProperty('teams');
+		expect(result).not.toHaveProperty('enrollments');
 	});
 
-	it('returns fail(400) when teamName is missing', async () => {
-		const formData = createFormData({});
-		const request = createRequest(formData);
-
-		const result = await actions.agregarEquipo({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 400);
-		expect((result as any).data.errors).toHaveProperty('teamName');
-		expect(mockCreateTeam).not.toHaveBeenCalled();
-	});
-
-	it('returns fail(400) when teamName is too short (< 2 chars)', async () => {
-		const formData = createFormData({ teamName: 'A' });
-		const request = createRequest(formData);
-
-		const result = await actions.agregarEquipo({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 400);
-		expect((result as any).data.errors).toHaveProperty('teamName');
-		expect(mockCreateTeam).not.toHaveBeenCalled();
-	});
-
-	it('returns fail with service error status when createTeam fails with ApiError', async () => {
-		mockCreateTeam.mockRejectedValue(
-			new ApiError(409, 'CONFLICT', 'Ya existe un equipo con ese nombre')
-		);
-
-		const formData = createFormData({ teamName: 'Equipo Duplicado' });
-		const request = createRequest(formData);
-
-		const result = await actions.agregarEquipo({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 409);
-		expect((result as any).data.errors).toHaveProperty('_form');
-	});
-});
-
-// ============================================================
-// eliminarEquipo action
-// ============================================================
-describe('eliminarEquipo action', () => {
-	it('returns { success: true } and calls deleteTeam with correct teamId', async () => {
-		mockDeleteTeam.mockResolvedValue(undefined);
-
-		const formData = createFormData({ teamId: 'team-99' });
-		const request = createRequest(formData);
-
-		const result = await actions.eliminarEquipo({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(mockDeleteTeam).toHaveBeenCalledWith(mockLocals, 'team-99');
-		expect(result).toEqual({ success: true });
-	});
-
-	it('returns fail(400) when teamId is missing', async () => {
-		const formData = createFormData({});
-		const request = createRequest(formData);
-
-		const result = await actions.eliminarEquipo({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 400);
-		expect((result as any).data.errors).toHaveProperty('_form');
-	});
-
-	it('returns fail with service error status when deleteTeam fails', async () => {
-		mockDeleteTeam.mockRejectedValue(
-			new ApiError(404, 'NOT_FOUND', 'Equipo no encontrado')
-		);
-
-		const formData = createFormData({ teamId: 'nonexistent' });
-		const request = createRequest(formData);
-
-		const result = await actions.eliminarEquipo({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 404);
-		expect((result as any).data.errors).toHaveProperty('_form');
-	});
-});
-
-// ============================================================
-// agregarVotante action
-// ============================================================
-describe('agregarVotante action', () => {
-	it('returns { success: true } and calls createEnrollment with correct params', async () => {
-		const mockEnrollment = {
-			id: 'enr-1',
-			electoralProcessId: 'proc-123',
-			email: 'votante@example.com',
-			userId: null,
-			commitment: null,
-			hasVoted: false
+	it('loads process with a different id from params', async () => {
+		const mockProcess = {
+			id: 'proc-999',
+			name: 'Otro Proceso',
+			description: null,
+			commitmentStart: '2026-06-01T00:00:00Z',
+			commitmentEnd: '2026-07-01T00:00:00Z',
+			votingStart: '2026-08-01T00:00:00Z',
+			votingEnd: '2026-08-15T00:00:00Z',
+			results: '2026-09-01T00:00:00Z',
+			scope: 'Otro Proceso',
+			status: 'active',
+			createdBy: 'user-2'
 		};
-		mockCreateEnrollment.mockResolvedValue(mockEnrollment);
+		mockGetProcessById.mockResolvedValue(mockProcess);
 
-		const formData = createFormData({ email: 'votante@example.com' });
-		const request = createRequest(formData);
-
-		const result = await actions.agregarVotante({
-			request,
-			params: mockParams,
+		const result = await load({
+			params: { id: 'proc-999' },
 			locals: mockLocals
 		} as any);
 
-		expect(mockCreateEnrollment).toHaveBeenCalledWith(mockLocals, 'proc-123', [{
-			email: 'votante@example.com'
-		}]);
-		expect(result).toEqual({ success: true });
+		expect(mockGetProcessById).toHaveBeenCalledWith(mockLocals, 'proc-999');
+		expect(result).toEqual({ process: mockProcess });
+		expect(result).not.toHaveProperty('teams');
 	});
 
-	it('returns fail(400) when email is missing', async () => {
-		const formData = createFormData({});
-		const request = createRequest(formData);
-
-		const result = await actions.agregarVotante({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 400);
-		expect((result as any).data.errors).toHaveProperty('email');
-		expect(mockCreateEnrollment).not.toHaveBeenCalled();
-	});
-
-	it('returns fail(400) when email is invalid format', async () => {
-		const formData = createFormData({ email: 'not-an-email' });
-		const request = createRequest(formData);
-
-		const result = await actions.agregarVotante({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 400);
-		expect((result as any).data.errors).toHaveProperty('email');
-		expect(mockCreateEnrollment).not.toHaveBeenCalled();
-	});
-
-	it('returns fail with service error when createEnrollment fails', async () => {
-		mockCreateEnrollment.mockRejectedValue(
-			new ApiError(409, 'CONFLICT', 'El votante ya está registrado')
+	it('throws 404 error when process is not found', async () => {
+		mockGetProcessById.mockRejectedValue(
+			new ApiError(404, 'NOT_FOUND', 'Proceso no encontrado')
 		);
 
-		const formData = createFormData({ email: 'existing@example.com' });
-		const request = createRequest(formData);
-
-		const result = await actions.agregarVotante({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 409);
-		expect((result as any).data.errors).toHaveProperty('_form');
-	});
-});
-
-// ============================================================
-// eliminarVotante action
-// ============================================================
-describe('eliminarVotante action', () => {
-	it('returns { success: true } and calls deleteEnrollment with correct enrollmentId', async () => {
-		mockDeleteEnrollment.mockResolvedValue(undefined);
-
-		const formData = createFormData({ enrollmentId: 'enr-77' });
-		const request = createRequest(formData);
-
-		const result = await actions.eliminarVotante({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(mockDeleteEnrollment).toHaveBeenCalledWith(mockLocals, 'enr-77');
-		expect(result).toEqual({ success: true });
-	});
-
-	it('returns fail(400) when enrollmentId is missing', async () => {
-		const formData = createFormData({});
-		const request = createRequest(formData);
-
-		const result = await actions.eliminarVotante({
-			request,
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 400);
-		expect((result as any).data.errors).toHaveProperty('_form');
+		try {
+			await load({
+				params: mockParams,
+				locals: mockLocals
+			} as any);
+			expect(true).toBe(false); // Should not reach here
+		} catch (err: any) {
+			expect(err).toHaveProperty('status', 404);
+			expect(err).toHaveProperty('body');
+			expect(err.body).toHaveProperty('message', 'Proceso electoral no encontrado');
+		}
 	});
 });
 
@@ -350,20 +161,20 @@ describe('eliminar action', () => {
 });
 
 // ============================================================
-// default action: scope derivation
+// default action (update process)
 // ============================================================
-describe('default action — scope derivation', () => {
+describe('default action', () => {
 	it('derives body.scope from name instead of reading scope from FormData', async () => {
 		mockUpdateProcess.mockResolvedValue({});
 
 		const formData = createFormData({
 			name: 'Elecciones 2026',
 			description: 'Test',
-			commitmentStart: '2026-01-01',
-			commitmentEnd: '2026-02-01',
-			votingStart: '2026-03-01',
-			votingEnd: '2026-03-15',
-			results: '2026-04-01'
+			commitmentStart: '2026-01-01T10:00',
+			commitmentEnd: '2026-02-01T10:00',
+			votingStart: '2026-03-01T10:00',
+			votingEnd: '2026-03-15T10:00',
+			results: '2026-04-01T10:00'
 		});
 		const request = createRequest(formData);
 
@@ -384,17 +195,105 @@ describe('default action — scope derivation', () => {
 		expect(updateBody.name).toBe('Elecciones 2026');
 	});
 
+	it('sends all fields in the update body with ISO-8601 conversion', async () => {
+		mockUpdateProcess.mockResolvedValue({});
+
+		const formData = createFormData({
+			name: 'Elecciones Actualizadas',
+			description: 'Nueva descripción',
+			commitmentStart: '2026-05-01T08:00',
+			commitmentEnd: '2026-06-01T08:00',
+			votingStart: '2026-07-01T08:00',
+			votingEnd: '2026-07-15T08:00',
+			results: '2026-08-01T08:00'
+		});
+		const request = createRequest(formData);
+
+		try {
+			await actions.default({
+				request,
+				params: { id: 'proc-456' },
+				locals: mockLocals
+			} as any);
+		} catch (err: any) {
+			expect(err).toHaveProperty('status', 303);
+		}
+
+		expect(mockUpdateProcess).toHaveBeenCalledWith(mockLocals, 'proc-456', expect.objectContaining({
+			name: 'Elecciones Actualizadas',
+			scope: 'Elecciones Actualizadas',
+			description: 'Nueva descripción'
+		}));
+
+		// Verify ISO-8601 conversion: timestamps end with 'Z' (UTC)
+		const updateBody = mockUpdateProcess.mock.calls[0][2];
+		expect(updateBody.commitmentStart).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+		expect(updateBody.commitmentEnd).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+		expect(updateBody.votingStart).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+		expect(updateBody.votingEnd).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+		expect(updateBody.results).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+	});
+
+	it('returns fail(409) when update process conflicts (duplicate name)', async () => {
+		mockUpdateProcess.mockRejectedValue(
+			new ApiError(409, 'CONFLICT', 'Ya existe un proceso con ese nombre')
+		);
+
+		const formData = createFormData({
+			name: 'Nombre Duplicado',
+			commitmentStart: '2026-01-01T10:00',
+			commitmentEnd: '2026-02-01T10:00',
+			votingStart: '2026-03-01T10:00',
+			votingEnd: '2026-03-15T10:00',
+			results: '2026-04-01T10:00'
+		});
+		const request = createRequest(formData);
+
+		const result = await actions.default({
+			request,
+			params: mockParams,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 409);
+		expect((result as any).data.errors).toHaveProperty('name', 'Ya existe un proceso con ese nombre');
+		// Should preserve submitted values on conflict
+		expect((result as any).data.values).toHaveProperty('name', 'Nombre Duplicado');
+	});
+
+	it('validates date ordering: votingStart must be after commitmentEnd', async () => {
+		const formData = createFormData({
+			name: 'Proceso Test',
+			commitmentStart: '2026-01-01T10:00',
+			commitmentEnd: '2026-03-01T10:00',
+			votingStart: '2026-02-01T10:00', // Before commitmentEnd
+			votingEnd: '2026-04-01T10:00',
+			results: '2026-05-01T10:00'
+		});
+		const request = createRequest(formData);
+
+		const result = await actions.default({
+			request,
+			params: mockParams,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 400);
+		expect((result as any).data.errors).toHaveProperty('votingStart');
+		expect(mockUpdateProcess).not.toHaveBeenCalled();
+	});
+
 	it('does NOT validate scope field (removed from required validation)', async () => {
 		mockUpdateProcess.mockResolvedValue({});
 
 		const formData = createFormData({
 			name: 'Elecciones 2026',
 			description: 'Test',
-			commitmentStart: '2026-01-01',
-			commitmentEnd: '2026-02-01',
-			votingStart: '2026-03-01',
-			votingEnd: '2026-03-15',
-			results: '2026-04-01'
+			commitmentStart: '2026-01-01T10:00',
+			commitmentEnd: '2026-02-01T10:00',
+			votingStart: '2026-03-01T10:00',
+			votingEnd: '2026-03-15T10:00',
+			results: '2026-04-01T10:00'
 		});
 		const request = createRequest(formData);
 

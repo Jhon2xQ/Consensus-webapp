@@ -18,7 +18,7 @@ describe('Sidebar.svelte', () => {
 		await expect.element(page.getByText('Dashboard')).toBeInTheDocument();
 		await expect.element(page.getByText('Procesos')).toBeInTheDocument();
 		await expect.element(page.getByText('Equipos')).toBeInTheDocument();
-		await expect.element(page.getByText('Compromisos')).toBeInTheDocument();
+		await expect.element(page.getByText('Votantes')).toBeInTheDocument();
 		await expect.element(page.getByText('Sufragios')).toBeInTheDocument();
 	});
 

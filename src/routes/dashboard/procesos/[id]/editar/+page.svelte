@@ -1,21 +1,10 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { ArrowLeft, CalendarDays } from '@lucide/svelte';
-	import ProcessStepper from '$lib/sections/dashboard/ProcessStepper.svelte';
+	import ProcessForm from '$lib/components/shared/ProcessForm.svelte';
 
 	let { data, form } = $props();
-
-	let isSubmitting = $state(false);
-
-	function handleSubmit() {
-		isSubmitting = true;
-		return async ({ update }: { update: () => Promise<void> }) => {
-			await update();
-			isSubmitting = false;
-		};
-	}
 </script>
 
 <div class="space-y-6">
@@ -32,7 +21,7 @@
 		</div>
 	</div>
 
-	<!-- Stepper Card -->
+	<!-- Form Card -->
 	<Card>
 		<CardHeader>
 			<CardTitle class="flex items-center gap-2">
@@ -41,16 +30,12 @@
 			</CardTitle>
 		</CardHeader>
 		<CardContent>
-			<form method="POST" use:enhance={handleSubmit}>
-				<ProcessStepper
-					process={data.process}
-					existingTeams={data.teams}
-					existingEnrollments={data.enrollments}
-					errors={form?.errors ?? {}}
-					submitting={isSubmitting}
-					values={form?.values ?? {}}
-				/>
-			</form>
+			<ProcessForm
+				mode="edit"
+				process={data.process}
+				errors={form?.errors ?? {}}
+				values={form?.values ?? {}}
+			/>
 		</CardContent>
 	</Card>
 </div>

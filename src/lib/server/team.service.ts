@@ -51,3 +51,20 @@ export async function getTeams(
 	);
 	return response.data;
 }
+
+/**
+ * Update an existing team by its ID.
+ * Calls PUT /api/private/teams/{teamId}
+ */
+export async function updateTeam(
+	locals: App.Locals,
+	teamId: string,
+	body: { name?: string; avatarUrl?: string | null }
+): Promise<Team> {
+	const response = await fetchBackendJson<ApiResponse<Team>>(
+		locals,
+		`/api/private/teams/${teamId}`,
+		{ method: 'PUT', body }
+	);
+	return response.data;
+}

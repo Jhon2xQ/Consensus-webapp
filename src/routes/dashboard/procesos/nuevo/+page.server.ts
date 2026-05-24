@@ -1,8 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { createProcess, type CreateProcessBody } from '$lib/server/process.service';
-import { createTeam } from '$lib/server/team.service';
-import { createEnrollment } from '$lib/server/enrollment.service';
 import { ApiError } from '$lib/server/api';
 import { toISO8601 } from '$lib/sections/dashboard/process-utils';
 
@@ -19,7 +17,6 @@ export const actions = {
 		const votingStart = formData.get('votingStart') as string;
 		const votingEnd = formData.get('votingEnd') as string;
 		const results = formData.get('results') as string;
-		const action = formData.get('_action') as string;
 
 		const errors: FormErrors = {};
 
@@ -89,7 +86,7 @@ export const actions = {
 			});
 		}
 
-		// Convert datetime-local strings to ISO-8601 UTC for API (REQ-2)
+		// Convert datetime-local strings to ISO-8601 UTC for API
 		const isoCommitmentStart = toISO8601(commitmentStart);
 		const isoCommitmentEnd = toISO8601(commitmentEnd);
 		const isoVotingStart = toISO8601(votingStart);
@@ -107,93 +104,7 @@ export const actions = {
 			results: isoResults
 		};
 
-		// ── "finalizar" action: create process + teams + enrollments ──
-		if (action === 'finalizar') {
-			// Parse teams and enrollments from hidden JSON fields
-			const teamsStr = formData.get('_teams') as string;
-			const enrollmentsStr = formData.get('_enrollments') as string;
-
-			let teams: { name: string; avatarUrl?: string | null }[] = [];
-			let enrollments: { email: string }[] = [];
-
-			try {
-				teams = JSON.parse(teamsStr || '[]');
-				enrollments = JSON.parse(enrollmentsStr || '[]');
-			} catch {
-				return fail(400, {
-					errors: { _form: 'Error al procesar los datos de equipos o votantes' },
-					values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-				});
-			}
-
-			// Validate at least one team
-			if (teams.length === 0) {
-				return fail(400, {
-					errors: { _form: 'Debe agregar al menos un equipo al proceso electoral' },
-					values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-				});
-			}
-
-			// Validate at least one enrollment
-			if (enrollments.length === 0) {
-				return fail(400, {
-					errors: { _form: 'Debe agregar al menos un votante al proceso electoral' },
-					values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-				});
-			}
-
-			// 1. Create the process
-			let process;
-			try {
-				process = await createProcess(locals, body);
-			} catch (err) {
-				if (err instanceof ApiError) {
-					if (err.status === 409) {
-						return fail(409, {
-							errors: { name: 'Ya existe un proceso con ese nombre' },
-							values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-						});
-					}
-					return fail(err.status, {
-						errors: { _form: err.message },
-						values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-					});
-				}
-				throw err;
-			}
-
-			// 2. Create teams — batch call (strip id and electoralProcessId)
-			const teamsPayload = teams.map((t) => ({ name: t.name, avatarUrl: t.avatarUrl || null }));
-			try {
-				await createTeam(locals, process.id, teamsPayload);
-			} catch (err) {
-				if (err instanceof ApiError) {
-					return fail(err.status, {
-						errors: { _form: `Error al crear equipos: ${err.message}` },
-						values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-					});
-				}
-				throw err;
-			}
-
-			// 3. Create enrollments — batch call (strip all except email)
-			const enrollmentsPayload = enrollments.map((e) => ({ email: e.email }));
-			try {
-				await createEnrollment(locals, process.id, enrollmentsPayload);
-			} catch (err) {
-				if (err instanceof ApiError) {
-					return fail(err.status, {
-						errors: { _form: `Error al registrar votantes: ${err.message}` },
-						values: { name, description, commitmentStart, commitmentEnd, votingStart, votingEnd, results }
-					});
-				}
-				throw err;
-			}
-
-			throw redirect(303, '/dashboard/procesos?success=Proceso+creado+exitosamente');
-		}
-
-		// ── Simple create (backward compatible) ──
+		// Create process — no teams, no enrollments
 		try {
 			await createProcess(locals, body);
 		} catch (err) {

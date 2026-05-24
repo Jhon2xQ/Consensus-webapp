@@ -4,7 +4,6 @@
 		LayoutDashboard,
 		FileText,
 		Users,
-		ClipboardCheck,
 		ScrollText,
 		Menu,
 		X,
@@ -32,7 +31,7 @@
 		{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
 		{ label: 'Procesos', href: '/dashboard/procesos', icon: FileText },
 		{ label: 'Equipos', href: '/dashboard/equipos', icon: Users },
-		{ label: 'Compromisos', href: '/dashboard/compromisos', icon: ClipboardCheck },
+		{ label: 'Votantes', href: '/dashboard/votantes', icon: Users },
 		{ label: 'Sufragios', href: '/dashboard/sufragios', icon: ScrollText }
 	];
 

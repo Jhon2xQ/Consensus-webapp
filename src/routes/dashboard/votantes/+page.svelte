@@ -20,48 +20,35 @@
 		TableHeader,
 		TableRow
 	} from '$lib/components/ui/table';
-	import { Plus, Pencil, Trash2, Users } from '@lucide/svelte';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Plus, Trash2, Users } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 
 	let { data, form } = $props();
 
 	let createOpen = $state(false);
-	let editOpen = $state(false);
 	let deleteOpen = $state(false);
-	let editingTeam = $state<{ id: string; name: string; avatarUrl?: string } | null>(null);
-	let teamToDelete = $state<{ id: string; name: string } | null>(null);
+	let enrollmentToDelete = $state<{ id: string; email: string } | null>(null);
 
-	let createName = $state('');
-	let createAvatarUrl = $state('');
-
-	let editName = $state('');
-	let editAvatarUrl = $state('');
+	let createEmail = $state('');
 
 	const selectedProcessId = $derived(data.selectedProcessId ?? page.url.searchParams.get('processId'));
 
 	function openCreate() {
-		createName = '';
-		createAvatarUrl = '';
+		createEmail = '';
 		createOpen = true;
 	}
 
-	function openEdit(team: { id: string; name: string; avatarUrl?: string }) {
-		editingTeam = team;
-		editName = team.name;
-		editAvatarUrl = team.avatarUrl ?? '';
-		editOpen = true;
-	}
-
-	function openDelete(team: { id: string; name: string }) {
-		teamToDelete = team;
+	function openDelete(enrollment: { id: string; email: string }) {
+		enrollmentToDelete = enrollment;
 		deleteOpen = true;
 	}
 
 	function handleProcessSelect(event: Event) {
 		const target = event.target as HTMLSelectElement;
 		if (target.value) {
-			goto(`/dashboard/equipos?processId=${target.value}`);
+			goto(`/dashboard/votantes?processId=${target.value}`);
 		}
 	}
 </script>
@@ -70,15 +57,15 @@
 	<!-- Page Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-3xl font-bold tracking-tight">Equipos</h1>
+			<h1 class="text-3xl font-bold tracking-tight">Votantes</h1>
 			<p class="text-muted-foreground mt-1">
-				Gestiona los equipos de tus procesos electorales.
+				Gestiona los votantes de tus procesos electorales.
 			</p>
 		</div>
 		{#if selectedProcessId}
 			<Button onclick={openCreate}>
 				<Plus class="size-4" />
-				Nuevo equipo
+				Nuevo votante
 			</Button>
 		{/if}
 	</div>
@@ -107,16 +94,16 @@
 		<div class="flex flex-col items-center justify-center py-24 text-center">
 			<Users class="size-12 text-muted-foreground/40 mb-4" />
 			<h2 class="text-xl font-semibold text-brand-gray-800">Selecciona un proceso</h2>
-			<p class="text-brand-gray-400 mt-2">Selecciona un proceso para ver sus equipos.</p>
+			<p class="text-brand-gray-400 mt-2">Selecciona un proceso para ver sus votantes.</p>
 		</div>
-	{:else if !data.teams || data.teams.length === 0}
+	{:else if !data.enrollments || data.enrollments.length === 0}
 		<div class="flex flex-col items-center justify-center py-24 text-center">
 			<Users class="size-12 text-muted-foreground/40 mb-4" />
-			<h2 class="text-xl font-semibold text-brand-gray-800">0 equipos</h2>
-			<p class="text-brand-gray-400 mt-2">Este proceso no tiene equipos aún.</p>
+			<h2 class="text-xl font-semibold text-brand-gray-800">0 votantes</h2>
+			<p class="text-brand-gray-400 mt-2">Este proceso no tiene votantes aún.</p>
 			<Button class="mt-4" onclick={openCreate}>
 				<Plus class="size-4" />
-				Nuevo equipo
+				Nuevo votante
 			</Button>
 		</div>
 	{:else}
@@ -124,33 +111,31 @@
 			<CardHeader>
 				<CardTitle class="flex items-center gap-2">
 					<Users class="size-5" />
-					Equipos ({data.teams.length})
+					Votantes ({data.enrollments.length})
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Nombre</TableHead>
-							<TableHead>Avatar</TableHead>
-							<TableHead class="w-[120px] text-right">Acciones</TableHead>
+							<TableHead>Email</TableHead>
+							<TableHead>Estado</TableHead>
+							<TableHead class="w-[80px] text-right">Acciones</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{#each data.teams as team (team.id)}
+						{#each data.enrollments as enrollment (enrollment.id)}
 							<TableRow>
-								<TableCell class="font-medium">{team.name}</TableCell>
+								<TableCell class="font-medium">{enrollment.email}</TableCell>
 								<TableCell>
-									{#if team.avatarUrl}
-										<img
-											src={team.avatarUrl}
-											alt={team.name}
-											class="size-10 rounded-full object-cover"
-										/>
+									{#if enrollment.hasVoted}
+										<Badge variant="default" class="bg-green-100 text-green-800 hover:bg-green-100">
+											Votó
+										</Badge>
 									{:else}
-										<div class="size-10 rounded-full bg-muted flex items-center justify-center">
-											<Users class="size-5 text-muted-foreground" />
-										</div>
+										<Badge variant="secondary">
+											Pendiente
+										</Badge>
 									{/if}
 								</TableCell>
 								<TableCell class="text-right">
@@ -158,15 +143,7 @@
 										<Button
 											variant="ghost"
 											size="icon"
-											onclick={() => openEdit(team)}
-											title="Editar"
-										>
-											<Pencil class="size-4" />
-										</Button>
-										<Button
-											variant="ghost"
-											size="icon"
-											onclick={() => openDelete(team)}
+											onclick={() => openDelete(enrollment)}
 											title="Eliminar"
 										>
 											<Trash2 class="size-4 text-destructive" />
@@ -182,56 +159,32 @@
 	{/if}
 </div>
 
-<!-- Create Team Dialog -->
+<!-- Create Enrollment Dialog -->
 <Dialog bind:open={createOpen}>
 	<DialogContent>
 		<DialogHeader>
-			<DialogTitle>Nuevo equipo</DialogTitle>
+			<DialogTitle>Nuevo votante</DialogTitle>
 			<DialogDescription>
-				Crea un nuevo equipo para este proceso electoral.
+				Agrega un votante por email para este proceso electoral.
 			</DialogDescription>
 		</DialogHeader>
-		<form method="POST" action="?/crear-equipo" class="space-y-4">
+		<form method="POST" action="?/crear-votante" class="space-y-4">
 			<input type="hidden" name="processId" value={selectedProcessId ?? ''} />
 			<div class="space-y-2">
-				<Label for="create-name">Nombre *</Label>
-				<Input id="create-name" name="name" placeholder="Nombre del equipo" bind:value={createName} required />
-			</div>
-			<div class="space-y-2">
-				<Label for="create-avatar">Avatar URL (opcional)</Label>
-				<Input id="create-avatar" name="avatarUrl" placeholder="https://..." bind:value={createAvatarUrl} />
+				<Label for="create-email">Email *</Label>
+				<Input
+					id="create-email"
+					name="email"
+					type="email"
+					placeholder="usuario@ejemplo.com"
+					bind:value={createEmail}
+					required
+				/>
+				<p class="text-xs text-muted-foreground">Debe ser un email válido (ej. usuario@dominio.com).</p>
 			</div>
 			<DialogFooter>
 				<DialogClose>Cancelar</DialogClose>
-				<Button type="submit">Crear equipo</Button>
-			</DialogFooter>
-		</form>
-	</DialogContent>
-</Dialog>
-
-<!-- Edit Team Dialog -->
-<Dialog bind:open={editOpen}>
-	<DialogContent>
-		<DialogHeader>
-			<DialogTitle>Editar equipo</DialogTitle>
-			<DialogDescription>
-				Modifica los datos del equipo.
-			</DialogDescription>
-		</DialogHeader>
-		<form method="POST" action="?/editar-equipo" class="space-y-4">
-			<input type="hidden" name="teamId" value={editingTeam?.id ?? ''} />
-			<input type="hidden" name="processId" value={selectedProcessId ?? ''} />
-			<div class="space-y-2">
-				<Label for="edit-name">Nombre *</Label>
-				<Input id="edit-name" name="name" placeholder="Nombre del equipo" bind:value={editName} required />
-			</div>
-			<div class="space-y-2">
-				<Label for="edit-avatar">Avatar URL (opcional)</Label>
-				<Input id="edit-avatar" name="avatarUrl" placeholder="https://..." bind:value={editAvatarUrl} />
-			</div>
-			<DialogFooter>
-				<DialogClose>Cancelar</DialogClose>
-				<Button type="submit">Guardar cambios</Button>
+				<Button type="submit">Agregar votante</Button>
 			</DialogFooter>
 		</form>
 	</DialogContent>
@@ -241,17 +194,17 @@
 <Dialog bind:open={deleteOpen}>
 	<DialogContent>
 		<DialogHeader>
-			<DialogTitle>Eliminar equipo</DialogTitle>
+			<DialogTitle>Eliminar votante</DialogTitle>
 			<DialogDescription>
-				¿Eliminar este equipo? Esta acción no se puede deshacer.
+				¿Eliminar este votante? Esta acción no se puede deshacer.
 			</DialogDescription>
 		</DialogHeader>
-		<form method="POST" action="?/eliminar-equipo" class="space-y-4">
-			<input type="hidden" name="teamId" value={teamToDelete?.id ?? ''} />
+		<form method="POST" action="?/eliminar-votante" class="space-y-4">
+			<input type="hidden" name="enrollmentId" value={enrollmentToDelete?.id ?? ''} />
 			<input type="hidden" name="processId" value={selectedProcessId ?? ''} />
-			{#if teamToDelete}
+			{#if enrollmentToDelete}
 				<p class="text-sm text-muted-foreground">
-					Estás a punto de eliminar <strong>{teamToDelete.name}</strong>.
+					Estás a punto de eliminar a <strong>{enrollmentToDelete.email}</strong>.
 				</p>
 			{/if}
 			<DialogFooter>

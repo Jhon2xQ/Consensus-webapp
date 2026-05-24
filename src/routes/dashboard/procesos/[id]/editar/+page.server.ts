@@ -1,8 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { getProcessById, updateProcess, deleteProcess, type CreateProcessBody } from '$lib/server/process.service';
-import { getTeams, createTeam, deleteTeam } from '$lib/server/team.service';
-import { getEnrollments, createEnrollment, deleteEnrollment } from '$lib/server/enrollment.service';
 import { ApiError } from '$lib/server/api';
 import { toISO8601 } from '$lib/sections/dashboard/process-utils';
 
@@ -10,12 +8,8 @@ type FormErrors = Record<string, string>;
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	try {
-		const [process, teams, enrollments] = await Promise.all([
-			getProcessById(locals, params.id),
-			getTeams(locals, params.id).catch(() => []),
-			getEnrollments(locals, params.id).catch(() => [])
-		]);
-		return { process, teams, enrollments };
+		const process = await getProcessById(locals, params.id);
+		return { process };
 	} catch (err) {
 		if (err instanceof ApiError && err.status === 404) {
 			error(404, 'Proceso electoral no encontrado');
@@ -144,96 +138,6 @@ export const actions = {
 		}
 
 		throw redirect(303, `/dashboard/procesos/${params.id}?success=Proceso+actualizado+exitosamente`);
-	},
-
-	agregarEquipo: async ({ request, params, locals }) => {
-		const formData = await request.formData();
-		const teamName = formData.get('teamName') as string;
-		const avatarUrl = formData.get('avatarUrl') as string;
-
-		// Validate
-		if (!teamName?.trim()) {
-			return fail(400, { errors: { teamName: 'El nombre del equipo es obligatorio' } });
-		}
-		if (teamName.trim().length < 2) {
-			return fail(400, { errors: { teamName: 'El nombre debe tener al menos 2 caracteres' } });
-		}
-		if (teamName.trim().length > 100) {
-			return fail(400, { errors: { teamName: 'El nombre no puede exceder 100 caracteres' } });
-		}
-
-		try {
-			await createTeam(locals, params.id, [{
-				name: teamName.trim(),
-				avatarUrl: avatarUrl?.trim() || undefined
-			}]);
-			return { success: true };
-		} catch (err) {
-			if (err instanceof ApiError) {
-				return fail(err.status, { errors: { _form: err.message } });
-			}
-			throw err;
-		}
-	},
-
-	eliminarEquipo: async ({ request, locals }) => {
-		const formData = await request.formData();
-		const teamId = formData.get('teamId') as string;
-
-		if (!teamId?.trim()) {
-			return fail(400, { errors: { _form: 'ID de equipo requerido' } });
-		}
-
-		try {
-			await deleteTeam(locals, teamId.trim());
-			return { success: true };
-		} catch (err) {
-			if (err instanceof ApiError) {
-				return fail(err.status, { errors: { _form: err.message } });
-			}
-			throw err;
-		}
-	},
-
-	agregarVotante: async ({ request, params, locals }) => {
-		const formData = await request.formData();
-		const email = (formData.get('email') as string)?.trim();
-
-		if (!email) {
-			return fail(400, { errors: { email: 'El email es obligatorio' } });
-		}
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-			return fail(400, { errors: { email: 'El email no es válido' } });
-		}
-
-		try {
-			await createEnrollment(locals, params.id, [{ email }]);
-			return { success: true };
-		} catch (err) {
-			if (err instanceof ApiError) {
-				return fail(err.status, { errors: { _form: err.message } });
-			}
-			throw err;
-		}
-	},
-
-	eliminarVotante: async ({ request, locals }) => {
-		const formData = await request.formData();
-		const enrollmentId = formData.get('enrollmentId') as string;
-
-		if (!enrollmentId?.trim()) {
-			return fail(400, { errors: { _form: 'ID de inscripción requerido' } });
-		}
-
-		try {
-			await deleteEnrollment(locals, enrollmentId.trim());
-			return { success: true };
-		} catch (err) {
-			if (err instanceof ApiError) {
-				return fail(err.status, { errors: { _form: err.message } });
-			}
-			throw err;
-		}
 	},
 
 	eliminar: async ({ params, locals }) => {
