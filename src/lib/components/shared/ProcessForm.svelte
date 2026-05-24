@@ -12,6 +12,7 @@
 		errors?: Record<string, string>;
 		values?: Record<string, string>;
 		submitting?: boolean;
+		action?: string;
 	};
 
 	let {
@@ -19,7 +20,8 @@
 		process = null,
 		errors = {},
 		values: rawValues = {},
-		submitting = false
+		submitting = false,
+		action = ''
 	}: Props = $props();
 
 	// Snapshot initial form data: values takes priority over process.
@@ -46,7 +48,7 @@
 	let results = $state(resolveDate('results'));
 </script>
 
-<form method="POST" class="space-y-6">
+<form method="POST" action={action || undefined} class="space-y-6">
 	<h3 class="text-lg font-semibold">Información General</h3>
 
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 };
 
 export const actions = {
-	default: async ({ request, params, locals }) => {
+	guardar: async ({ request, params, locals }) => {
 		const formData = await request.formData();
 
 		const name = formData.get('name') as string;

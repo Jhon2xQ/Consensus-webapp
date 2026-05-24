@@ -35,6 +35,32 @@ export async function fetchBackendJson<T>(locals: App.Locals, path: string, opti
 }
 
 /**
+ * Fetch a PUBLIC endpoint from the backend API (no authentication).
+ * Parses the response as JSON.
+ */
+export async function fetchPublicJson<T>(path: string, options?: FetchOptions): Promise<T> {
+  const method = options?.method ?? 'GET';
+  const url = `${privateEnv.backendApiUrl}${path}`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options?.headers,
+  };
+
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: options?.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, 'API_ERROR', `Request failed with status ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+/**
  * Internal request helper with retry logic.
  */
 async function _request(locals: App.Locals, path: string, options: FetchOptions | undefined, retryCount: number): Promise<Response> {

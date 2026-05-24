@@ -1,4 +1,4 @@
-import { fetchBackendJson } from '$lib/server/api';
+import { fetchBackendJson, fetchPublicJson } from '$lib/server/api';
 import type { ElectoralProcess } from '$lib/types/electoral-process';
 import type { PaginatedResponse } from '$lib/types/api-response';
 
@@ -44,7 +44,7 @@ export async function getProcessById(
 	locals: App.Locals,
 	id: string
 ): Promise<ElectoralProcess> {
-	return fetchBackendJson<ElectoralProcess>(locals, `/api/public/processes/${id}`);
+	return fetchPublicJson<ElectoralProcess>(`/api/public/processes/${id}`);
 }
 
 /**

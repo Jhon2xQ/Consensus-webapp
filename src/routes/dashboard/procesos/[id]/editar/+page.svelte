@@ -35,6 +35,7 @@
 				process={data.process}
 				errors={form?.errors ?? {}}
 				values={form?.values ?? {}}
+				action="?/guardar"
 			/>
 		</CardContent>
 	</Card>

@@ -179,7 +179,7 @@ describe('default action', () => {
 		const request = createRequest(formData);
 
 		try {
-			await actions.default({
+			await actions.guardar({
 				request,
 				params: mockParams,
 				locals: mockLocals
@@ -211,7 +211,7 @@ describe('default action', () => {
 		const request = createRequest(formData);
 
 		try {
-			await actions.default({
+			await actions.guardar({
 				request,
 				params: { id: 'proc-456' },
 				locals: mockLocals
@@ -251,7 +251,7 @@ describe('default action', () => {
 		});
 		const request = createRequest(formData);
 
-		const result = await actions.default({
+		const result = await actions.guardar({
 			request,
 			params: mockParams,
 			locals: mockLocals
@@ -274,7 +274,7 @@ describe('default action', () => {
 		});
 		const request = createRequest(formData);
 
-		const result = await actions.default({
+		const result = await actions.guardar({
 			request,
 			params: mockParams,
 			locals: mockLocals
@@ -300,7 +300,7 @@ describe('default action', () => {
 		const request = createRequest(formData);
 
 		try {
-			await actions.default({
+			await actions.guardar({
 				request,
 				params: mockParams,
 				locals: mockLocals
@@ -319,7 +319,7 @@ describe('default action', () => {
 		const formData = createFormData({ name: '' });
 		const request = createRequest(formData);
 
-		const result = await actions.default({
+		const result = await actions.guardar({
 			request,
 			params: mockParams,
 			locals: mockLocals
