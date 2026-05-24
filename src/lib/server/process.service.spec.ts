@@ -4,21 +4,24 @@ import type { ElectoralProcess } from '$lib/types/electoral-process';
 import type { PaginatedResponse } from '$lib/types/api-response';
 
 // ── Mocks (hoisted so vi.mock factory can reference them) ──
-const { mockFetchBackendJson } = vi.hoisted(() => ({
-	mockFetchBackendJson: vi.fn()
+const { mockFetchBackendJson, mockFetchBackend } = vi.hoisted(() => ({
+	mockFetchBackendJson: vi.fn(),
+	mockFetchBackend: vi.fn()
 }));
 
 vi.mock('$lib/server/api', async (importOriginal) => {
 	const actual = (await importOriginal()) as typeof import('./api');
 	return {
 		...actual,
-		fetchBackendJson: mockFetchBackendJson
+		fetchBackendJson: mockFetchBackendJson,
+		fetchBackend: mockFetchBackend
 	};
 });
 
 // ── Import after mocks ──
-import { getMyProcesses, createProcess, updateProcess, deleteProcess } from './process.service';
+import { getMyProcesses, getProcessById, createProcess, updateProcess, deleteProcess } from './process.service';
 import type { CreateProcessBody } from './process.service';
+import type { ApiResponse } from '$lib/types/api-response';
 
 // ── Helpers ──
 const mockLocals = {} as App.Locals;
@@ -107,6 +110,49 @@ describe('getMyProcesses', () => {
 	});
 });
 
+// ── getProcessById tests ──
+describe('getProcessById', () => {
+	function mockApiResponse<T>(data: T): ApiResponse<T> {
+		return {
+			success: true,
+			message: 'OK',
+			data,
+			timestamp: '2026-01-01T00:00:00Z'
+		};
+	}
+
+	it('calls GET /api/private/processes/{id} and unwraps ApiResponse.data', async () => {
+		const mockProcess = createMockProcess();
+		mockFetchBackendJson.mockResolvedValue(mockApiResponse(mockProcess));
+
+		const result = await getProcessById(mockLocals, 'proc-1');
+
+		expect(mockFetchBackendJson).toHaveBeenCalledWith(
+			mockLocals,
+			'/api/private/processes/proc-1'
+		);
+		expect(result).toEqual(mockProcess);
+	});
+
+	it('returns the unwrapped ElectoralProcess with correct fields', async () => {
+		const mockProcess = createMockProcess({ id: 'proc-xyz', name: 'Proceso Específico' });
+		mockFetchBackendJson.mockResolvedValue(mockApiResponse(mockProcess));
+
+		const result = await getProcessById(mockLocals, 'proc-xyz');
+
+		expect(result.id).toBe('proc-xyz');
+		expect(result.name).toBe('Proceso Específico');
+		expect(result.scope).toBe('Nacional');
+	});
+
+	it('propagates ApiError (e.g. 404 not found)', async () => {
+		const apiError = new ApiError(404, 'NOT_FOUND', 'Proceso no encontrado');
+		mockFetchBackendJson.mockRejectedValue(apiError);
+
+		await expect(getProcessById(mockLocals, 'no-existe')).rejects.toThrow(ApiError);
+	});
+});
+
 // ── createProcess tests ──
 describe('createProcess', () => {
 	const createBody: CreateProcessBody = {
@@ -186,11 +232,11 @@ describe('updateProcess', () => {
 // ── deleteProcess tests ──
 describe('deleteProcess', () => {
 	it('calls DELETE /api/private/processes/{id} with correct path', async () => {
-		mockFetchBackendJson.mockResolvedValue(undefined);
+		mockFetchBackend.mockResolvedValue(new Response(null, { status: 204 }));
 
 		await deleteProcess(mockLocals, 'proc-1');
 
-		expect(mockFetchBackendJson).toHaveBeenCalledWith(
+		expect(mockFetchBackend).toHaveBeenCalledWith(
 			mockLocals,
 			'/api/private/processes/proc-1',
 			{
@@ -200,7 +246,7 @@ describe('deleteProcess', () => {
 	});
 
 	it('returns void on success', async () => {
-		mockFetchBackendJson.mockResolvedValue(undefined);
+		mockFetchBackend.mockResolvedValue(new Response(null, { status: 204 }));
 
 		const result = await deleteProcess(mockLocals, 'proc-1');
 
@@ -209,7 +255,7 @@ describe('deleteProcess', () => {
 
 	it('propagates ApiError (e.g. 403 forbidden)', async () => {
 		const apiError = new ApiError(403, 'FORBIDDEN', 'No tienes permisos');
-		mockFetchBackendJson.mockRejectedValue(apiError);
+		mockFetchBackend.mockRejectedValue(apiError);
 
 		await expect(deleteProcess(mockLocals, 'proc-1')).rejects.toThrow(ApiError);
 	});

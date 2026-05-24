@@ -1,6 +1,6 @@
-import { fetchBackendJson, fetchPublicJson } from '$lib/server/api';
+import { fetchBackend, fetchBackendJson } from '$lib/server/api';
 import type { ElectoralProcess } from '$lib/types/electoral-process';
-import type { PaginatedResponse } from '$lib/types/api-response';
+import type { ApiResponse, PaginatedResponse } from '$lib/types/api-response';
 
 export type ProcessQueryParams = {
 	size?: number;
@@ -36,15 +36,19 @@ export async function getMyProcesses(
 }
 
 /**
- * Fetch a single electoral process by ID from the public backend API.
+ * Fetch a single electoral process by ID from the private backend API.
  *
- * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 404).
+ * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 401, 404).
  */
 export async function getProcessById(
 	locals: App.Locals,
 	id: string
 ): Promise<ElectoralProcess> {
-	return fetchPublicJson<ElectoralProcess>(`/api/public/processes/${id}`);
+	const response = await fetchBackendJson<ApiResponse<ElectoralProcess>>(
+		locals,
+		`/api/private/processes/${id}`
+	);
+	return response.data;
 }
 
 /**
@@ -80,14 +84,15 @@ export async function updateProcess(
 
 /**
  * Delete an electoral process via the backend API.
+ * Uses fetchBackend (no body parsing) to handle 204 No Content responses.
  *
- * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 401, 403, 404).
+ * @throws {ApiError} Propagates any ApiError thrown by fetchBackend (e.g. 401, 403, 404).
  */
 export async function deleteProcess(
 	locals: App.Locals,
 	id: string
 ): Promise<void> {
-	await fetchBackendJson<ElectoralProcess>(locals, `/api/private/processes/${id}`, {
+	await fetchBackend(locals, `/api/private/processes/${id}`, {
 		method: 'DELETE'
 	});
 }
