@@ -4,6 +4,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Button } from '$lib/components/ui/button';
+	import { toDatetimeLocal } from '$lib/sections/dashboard/process-utils';
 
 	type Props = {
 		mode: 'create' | 'edit';
@@ -27,18 +28,30 @@
 	const v = rawValues ?? {};
 	const p = (process ?? {}) as Record<string, string>;
 
-	// T00:00 default for create mode: datetime-local inputs show 00:00 AM
-	// Date portion uses today (HTML datetime-local requires full YYYY-MM-DDTHH:MM)
-	const today = new Date().toISOString().split('T')[0];
-	const defaultTime = mode === 'create' ? `${today}T00:00` : '';
+	// In edit mode, convert ISO dates from process prop to datetime-local format.
+	// Values from a previous fail() are already datetime-local — skip conversion.
+	const resolveDate = (key: string): string => {
+		if (v[key]) return v[key];
+		const iso = p[key];
+		if (!iso) return '';
+		return mode === 'edit' ? toDatetimeLocal(iso) : iso;
+	};
 
 	let name = $state(v.name ?? p.name ?? '');
 	let description = $state(v.description ?? p.description ?? '');
-	let commitmentStart = $state(v.commitmentStart ?? p.commitmentStart ?? defaultTime);
-	let commitmentEnd = $state(v.commitmentEnd ?? p.commitmentEnd ?? defaultTime);
-	let votingStart = $state(v.votingStart ?? p.votingStart ?? defaultTime);
-	let votingEnd = $state(v.votingEnd ?? p.votingEnd ?? defaultTime);
-	let results = $state(v.results ?? p.results ?? defaultTime);
+	let commitmentStart = $state(resolveDate('commitmentStart'));
+	let commitmentEnd = $state(resolveDate('commitmentEnd'));
+	let votingStart = $state(resolveDate('votingStart'));
+	let votingEnd = $state(resolveDate('votingEnd'));
+	let results = $state(resolveDate('results'));
+
+	// Force time to 00:00 when user picks a date (create mode convenience)
+	function forceMidnight(e: Event) {
+		const input = e.target as HTMLInputElement;
+		if (input.value) {
+			input.value = input.value.split('T')[0] + 'T00:00';
+		}
+	}
 </script>
 
 <form method="POST" class="space-y-6">
@@ -84,6 +97,7 @@
 					id="commitmentStart"
 					type="datetime-local"
 					bind:value={commitmentStart}
+					oninput={forceMidnight}
 					aria-invalid={!!errors.commitmentStart}
 				/>
 				{#if errors.commitmentStart}
@@ -97,6 +111,7 @@
 					id="commitmentEnd"
 					type="datetime-local"
 					bind:value={commitmentEnd}
+					oninput={forceMidnight}
 					aria-invalid={!!errors.commitmentEnd}
 				/>
 				{#if errors.commitmentEnd}
@@ -114,6 +129,7 @@
 					id="votingStart"
 					type="datetime-local"
 					bind:value={votingStart}
+					oninput={forceMidnight}
 					aria-invalid={!!errors.votingStart}
 				/>
 				{#if errors.votingStart}
@@ -127,6 +143,7 @@
 					id="votingEnd"
 					type="datetime-local"
 					bind:value={votingEnd}
+					oninput={forceMidnight}
 					aria-invalid={!!errors.votingEnd}
 				/>
 				{#if errors.votingEnd}
@@ -144,6 +161,7 @@
 					id="results"
 					type="datetime-local"
 					bind:value={results}
+					oninput={forceMidnight}
 					aria-invalid={!!errors.results}
 				/>
 				{#if errors.results}

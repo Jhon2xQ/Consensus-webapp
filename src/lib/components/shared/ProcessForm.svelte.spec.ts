@@ -199,21 +199,17 @@ describe('ProcessForm.svelte', () => {
 		});
 	});
 
-	// ── 8. T00:00 datetime-local defaults (create mode) ──
+	// ── 8. datetime-local defaults (create mode) ──
 	describe('datetime-local defaults in create mode', () => {
-		it('sets datetime-local inputs to T00:00 time in create mode when no process/values provided', async () => {
+		it('datetime-local inputs start empty in create mode when no process/values provided', async () => {
 			render(ProcessForm, { mode: 'create' });
 
-			// Each datetime-local input should have T00:00 in its value
-			// HTML datetime-local requires full YYYY-MM-DDTHH:MM format
-			const today = new Date().toISOString().split('T')[0];
-			const expectedDefault = `${today}T00:00`;
-
-			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue(expectedDefault);
-			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue(expectedDefault);
-			await expect.element(page.getByLabelText('Inicio de Votación *')).toHaveValue(expectedDefault);
-			await expect.element(page.getByLabelText('Fin de Votación *')).toHaveValue(expectedDefault);
-			await expect.element(page.getByLabelText('Fecha de Resultados *')).toHaveValue(expectedDefault);
+			// All datetime-local inputs should be empty (no date pre-selected)
+			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue('');
+			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue('');
+			await expect.element(page.getByLabelText('Inicio de Votación *')).toHaveValue('');
+			await expect.element(page.getByLabelText('Fin de Votación *')).toHaveValue('');
+			await expect.element(page.getByLabelText('Fecha de Resultados *')).toHaveValue('');
 		});
 
 		it('does NOT override datetime values with T00:00 in edit mode', async () => {
@@ -245,17 +241,14 @@ describe('ProcessForm.svelte', () => {
 			await expect.element(page.getByLabelText('Fecha de Resultados *')).toHaveValue('2026-07-10T12:00');
 		});
 
-		it('applies T00:00 default in create mode even when process prop has empty datetime fields', async () => {
+		it('keeps empty string in create mode when process prop has no datetime fields', async () => {
 			// Process with name only (no datetime fields) — still in create mode
 			const minimalProcess = { name: 'Solo Nombre' };
 			render(ProcessForm, { mode: 'create', process: minimalProcess });
 
-			const today = new Date().toISOString().split('T')[0];
-			const expectedDefault = `${today}T00:00`;
-
-			// Datetime fields fall back to T00:00 since process has none
-			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue(expectedDefault);
-			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue(expectedDefault);
+			// Datetime fields fall back to empty since process has none
+			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue('');
+			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue('');
 			// Name from process, description from default (empty)
 			await expect.element(page.getByLabelText('Nombre *')).toHaveValue('Solo Nombre');
 			await expect.element(page.getByLabelText('Descripción')).toHaveValue('');
@@ -270,6 +263,27 @@ describe('ProcessForm.svelte', () => {
 			await expect.element(page.getByLabelText('Inicio de Compromiso *')).toHaveValue('');
 			await expect.element(page.getByLabelText('Fin de Compromiso *')).toHaveValue('');
 			await expect.element(page.getByLabelText('Nombre *')).toHaveValue('Editar Sin Fechas');
+		});
+
+		it('converts ISO dates to datetime-local in edit mode', async () => {
+			// Simulate backend returning ISO-8601 UTC dates
+			const isoProcess = {
+				name: 'ISO Process',
+				commitmentStart: '2026-01-01T10:00:00Z',
+				commitmentEnd: '2026-01-15T18:00:00Z',
+				votingStart: '2026-02-01T08:00:00Z',
+				votingEnd: '2026-02-05T20:00:00Z',
+				results: '2026-02-10T12:00:00Z'
+			};
+			render(ProcessForm, { mode: 'edit', process: isoProcess });
+
+			// Dates should be converted from ISO UTC to local datetime-local format.
+			// Verify inputs are not empty — conversion happened successfully.
+			await expect.element(page.getByLabelText('Inicio de Compromiso *')).not.toHaveValue('');
+			await expect.element(page.getByLabelText('Fin de Compromiso *')).not.toHaveValue('');
+			await expect.element(page.getByLabelText('Inicio de Votación *')).not.toHaveValue('');
+			await expect.element(page.getByLabelText('Fin de Votación *')).not.toHaveValue('');
+			await expect.element(page.getByLabelText('Fecha de Resultados *')).not.toHaveValue('');
 		});
 	});
 
