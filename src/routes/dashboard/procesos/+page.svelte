@@ -113,21 +113,13 @@
 				<tbody>
 					{#each data.processes as process (process.id)}
 						<tr>
-							<td class="border rounded-lg p-4 bg-card">
-								<div class="flex flex-col lg:flex-row gap-4">
-									<!-- Left: name + description -->
-									<div class="flex-1 min-w-0 space-y-1">
-										<div class="flex items-center gap-2">
-											<span class="text-lg font-semibold truncate" title={process.name}>
-												{process.name}
-											</span>
-											<Badge
-												variant="outline"
-												class="shrink-0 {getStatusColor(process.estatus)}"
-											>
-												{getStatusLabel(process.estatus)}
-											</Badge>
-										</div>
+							<td class="border rounded-lg p-5 bg-card">
+								<div class="space-y-4">
+									<!-- Section 1: Name + Description -->
+									<div class="space-y-1">
+										<h2 class="text-lg font-bold tracking-tight" title={process.name}>
+											{process.name}
+										</h2>
 										{#if process.description}
 											<p class="text-sm text-muted-foreground line-clamp-2">
 												{process.description}
@@ -135,64 +127,89 @@
 										{/if}
 									</div>
 
-									<!-- Center: date intervals -->
-									<div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-										<div class="space-y-1">
-											<p class="text-xs text-muted-foreground font-medium uppercase tracking-wide">Compromiso</p>
-											<p class="text-xs">{formatDateTime(process.commitmentStart)}</p>
-											<p class="text-xs text-muted-foreground">–</p>
-											<p class="text-xs">{formatDateTime(process.commitmentEnd)}</p>
+									<!-- Section 2: Status Badge -->
+									<div>
+										<Badge class="text-sm px-4 py-1.5 font-semibold {getStatusColor(process.estatus)}">
+											{getStatusLabel(process.estatus)}
+										</Badge>
+									</div>
+
+									<!-- Section 3: Dates — 3-column grid -->
+									<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+										<!-- Compromiso -->
+										<div class="space-y-2 border rounded-md p-3 bg-muted/30">
+											<p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Compromiso</p>
+											<div class="space-y-1">
+												<div>
+													<span class="text-xs text-muted-foreground">Inicio</span>
+													<p class="text-sm font-medium">{formatDateTime(process.commitmentStart)}</p>
+												</div>
+												<div>
+													<span class="text-xs text-muted-foreground">Fin</span>
+													<p class="text-sm font-medium">{formatDateTime(process.commitmentEnd)}</p>
+												</div>
+											</div>
 										</div>
-										<div class="space-y-1">
-											<p class="text-xs text-muted-foreground font-medium uppercase tracking-wide">Votación</p>
-											<p class="text-xs">{formatDateTime(process.votingStart)}</p>
-											<p class="text-xs text-muted-foreground">–</p>
-											<p class="text-xs">{formatDateTime(process.votingEnd)}</p>
+
+										<!-- Votación -->
+										<div class="space-y-2 border rounded-md p-3 bg-muted/30">
+											<p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Votación</p>
+											<div class="space-y-1">
+												<div>
+													<span class="text-xs text-muted-foreground">Inicio</span>
+													<p class="text-sm font-medium">{formatDateTime(process.votingStart)}</p>
+												</div>
+												<div>
+													<span class="text-xs text-muted-foreground">Fin</span>
+													<p class="text-sm font-medium">{formatDateTime(process.votingEnd)}</p>
+												</div>
+											</div>
 										</div>
-										<div class="space-y-1">
-											<p class="text-xs text-muted-foreground font-medium uppercase tracking-wide">Resultados</p>
-											<p class="text-xs">{formatDateTime(process.results)}</p>
+
+										<!-- Resultados -->
+										<div class="space-y-2 border rounded-md p-3 bg-muted/30">
+											<p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resultados</p>
+											<div>
+												<p class="text-sm font-medium">{formatDateTime(process.results)}</p>
+											</div>
 										</div>
 									</div>
 
-									<!-- Right: actions -->
-									<div class="flex flex-col gap-2 shrink-0">
-										<div class="flex gap-1.5">
-											<Button
-												variant="outline"
-												size="sm"
-												href="/dashboard/equipos?processId={process.id}"
-											>
-												<Users class="size-3.5 mr-1" />
-												Ver equipos
-											</Button>
-											<Button
-												variant="outline"
-												size="sm"
-												href="/dashboard/votantes?processId={process.id}"
-											>
-												<UserCheck class="size-3.5 mr-1" />
-												Ver votantes
-											</Button>
-										</div>
-										<div class="flex gap-1.5">
-											<Button
-												variant="outline"
-												size="sm"
-												href="/dashboard/procesos/{process.id}/editar"
-											>
-												<Pencil class="size-3.5 mr-1" />
-												Editar
-											</Button>
-											<Button
-												variant="destructive"
-												size="sm"
-												onclick={() => handleDeleteClick(process)}
-											>
-												<Trash2 class="size-3.5 mr-1" />
-												Eliminar
-											</Button>
-										</div>
+									<!-- Section 4: Action Buttons -->
+									<div class="flex flex-wrap items-center gap-2 pt-2 border-t">
+										<Button
+											variant="outline"
+											size="sm"
+											href="/dashboard/equipos?processId={process.id}"
+										>
+											<Users class="size-3.5 mr-1" />
+											Ver equipos
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											href="/dashboard/votantes?processId={process.id}"
+										>
+											<UserCheck class="size-3.5 mr-1" />
+											Ver votantes
+										</Button>
+										<div class="flex-1"></div>
+										<Button
+											variant="outline"
+											size="sm"
+											href="/dashboard/procesos/{process.id}/editar"
+										>
+											<Pencil class="size-3.5 mr-1" />
+											Editar
+										</Button>
+										<Button
+											variant="destructive"
+											size="sm"
+											onclick={() => handleDeleteClick(process)}
+										>
+											<Trash2 class="size-3.5 mr-1" />
+											Eliminar
+										</Button>
 									</div>
 								</div>
 							</td>

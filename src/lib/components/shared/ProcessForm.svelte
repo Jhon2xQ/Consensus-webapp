@@ -44,14 +44,6 @@
 	let votingStart = $state(resolveDate('votingStart'));
 	let votingEnd = $state(resolveDate('votingEnd'));
 	let results = $state(resolveDate('results'));
-
-	// Force time to 00:00 when user picks a date (create mode convenience)
-	function forceMidnight(e: Event) {
-		const input = e.target as HTMLInputElement;
-		if (input.value) {
-			input.value = input.value.split('T')[0] + 'T00:00';
-		}
-	}
 </script>
 
 <form method="POST" class="space-y-6">
@@ -97,7 +89,6 @@
 					id="commitmentStart"
 					type="datetime-local"
 					bind:value={commitmentStart}
-					oninput={forceMidnight}
 					aria-invalid={!!errors.commitmentStart}
 				/>
 				{#if errors.commitmentStart}
@@ -111,7 +102,6 @@
 					id="commitmentEnd"
 					type="datetime-local"
 					bind:value={commitmentEnd}
-					oninput={forceMidnight}
 					aria-invalid={!!errors.commitmentEnd}
 				/>
 				{#if errors.commitmentEnd}
@@ -129,7 +119,6 @@
 					id="votingStart"
 					type="datetime-local"
 					bind:value={votingStart}
-					oninput={forceMidnight}
 					aria-invalid={!!errors.votingStart}
 				/>
 				{#if errors.votingStart}
@@ -143,7 +132,6 @@
 					id="votingEnd"
 					type="datetime-local"
 					bind:value={votingEnd}
-					oninput={forceMidnight}
 					aria-invalid={!!errors.votingEnd}
 				/>
 				{#if errors.votingEnd}
@@ -161,7 +149,6 @@
 					id="results"
 					type="datetime-local"
 					bind:value={results}
-					oninput={forceMidnight}
 					aria-invalid={!!errors.results}
 				/>
 				{#if errors.results}
