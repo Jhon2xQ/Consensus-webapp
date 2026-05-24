@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { getProcessById, updateProcess, deleteProcess, type CreateProcessBody } from '$lib/server/process.service';
+import { getProcessById, updateProcess, type CreateProcessBody } from '$lib/server/process.service';
 import { ApiError } from '$lib/server/api';
 import { toISO8601 } from '$lib/sections/dashboard/process-utils';
 
@@ -138,23 +138,5 @@ export const actions = {
 		}
 
 		throw redirect(303, `/dashboard/procesos?success=Proceso+actualizado+exitosamente`);
-	},
-
-	eliminar: async ({ params, locals }) => {
-		try {
-			await deleteProcess(locals, params.id);
-		} catch (err) {
-			if (err instanceof ApiError) {
-				if (err.status === 404) {
-					error(404, 'Proceso electoral no encontrado');
-				}
-				return fail(err.status, {
-					errors: { _form: err.message }
-				});
-			}
-			throw err;
-		}
-
-		throw redirect(303, '/dashboard/procesos?success=Proceso+eliminado+exitosamente');
 	}
 } satisfies Actions;

@@ -4,12 +4,10 @@ import { ApiError } from '$lib/server/api';
 // ── Hoisted mocks (required for vi.mock factory to reference them) ──
 const {
 	mockGetProcessById,
-	mockUpdateProcess,
-	mockDeleteProcess
+	mockUpdateProcess
 } = vi.hoisted(() => ({
 	mockGetProcessById: vi.fn(),
-	mockUpdateProcess: vi.fn(),
-	mockDeleteProcess: vi.fn()
+	mockUpdateProcess: vi.fn()
 }));
 
 vi.mock('$lib/server/process.service', async (importOriginal) => {
@@ -17,8 +15,7 @@ vi.mock('$lib/server/process.service', async (importOriginal) => {
 	return {
 		...actual,
 		getProcessById: mockGetProcessById,
-		updateProcess: mockUpdateProcess,
-		deleteProcess: mockDeleteProcess
+		updateProcess: mockUpdateProcess
 	};
 });
 
@@ -62,7 +59,7 @@ describe('load function', () => {
 			votingEnd: '2026-03-15T00:00:00Z',
 			results: '2026-04-01T00:00:00Z',
 			scope: 'Elecciones 2026',
-			status: 'draft',
+			estatus: 'NONE',
 			createdBy: 'user-1'
 		};
 		mockGetProcessById.mockResolvedValue(mockProcess);
@@ -89,7 +86,7 @@ describe('load function', () => {
 			votingEnd: '2026-08-15T00:00:00Z',
 			results: '2026-09-01T00:00:00Z',
 			scope: 'Otro Proceso',
-			status: 'active',
+			estatus: 'COMMITMENT',
 			createdBy: 'user-2'
 		};
 		mockGetProcessById.mockResolvedValue(mockProcess);
@@ -124,46 +121,9 @@ describe('load function', () => {
 });
 
 // ============================================================
-// eliminar action (existing — verify it still works)
+// guardar action (update process)
 // ============================================================
-describe('eliminar action', () => {
-	it('calls deleteProcess and throws redirect on success', async () => {
-		mockDeleteProcess.mockResolvedValue(undefined);
-
-		try {
-			await actions.eliminar({
-				params: mockParams,
-				locals: mockLocals
-			} as any);
-			// Should not reach here — redirect throws
-			expect(true).toBe(false);
-		} catch (err: any) {
-			expect(err).toHaveProperty('status', 303);
-			expect(err).toHaveProperty('location');
-		}
-
-		expect(mockDeleteProcess).toHaveBeenCalledWith(mockLocals, 'proc-123');
-	});
-
-	it('returns fail with ApiError status when deletion fails', async () => {
-		mockDeleteProcess.mockRejectedValue(
-			new ApiError(403, 'FORBIDDEN', 'No tienes permisos')
-		);
-
-		const result = await actions.eliminar({
-			params: mockParams,
-			locals: mockLocals
-		} as any);
-
-		expect(result).toHaveProperty('status', 403);
-		expect((result as any).data.errors).toHaveProperty('_form');
-	});
-});
-
-// ============================================================
-// default action (update process)
-// ============================================================
-describe('default action', () => {
+describe('guardar action', () => {
 	it('derives body.scope from name instead of reading scope from FormData', async () => {
 		mockUpdateProcess.mockResolvedValue({});
 
