@@ -36,15 +36,15 @@ export async function getMyProcesses(
 }
 
 /**
- * Fetch a single electoral process by ID from the backend API.
+ * Fetch a single electoral process by ID from the public backend API.
  *
- * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 401, 404).
+ * @throws {ApiError} Propagates any ApiError thrown by fetchBackendJson (e.g. 404).
  */
 export async function getProcessById(
 	locals: App.Locals,
 	id: string
 ): Promise<ElectoralProcess> {
-	return fetchBackendJson<ElectoralProcess>(locals, `/api/private/processes/${id}`);
+	return fetchBackendJson<ElectoralProcess>(locals, `/api/public/processes/${id}`);
 }
 
 /**
