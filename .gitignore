@@ -18,7 +18,11 @@ Thumbs.db
 !.env.example
 !.env.test
 
-.atl
+### Agent Tools ###
+.atl/
+.atl/.skill-registry.cache.json
+.atl/skill-registry.md
+.atl/*
 
 # Vite
 vite.config.js.timestamp-*
