@@ -49,18 +49,14 @@
 		'COMMITMENT',
 		'VOTING',
 		'CLOSED',
-		'PAUSED',
-		'NONE',
-		'CANCELLED'
+		'NONE'
 	];
 
 	const statusBarColors: Record<ElectoralProcessStatus, string> = {
 		NONE: 'bg-gray-300',
 		COMMITMENT: 'bg-blue-500',
 		VOTING: 'bg-green-500',
-		CLOSED: 'bg-red-400',
-		PAUSED: 'bg-amber-400',
-		CANCELLED: 'bg-red-300'
+		CLOSED: 'bg-red-400'
 	};
 
 	function getVariantClasses(variant: StatCard['variant']): string {

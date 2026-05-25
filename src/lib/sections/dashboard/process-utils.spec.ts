@@ -20,8 +20,6 @@ describe('process-utils', () => {
 			expect(getStatusLabel('COMMITMENT')).toBe('Compromiso');
 			expect(getStatusLabel('VOTING')).toBe('Votación');
 			expect(getStatusLabel('CLOSED')).toBe('Cerrado');
-			expect(getStatusLabel('PAUSED')).toBe('Pausado');
-			expect(getStatusLabel('CANCELLED')).toBe('Cancelado');
 		});
 
 		it('covers all statuses defined in the type', () => {
@@ -29,9 +27,7 @@ describe('process-utils', () => {
 				'NONE',
 				'COMMITMENT',
 				'VOTING',
-				'CLOSED',
-				'PAUSED',
-				'CANCELLED'
+				'CLOSED'
 			];
 			for (const status of allStatuses) {
 				expect(getStatusLabel(status)).toBeTruthy();
@@ -45,9 +41,7 @@ describe('process-utils', () => {
 				'NONE',
 				'COMMITMENT',
 				'VOTING',
-				'CLOSED',
-				'PAUSED',
-				'CANCELLED'
+				'CLOSED'
 			];
 			for (const status of allStatuses) {
 				const color = getStatusColor(status);
@@ -59,9 +53,9 @@ describe('process-utils', () => {
 		it('returns distinct colors for different statuses', () => {
 			const commitmentColor = getStatusColor('COMMITMENT');
 			const votingColor = getStatusColor('VOTING');
-			const cancelledColor = getStatusColor('CANCELLED');
+			const closedColor = getStatusColor('CLOSED');
 			expect(commitmentColor).not.toBe(votingColor);
-			expect(votingColor).not.toBe(cancelledColor);
+			expect(votingColor).not.toBe(closedColor);
 		});
 	});
 

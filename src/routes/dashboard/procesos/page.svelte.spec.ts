@@ -22,7 +22,8 @@ const mockProcess1: ElectoralProcess = {
 	commitmentEnd: '2026-04-30',
 	votingStart: '2026-06-15',
 	votingEnd: '2026-06-20',
-	results: '2026-06-25'
+	results: '2026-06-25',
+	createdBy: 'user-1'
 };
 
 const mockProcess2: ElectoralProcess = {
@@ -35,7 +36,8 @@ const mockProcess2: ElectoralProcess = {
 	commitmentEnd: '2026-05-15',
 	votingStart: '2026-07-01',
 	votingEnd: '2026-07-05',
-	results: '2026-07-10'
+	results: '2026-07-10',
+	createdBy: 'user-1'
 };
 
 function mockData(processes: ElectoralProcess[], error: string | null = null) {

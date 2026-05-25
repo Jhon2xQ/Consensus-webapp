@@ -4,18 +4,14 @@ export const STATUS_LABELS: Record<ElectoralProcessStatus, string> = {
 	NONE: 'Inactivo',
 	COMMITMENT: 'Compromiso',
 	VOTING: 'Votación',
-	CLOSED: 'Cerrado',
-	PAUSED: 'Pausado',
-	CANCELLED: 'Cancelado'
+	CLOSED: 'Cerrado'
 };
 
 export const STATUS_COLORS: Record<ElectoralProcessStatus, string> = {
 	NONE: 'bg-gray-100 text-gray-600 border-gray-200',
 	COMMITMENT: 'bg-blue-50 text-blue-700 border-blue-200',
 	VOTING: 'bg-green-50 text-green-700 border-green-200',
-	CLOSED: 'bg-red-50 text-red-700 border-red-200',
-	PAUSED: 'bg-amber-50 text-amber-700 border-amber-200',
-	CANCELLED: 'bg-red-50 text-red-700 border-red-200'
+	CLOSED: 'bg-red-50 text-red-700 border-red-200'
 };
 
 export function parseLocalDate(iso: string): Date {

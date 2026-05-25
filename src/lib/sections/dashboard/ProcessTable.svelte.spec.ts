@@ -15,7 +15,8 @@ const mockProcesses: ElectoralProcess[] = [
 		commitmentEnd: '2026-06-15',
 		votingStart: '2026-07-01',
 		votingEnd: '2026-07-15',
-		results: ''
+		results: '',
+		createdBy: 'user-1'
 	},
 	{
 		id: 'proc-2',
@@ -27,7 +28,8 @@ const mockProcesses: ElectoralProcess[] = [
 		commitmentEnd: '2026-05-15',
 		votingStart: '2026-06-01',
 		votingEnd: '2026-06-30',
-		results: ''
+		results: '',
+		createdBy: 'user-1'
 	}
 ];
 

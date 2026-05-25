@@ -37,6 +37,7 @@ const createMockProcess = (overrides?: Partial<ElectoralProcess>): ElectoralProc
 	votingStart: '2026-03-01',
 	votingEnd: '2026-03-05',
 	results: '2026-03-10',
+	createdBy: 'user-1',
 	...overrides
 });
 

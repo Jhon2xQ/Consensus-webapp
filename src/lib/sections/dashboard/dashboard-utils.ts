@@ -10,9 +10,7 @@ export function getStatusDistribution(processes: ElectoralProcess[]): Record<Ele
 		NONE: 0,
 		COMMITMENT: 0,
 		VOTING: 0,
-		CLOSED: 0,
-		PAUSED: 0,
-		CANCELLED: 0
+		CLOSED: 0
 	};
 
 	for (const process of processes) {

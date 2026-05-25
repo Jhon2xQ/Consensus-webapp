@@ -2,9 +2,7 @@ export type ElectoralProcessStatus =
 	| 'NONE'
 	| 'COMMITMENT'
 	| 'VOTING'
-	| 'CLOSED'
-	| 'PAUSED'
-	| 'CANCELLED';
+	| 'CLOSED';
 
 export type ElectoralProcess = {
 	id: string;
@@ -17,4 +15,5 @@ export type ElectoralProcess = {
 	votingStart: string;
 	votingEnd: string;
 	results: string;
+	createdBy: string;
 };

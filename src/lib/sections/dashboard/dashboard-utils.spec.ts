@@ -23,7 +23,8 @@ const mockProcesses: ElectoralProcess[] = [
 		commitmentEnd: '2026-04-30',
 		votingStart: '2026-06-15',
 		votingEnd: '2026-06-20',
-		results: '2026-06-25'
+		results: '2026-06-25',
+		createdBy: 'user-1'
 	},
 	{
 		id: '2',
@@ -35,7 +36,8 @@ const mockProcesses: ElectoralProcess[] = [
 		commitmentEnd: '2026-05-15',
 		votingStart: '2026-07-01',
 		votingEnd: '2026-07-05',
-		results: '2026-07-10'
+		results: '2026-07-10',
+		createdBy: 'user-1'
 	},
 	{
 		id: '3',
@@ -47,7 +49,8 @@ const mockProcesses: ElectoralProcess[] = [
 		commitmentEnd: '2025-10-15',
 		votingStart: '2025-11-10',
 		votingEnd: '2025-11-15',
-		results: '2025-11-20'
+		results: '2025-11-20',
+		createdBy: 'user-1'
 	},
 	{
 		id: '4',
@@ -59,7 +62,8 @@ const mockProcesses: ElectoralProcess[] = [
 		commitmentEnd: '2026-06-30',
 		votingStart: '2026-08-10',
 		votingEnd: '2026-08-12',
-		results: '2026-08-15'
+		results: '2026-08-15',
+		createdBy: 'user-1'
 	}
 ];
 
@@ -83,8 +87,6 @@ describe('dashboard-utils', () => {
 			expect(dist.VOTING).toBe(1);
 			expect(dist.CLOSED).toBe(1);
 			expect(dist.NONE).toBe(0);
-			expect(dist.PAUSED).toBe(0);
-			expect(dist.CANCELLED).toBe(0);
 		});
 
 		it('returns all zeros for empty array', () => {
