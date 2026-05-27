@@ -10,3 +10,9 @@ export type Enrollment = {
 export type CreateEnrollmentBody = {
 	email: string;
 };
+
+export type EnrollmentSummary = {
+	totalParticipants: number;
+	totalCommitments: number;
+	totalVoted: number;
+};
