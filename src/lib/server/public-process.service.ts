@@ -1,6 +1,6 @@
 import { fetchPublicJson } from '$lib/server/api';
 import type { ElectoralProcess } from '$lib/types/electoral-process';
-import type { PaginatedResponse } from '$lib/types/api-response';
+import type { ApiResponse, PaginatedResponse } from '$lib/types/api-response';
 
 export type PublicProcessQueryParams = {
 	page?: number;
@@ -41,4 +41,17 @@ export async function getPublicProcesses(
 		totalPages: response.data.totalPages,
 		totalElements: response.data.totalElements
 	};
+}
+
+/**
+ * Fetch a single public electoral process by ID.
+ * Public endpoint — no authentication required.
+ *
+ * @throws {ApiError} Propagates any ApiError thrown by fetchPublicJson (including 404).
+ */
+export async function getPublicProcessById(id: string): Promise<ElectoralProcess> {
+	const response = await fetchPublicJson<ApiResponse<ElectoralProcess>>(
+		`/api/public/processes/${id}`
+	);
+	return response.data;
 }

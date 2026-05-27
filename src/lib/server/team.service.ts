@@ -1,11 +1,6 @@
-import { fetchBackendJson } from '$lib/server/api';
+import { fetchBackendJson, fetchPublicJson } from '$lib/server/api';
 import type { Team } from '$lib/types/team';
-
-type ApiResponse<T> = {
-	success: boolean;
-	message: string;
-	data: T;
-};
+import type { ApiResponse } from '$lib/types/api-response';
 
 /**
  * Create a new team within an electoral process.
@@ -65,6 +60,17 @@ export async function updateTeam(
 		locals,
 		`/api/private/teams/${teamId}`,
 		{ method: 'PUT', body }
+	);
+	return response.data;
+}
+
+/**
+ * Get all teams for an electoral process (public, no authentication).
+ * Calls GET /api/public/processes/{processId}/teams
+ */
+export async function getPublicTeamsForProcess(processId: string): Promise<Team[]> {
+	const response = await fetchPublicJson<ApiResponse<Team[]>>(
+		`/api/public/processes/${processId}/teams`
 	);
 	return response.data;
 }
