@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "$lib/components/ui/card";
-	import { PenSquare, ShieldCheck, Database, BarChart3 } from "lucide-svelte";
+	import { PenSquare, ShieldCheck, Database, BarChart3 } from "@lucide/svelte";
 </script>
 
 <section class="py-32 bg-brand-white border-t border-brand-gray-100" id="how-it-works">

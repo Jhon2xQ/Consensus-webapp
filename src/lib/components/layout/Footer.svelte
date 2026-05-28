@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { GitBranch, Globe, X } from "lucide-svelte";
+	import { GitBranch, Globe, X } from "@lucide/svelte";
 </script>
 
 <footer class="bg-brand-white pt-24 pb-12 border-t border-brand-gray-100">

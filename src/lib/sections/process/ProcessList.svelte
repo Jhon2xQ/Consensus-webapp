@@ -4,7 +4,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Card, CardContent } from '$lib/components/ui/card/index.js';
 	import { cn } from '$lib/utils.js';
-	import { Calendar, Vote, Trophy, ArrowRight } from 'lucide-svelte';
+	import { Calendar, Vote, Trophy, ArrowRight } from '@lucide/svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process.js';
 
 	type Props = {

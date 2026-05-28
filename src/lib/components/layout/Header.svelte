@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
-	import { ChevronDown, Shield, ShieldCheck, ShieldAlert } from 'lucide-svelte';
+	import { ChevronDown, Shield, ShieldCheck, ShieldAlert } from '@lucide/svelte';
 	import { supportsPasskeys, registerPasskey, verifyPasskey } from '$lib/services/passkey.service';
 	import {
 		getPasskeyStatus,

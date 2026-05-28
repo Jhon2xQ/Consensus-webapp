@@ -12,7 +12,7 @@
 		CheckCircle,
 		Send,
 		Shield
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
 	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
