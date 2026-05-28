@@ -9,7 +9,7 @@
 		setStatus,
 		setError,
 		isPasskeyVerified
-	} from '$lib/services/passkey-state.svelte.ts';
+	} from '$lib/services/passkey-state.svelte';
 
 	let user = $derived(page.data.user);
 	let dropdownOpen = $state(false);

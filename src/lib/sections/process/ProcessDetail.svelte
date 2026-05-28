@@ -16,7 +16,7 @@
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
 	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
-	import { getPasskeyStatus, isPasskeyVerified, getCredentialId } from '$lib/services/passkey-state.svelte.ts';
+	import { getPasskeyStatus, isPasskeyVerified, getCredentialId } from '$lib/services/passkey-state.svelte';
 	import { verifyPasskey } from '$lib/services/passkey.service';
 	import { deriveIdentity } from '$lib/services/semaphore.service';
 
