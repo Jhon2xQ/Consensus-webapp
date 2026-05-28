@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
 	import { cn } from '$lib/utils.js';
 	import {
@@ -8,11 +9,16 @@
 		Vote,
 		Users,
 		Clock,
-		CheckCircle
+		CheckCircle,
+		Send,
+		Shield
 	} from 'lucide-svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
-	import type { EnrollmentSummary } from '$lib/types/enrollment';
+	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
+	import { getPasskeyStatus, isPasskeyVerified, getCredentialId } from '$lib/services/passkey-state.svelte.ts';
+	import { verifyPasskey } from '$lib/services/passkey.service';
+	import { deriveIdentity } from '$lib/services/semaphore.service';
 
 	type Props = {
 		process: ElectoralProcess;
@@ -20,6 +26,8 @@
 		enrollmentSummary: EnrollmentSummary | null;
 		teamsError: boolean;
 		enrollmentError: boolean;
+		userSub: string | null;
+		userEnrollment: Enrollment | null;
 	};
 
 	let {
@@ -27,8 +35,26 @@
 		teams,
 		enrollmentSummary = null,
 		teamsError = false,
-		enrollmentError = false
+		enrollmentError = false,
+		userSub = null,
+		userEnrollment = null
 	}: Props = $props();
+
+	// Passkey reactive state
+	let passkeyVerified = $derived(isPasskeyVerified());
+	let passkeyStatus = $derived(getPasskeyStatus());
+
+	// Action state
+	let submitting = $state<'none' | 'commitment' | 'vote'>('none');
+	let actionError = $state<string | null>(null);
+
+	// Process phase checks
+	let isCommitmentPhase = $derived(process.estatus === 'COMMITMENT');
+	let isVotingPhase = $derived(process.estatus === 'VOTING');
+
+	// Already committed/voted checks
+	let hasCommitted = $derived(userEnrollment?.commitment !== null && userEnrollment?.commitment !== undefined);
+	let hasVoted = $derived(userEnrollment?.hasVoted === true);
 
 	// ── Status helpers (inline, matching ProcessList pattern) ──
 	function getStatusLabel(estatus: ElectoralProcessStatus): string {
@@ -67,6 +93,97 @@
 			.join('')
 			.toUpperCase()
 			.slice(0, 2);
+	}
+
+	// ── Action handlers ──
+	async function handleSubmitCommitment() {
+		if (!userSub) {
+			actionError = 'Debés estar autenticado para enviar un compromiso';
+			return;
+		}
+
+		submitting = 'commitment';
+		actionError = null;
+
+		try {
+			// Verify passkey if not already verified
+			if (!passkeyVerified) {
+				await verifyPasskey();
+			}
+
+			const credentialId = getCredentialId();
+			if (!credentialId) {
+				actionError = 'Registrá un passkey primero';
+				submitting = 'none';
+				return;
+			}
+
+			// Derive identity
+			const identity = await deriveIdentity(userSub, credentialId, process.id);
+
+			// POST commitment
+			const response = await fetch(`/api/public/processes/${process.id}/commitments`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					commitment: identity.commitment
+				})
+			});
+
+			if (!response.ok) {
+				const data = await response.json().catch(() => null);
+				throw new Error(data?.message ?? 'Error al enviar compromiso');
+			}
+		} catch (err) {
+			actionError = err instanceof Error ? err.message : 'Error al enviar compromiso';
+		} finally {
+			submitting = 'none';
+		}
+	}
+
+	async function handleSubmitVote() {
+		if (!userSub) {
+			actionError = 'Debés estar autenticado para votar';
+			return;
+		}
+
+		submitting = 'vote';
+		actionError = null;
+
+		try {
+			// Verify passkey if not already verified
+			if (!passkeyVerified) {
+				await verifyPasskey();
+			}
+
+			const credentialId = getCredentialId();
+			if (!credentialId) {
+				actionError = 'Verificá tu passkey primero';
+				submitting = 'none';
+				return;
+			}
+
+			// Derive identity
+			const identity = await deriveIdentity(userSub, credentialId, process.id);
+
+			// POST vote
+			const response = await fetch(`/api/public/processes/${process.id}/votes`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					commitment: identity.commitment
+				})
+			});
+
+			if (!response.ok) {
+				const data = await response.json().catch(() => null);
+				throw new Error(data?.message ?? 'Error al enviar voto');
+			}
+		} catch (err) {
+			actionError = err instanceof Error ? err.message : 'Error al enviar voto';
+		} finally {
+			submitting = 'none';
+		}
 	}
 </script>
 
@@ -229,5 +346,66 @@
 				</Card>
 			</div>
 		</div>
+
+		<!-- Action buttons -->
+		{#if isCommitmentPhase || isVotingPhase}
+			<div class="mt-6 space-y-3">
+				{#if isCommitmentPhase}
+					{#if hasCommitted}
+						<Button
+							disabled
+							class="w-full"
+							variant="default"
+						>
+							<Shield class="size-4 mr-2" />
+							Compromiso enviado
+						</Button>
+					{:else}
+						<Button
+							onclick={handleSubmitCommitment}
+							disabled={submitting !== 'none'}
+							class="w-full"
+							variant="default"
+						>
+							<Send class="size-4 mr-2" />
+							Enviar compromiso
+						</Button>
+					{/if}
+				{/if}
+
+				{#if isVotingPhase}
+					{#if hasVoted}
+						<Button
+							disabled
+							class="w-full"
+							variant="default"
+						>
+							<Vote class="size-4 mr-2" />
+							Ya votaste
+						</Button>
+					{:else}
+						<Button
+							onclick={handleSubmitVote}
+							disabled={submitting !== 'none'}
+							class="w-full bg-brand-red hover:bg-brand-red/90 text-white"
+							variant="default"
+						>
+							<Vote class="size-4 mr-2" />
+							Realizar voto
+						</Button>
+					{/if}
+				{/if}
+
+				{#if submitting !== 'none'}
+					<p class="text-xs text-brand-gray-400 text-center">
+						Escaneá el QR que aparece en pantalla con tu móvil
+					</p>
+				{/if}
+
+				{#if actionError}
+					<p class="text-xs text-red-600 text-center">{actionError}</p>
+				{/if}
+			</div>
+		{/if}
 	</div>
 </section>

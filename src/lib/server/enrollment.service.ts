@@ -51,3 +51,17 @@ export async function getEnrollments(
 	);
 	return response.data;
 }
+
+/**
+ * Get enrollment for a specific user in an electoral process.
+ * Returns null if the user is not enrolled.
+ * Calls GET /api/private/processes/{processId}/enrollments and filters by userId.
+ */
+export async function getUserEnrollment(
+	locals: App.Locals,
+	processId: string,
+	userId: string
+): Promise<Enrollment | null> {
+	const enrollments = await getEnrollments(locals, processId);
+	return enrollments.find((e) => e.userId === userId) ?? null;
+}

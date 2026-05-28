@@ -2,7 +2,7 @@
 	import ProcessDetail from '$lib/sections/process/ProcessDetail.svelte';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
-	import type { EnrollmentSummary } from '$lib/types/enrollment';
+	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
 
 	type PageData = {
 		process: ElectoralProcess;
@@ -10,6 +10,8 @@
 		enrollmentSummary: EnrollmentSummary | null;
 		teamsError: boolean;
 		enrollmentError: boolean;
+		userSub: string | null;
+		userEnrollment: Enrollment | null;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -22,5 +24,7 @@
 		enrollmentSummary={data.enrollmentSummary}
 		teamsError={data.teamsError}
 		enrollmentError={data.enrollmentError}
+		userSub={data.userSub}
+		userEnrollment={data.userEnrollment}
 	/>
 </main>

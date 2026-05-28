@@ -2,12 +2,13 @@ import { error } from '@sveltejs/kit';
 import { getPublicProcessById } from '$lib/server/public-process.service';
 import { getPublicTeamsForProcess } from '$lib/server/team.service';
 import { getPublicEnrollmentSummary } from '$lib/server/public-enrollment.service';
+import { getUserEnrollment } from '$lib/server/enrollment.service';
 import { ApiError } from '$lib/server/api';
 import type { PageServerLoad } from './$types';
 import type { Team } from '$lib/types/team';
-import type { EnrollmentSummary } from '$lib/types/enrollment';
+import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const id = params.id;
 
 	const [process, teams, enrollmentSummary] = await Promise.allSettled([
@@ -44,11 +45,25 @@ export const load: PageServerLoad = async ({ params }) => {
 		enrollmentError = true;
 	}
 
+	// User enrollment for passkey/commitment integration
+	const userSub = locals.user?.sub ?? null;
+	let userEnrollment: Enrollment | null = null;
+
+	if (userSub) {
+		try {
+			userEnrollment = await getUserEnrollment(locals, id, userSub);
+		} catch {
+			userEnrollment = null;
+		}
+	}
+
 	return {
 		process: process.value,
 		teams: teamsResult,
 		enrollmentSummary: enrollmentResult,
 		teamsError,
-		enrollmentError
+		enrollmentError,
+		userSub,
+		userEnrollment
 	};
 };

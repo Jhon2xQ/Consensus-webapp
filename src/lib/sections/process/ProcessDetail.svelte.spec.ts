@@ -1,11 +1,42 @@
 import { page } from 'vitest/browser';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-// RED: ProcessDetail.svelte does NOT exist yet
 import ProcessDetail from './ProcessDetail.svelte';
 import type { ElectoralProcess } from '$lib/types/electoral-process';
 import type { Team } from '$lib/types/team';
-import type { EnrollmentSummary } from '$lib/types/enrollment';
+import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
+
+// Mock passkey services
+let mockPasskeyStatus = 'none';
+let mockPasskeyVerified = false;
+let mockPasskeyCredentialId: string | null = null;
+
+vi.mock('$lib/services/passkey-state.svelte.ts', () => ({
+	getPasskeyStatus: () => mockPasskeyStatus,
+	isPasskeyVerified: () => mockPasskeyVerified,
+	getCredentialId: () => mockPasskeyCredentialId,
+	setCredentialId: vi.fn(),
+	setStatus: vi.fn(),
+	setError: vi.fn(),
+	resetPasskeyState: vi.fn()
+}));
+
+const mockVerifyPasskey = vi.hoisted(() => vi.fn());
+const mockDeriveIdentity = vi.hoisted(() => vi.fn());
+
+vi.mock('$lib/services/passkey.service', () => ({
+	verifyPasskey: mockVerifyPasskey,
+	supportsPasskeys: vi.fn(() => true),
+	registerPasskey: vi.fn()
+}));
+
+vi.mock('$lib/services/semaphore.service', () => ({
+	deriveIdentity: mockDeriveIdentity
+}));
+
+// Mock fetch for API calls
+const mockFetch = vi.hoisted(() => vi.fn());
+vi.stubGlobal('fetch', mockFetch);
 
 const mockProcess: ElectoralProcess = {
 	id: '1',
@@ -40,6 +71,8 @@ function defaultProps(overrides?: Record<string, unknown>) {
 		enrollmentSummary: mockEnrollmentSummary,
 		teamsError: false,
 		enrollmentError: false,
+		userSub: 'user-abc-123',
+		userEnrollment: null,
 		...overrides
 	};
 }
@@ -166,6 +199,78 @@ describe('ProcessDetail.svelte', () => {
 			await expect
 				.element(page.getByText('Proceso electoral para elegir representantes nacionales.'))
 				.not.toBeInTheDocument();
+		});
+	});
+
+	describe('action buttons', () => {
+		beforeEach(() => {
+			mockPasskeyStatus = 'none';
+			mockPasskeyVerified = false;
+			mockPasskeyCredentialId = null;
+			vi.clearAllMocks();
+		});
+
+		it('shows "Enviar compromiso" button when estatus is COMMITMENT', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'COMMITMENT' } }));
+			await expect.element(page.getByRole('button', { name: 'Enviar compromiso' })).toBeInTheDocument();
+		});
+
+		it('shows "Realizar voto" button when estatus is VOTING', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'VOTING' } }));
+			await expect.element(page.getByRole('button', { name: 'Realizar voto' })).toBeInTheDocument();
+		});
+
+		it('does not show action buttons when estatus is NONE', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'NONE' } }));
+			await expect.element(page.getByRole('button', { name: 'Enviar compromiso' })).not.toBeInTheDocument();
+			await expect.element(page.getByRole('button', { name: 'Realizar voto' })).not.toBeInTheDocument();
+		});
+
+		it('does not show action buttons when estatus is CLOSED', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'CLOSED' } }));
+			await expect.element(page.getByRole('button', { name: 'Enviar compromiso' })).not.toBeInTheDocument();
+			await expect.element(page.getByRole('button', { name: 'Realizar voto' })).not.toBeInTheDocument();
+		});
+
+		it('shows disabled commitment button when user already committed', async () => {
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'some-commitment-hash',
+				hasVoted: false
+			};
+			render(ProcessDetail, defaultProps({
+				process: { ...mockProcess, estatus: 'COMMITMENT' },
+				userEnrollment: enrolledUser
+			}));
+			const btn = page.getByRole('button', { name: 'Compromiso enviado' });
+			await expect.element(btn).toBeInTheDocument();
+			await expect.element(btn).toBeDisabled();
+		});
+
+		it('shows disabled vote button when user already voted', async () => {
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'some-commitment-hash',
+				hasVoted: true
+			};
+			render(ProcessDetail, defaultProps({
+				process: { ...mockProcess, estatus: 'VOTING' },
+				userEnrollment: enrolledUser
+			}));
+			const btn = page.getByRole('button', { name: 'Ya votaste' });
+			await expect.element(btn).toBeInTheDocument();
+			await expect.element(btn).toBeDisabled();
+		});
+
+		it('does not show QR instruction text before submission', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'COMMITMENT' } }));
+			await expect.element(page.getByText('Escaneá el QR que aparece en pantalla con tu móvil')).not.toBeInTheDocument();
 		});
 	});
 });
