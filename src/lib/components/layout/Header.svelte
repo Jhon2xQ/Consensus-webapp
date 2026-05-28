@@ -1,13 +1,56 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
-	import { ChevronDown } from 'lucide-svelte';
+	import { ChevronDown, Shield, ShieldCheck, ShieldAlert } from 'lucide-svelte';
+	import { supportsPasskeys, registerPasskey, verifyPasskey } from '$lib/services/passkey.service';
+	import {
+		getPasskeyStatus,
+		setCredentialId,
+		setStatus,
+		setError,
+		isPasskeyVerified
+	} from '$lib/services/passkey-state.svelte.ts';
 
 	let user = $derived(page.data.user);
 	let dropdownOpen = $state(false);
 
 	let dropdownRef: HTMLDivElement | undefined = $state();
 	let triggerRef: HTMLButtonElement | undefined = $state();
+
+	// Passkey reactive state
+	let passkeyStatus = $derived(getPasskeyStatus());
+	let passkeyVerified = $derived(isPasskeyVerified());
+	let registering = $state(false);
+	let verifying = $state(false);
+
+	// Firefox detection
+	const isFirefox = typeof navigator !== 'undefined' && navigator.userAgent.includes('Firefox');
+
+	async function handleRegisterPasskey() {
+		if (!user?.sub || !user?.name) return;
+		registering = true;
+		try {
+			const result = await registerPasskey(user.sub, user.name);
+			setCredentialId(result.credentialId);
+			setStatus('registered');
+		} catch {
+			setError('Error al registrar dispositivo');
+		} finally {
+			registering = false;
+		}
+	}
+
+	async function handleVerifyPasskey() {
+		verifying = true;
+		try {
+			await verifyPasskey();
+			setStatus('verified');
+		} catch {
+			setError('Error al verificar dispositivo');
+		} finally {
+			verifying = false;
+		}
+	}
 
 	// Close on click outside
 	$effect(() => {
@@ -96,6 +139,47 @@
 									{user.email ?? 'No disponible'}
 								</p>
 							</div>
+
+							<!-- Passkey section -->
+							<div class="px-4 py-3 border-b border-brand-gray-100">
+								<p class="text-xs text-brand-gray-500 font-medium mb-2">Dispositivo</p>
+
+								{#if !supportsPasskeys()}
+									<p class="text-xs text-brand-gray-400 flex items-center gap-1.5">
+										<ShieldAlert class="size-3.5" />
+										Navegador no compatible
+									</p>
+									{#if isFirefox}
+										<p class="text-[10px] text-brand-gray-400 mt-1">
+											Firefox no soporta QR cross-device. Usá Chrome o Safari.
+										</p>
+									{/if}
+								{:else if passkeyStatus === 'none' || passkeyStatus === 'error'}
+									<button
+										onclick={handleRegisterPasskey}
+										disabled={registering}
+										class="text-xs text-brand-black flex items-center gap-1.5 hover:text-brand-red transition-colors disabled:opacity-50"
+									>
+										<Shield class="size-3.5" />
+										{registering ? 'Registrando...' : 'Registrar dispositivo'}
+									</button>
+								{:else if passkeyStatus === 'registered'}
+									<button
+										onclick={handleVerifyPasskey}
+										disabled={verifying}
+										class="text-xs text-brand-black flex items-center gap-1.5 hover:text-brand-red transition-colors disabled:opacity-50"
+									>
+										<Shield class="size-3.5" />
+										{verifying ? 'Verificando...' : 'Verificar dispositivo'}
+									</button>
+								{:else if passkeyVerified}
+									<p class="text-xs text-green-600 flex items-center gap-1.5">
+										<ShieldCheck class="size-3.5" />
+										Dispositivo verificado
+									</p>
+								{/if}
+							</div>
+
 							<div class="p-2">
 								<form method="POST" action="/?/signOut" aria-label="Cerrar sesión">
 									<Button

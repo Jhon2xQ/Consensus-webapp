@@ -11,6 +11,31 @@ vi.mock('$app/state', () => ({
 	page: mockPage,
 }));
 
+// Mock passkey services
+const mockSupportsPasskeys = vi.hoisted(() => vi.fn(() => true));
+const mockRegisterPasskey = vi.hoisted(() => vi.fn());
+const mockVerifyPasskey = vi.hoisted(() => vi.fn());
+
+vi.mock('$lib/services/passkey.service', () => ({
+	supportsPasskeys: mockSupportsPasskeys,
+	registerPasskey: mockRegisterPasskey,
+	verifyPasskey: mockVerifyPasskey
+}));
+
+let mockPasskeyStatus = 'none';
+let mockPasskeyVerified = false;
+let mockPasskeyCredentialId: string | null = null;
+
+vi.mock('$lib/services/passkey-state.svelte.ts', () => ({
+	getPasskeyStatus: () => mockPasskeyStatus,
+	isPasskeyVerified: () => mockPasskeyVerified,
+	getCredentialId: () => mockPasskeyCredentialId,
+	setCredentialId: vi.fn(),
+	setStatus: vi.fn(),
+	setError: vi.fn(),
+	resetPasskeyState: vi.fn()
+}));
+
 describe('Header.svelte', () => {
 	it('renders the brand name', async () => {
 		render(Header);
@@ -105,6 +130,61 @@ describe('Header.svelte', () => {
 			render(Header);
 			await expect.element(page.getByText('Usuario')).toBeInTheDocument();
 			await expect.element(page.getByRole('img')).not.toBeInTheDocument();
+		});
+
+		describe('passkey section', () => {
+			beforeEach(() => {
+				mockPasskeyStatus = 'none';
+				mockPasskeyVerified = false;
+				mockPasskeyCredentialId = null;
+				mockSupportsPasskeys.mockReturnValue(true);
+			});
+
+				it('shows "Dispositivo" label in dropdown', async () => {
+				render(Header);
+				const trigger = page.getByRole('button', { name: 'María García' });
+				await trigger.click();
+				await expect.element(page.getByText('Dispositivo', { exact: true })).toBeInTheDocument();
+			});
+
+			it('shows "Registrar dispositivo" button when status is none', async () => {
+				mockPasskeyStatus = 'none';
+				render(Header);
+				const trigger = page.getByRole('button', { name: 'María García' });
+				await trigger.click();
+				await expect.element(page.getByText('Registrar dispositivo')).toBeInTheDocument();
+			});
+
+			it('shows "Verificar dispositivo" button when status is registered', async () => {
+				mockPasskeyStatus = 'registered';
+				render(Header);
+				const trigger = page.getByRole('button', { name: 'María García' });
+				await trigger.click();
+				await expect.element(page.getByText('Verificar dispositivo')).toBeInTheDocument();
+			});
+
+			it('shows "Dispositivo verificado" when passkey is verified', async () => {
+				mockPasskeyStatus = 'verified';
+				mockPasskeyVerified = true;
+				render(Header);
+				const trigger = page.getByRole('button', { name: 'María García' });
+				await trigger.click();
+				await expect.element(page.getByText('Dispositivo verificado')).toBeInTheDocument();
+			});
+
+			it('shows unsupported browser message when WebAuthn is not available', async () => {
+				mockSupportsPasskeys.mockReturnValue(false);
+				render(Header);
+				const trigger = page.getByRole('button', { name: 'María García' });
+				await trigger.click();
+				await expect.element(page.getByText('Navegador no compatible')).toBeInTheDocument();
+			});
+
+			it('does not show passkey section when user is not logged in', async () => {
+				mockPage.data.user = null;
+				render(Header);
+				await expect.element(page.getByText('Dispositivo')).not.toBeInTheDocument();
+			});
 		});
 	});
 });
