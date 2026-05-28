@@ -43,6 +43,8 @@
 		"@fontsource-variable/space-grotesk": "^5.2.10",
 		"@internationalized/date": "^3.12.1",
 		"@logto/sveltekit": "^0.3.23",
+		"@semaphore-protocol/core": "^4.14.2",
+		"@simplewebauthn/browser": "^13.3.0",
 		"bits-ui": "^2.18.1",
 		"lucide-svelte": "^1.0.1",
 		"redis": "^5.12.1",
