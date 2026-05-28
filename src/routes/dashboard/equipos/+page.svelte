@@ -29,7 +29,7 @@
 	let createOpen = $state(false);
 	let editOpen = $state(false);
 	let deleteOpen = $state(false);
-	let editingTeam = $state<{ id: string; name: string; avatarUrl?: string } | null>(null);
+	let editingTeam = $state<{ id: string; name: string; avatarUrl?: string | null } | null>(null);
 	let teamToDelete = $state<{ id: string; name: string } | null>(null);
 
 	let createName = $state('');
@@ -46,7 +46,7 @@
 		createOpen = true;
 	}
 
-	function openEdit(team: { id: string; name: string; avatarUrl?: string }) {
+	function openEdit(team: { id: string; name: string; avatarUrl?: string | null }) {
 		editingTeam = team;
 		editName = team.name;
 		editAvatarUrl = team.avatarUrl ?? '';
