@@ -18,7 +18,7 @@
 
 	type Props = {
 		mode: 'create' | 'edit';
-		process?: ProcessData | null;
+		process?: Partial<ProcessData> | null;
 		errors?: Record<string, string>;
 		values?: Record<string, string>;
 		submitting?: boolean;
@@ -42,7 +42,7 @@
 
 	// In edit mode, convert ISO dates from process prop to datetime-local format.
 	// Values from a previous fail() are already datetime-local — skip conversion.
-	const resolveDate = (key: string): string => {
+	const resolveDate = (key: keyof ProcessData): string => {
 		if (v[key]) return v[key];
 		const iso = p[key];
 		if (!iso) return '';
