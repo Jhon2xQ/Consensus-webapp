@@ -11,3 +11,11 @@ export type {
 	PaginatedData,
 	PaginatedResponse
 } from './api-response';
+
+export type {
+	PasskeyResult,
+	RegisterOptionsResponse,
+	AuthOptionsResponse
+} from './passkey';
+
+export type { SemaphoreIdentityResult } from './semaphore';
