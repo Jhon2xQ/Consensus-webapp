@@ -2,7 +2,7 @@ export type PasskeyResult = {
 	credentialId: string;
 };
 
-export type RegisterOptionsResponse = {
+export type RegisterOptions = {
 	challenge: string;
 	rp: { name: string; id: string };
 	user: { id: string; name: string; displayName: string };
@@ -15,7 +15,7 @@ export type RegisterOptionsResponse = {
 	};
 };
 
-export type AuthOptionsResponse = {
+export type AuthOptions = {
 	challenge: string;
 	timeout: number;
 	userVerification: 'discouraged' | 'preferred' | 'required';

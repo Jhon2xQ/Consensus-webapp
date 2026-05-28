@@ -1,11 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supportsPasskeys, registerPasskey, verifyPasskey } from './passkey.service';
 
 // ── Mocks ──
-const { mockStartRegistration, mockStartAuthentication, mockBrowserSupportsWebAuthn } = vi.hoisted(() => ({
+const {
+	mockStartRegistration,
+	mockStartAuthentication,
+	mockBrowserSupportsWebAuthn,
+	mockGenerateChallenge
+} = vi.hoisted(() => ({
 	mockStartRegistration: vi.fn(),
 	mockStartAuthentication: vi.fn(),
-	mockBrowserSupportsWebAuthn: vi.fn()
+	mockBrowserSupportsWebAuthn: vi.fn(),
+	mockGenerateChallenge: vi.fn()
 }));
 
 vi.mock('@simplewebauthn/browser', () => ({
@@ -14,11 +20,21 @@ vi.mock('@simplewebauthn/browser', () => ({
 	browserSupportsWebAuthn: mockBrowserSupportsWebAuthn
 }));
 
-describe('supportsPasskeys', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
+vi.mock('$lib/utils/webauthn', () => ({
+	generateChallenge: mockGenerateChallenge
+}));
 
+// ── Window mock ──
+beforeEach(() => {
+	vi.clearAllMocks();
+	Object.defineProperty(globalThis, 'window', {
+		value: { location: { hostname: 'localhost' } },
+		writable: true,
+		configurable: true
+	});
+});
+
+describe('supportsPasskeys', () => {
 	it('returns true when browser supports WebAuthn', () => {
 		mockBrowserSupportsWebAuthn.mockReturnValue(true);
 		expect(supportsPasskeys()).toBe(true);
@@ -37,82 +53,50 @@ describe('supportsPasskeys', () => {
 });
 
 describe('registerPasskey', () => {
-	const originalFetch = globalThis.fetch;
-
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
-	afterEach(() => {
-		globalThis.fetch = originalFetch;
-	});
-
-	it('calls API and starts registration, returns credentialId', async () => {
-		const mockResponse = {
-			challenge: 'test-challenge',
-			rp: { name: 'Consensus', id: 'localhost' },
-			user: { id: 'user-1', name: 'test@example.com', displayName: 'Test User' },
-			pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-			timeout: 60000,
-			attestation: 'none',
-			authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' }
-		};
-
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () => Promise.resolve(mockResponse)
-		});
-
+	it('generates challenge client-side and starts registration with correct options', async () => {
+		mockGenerateChallenge.mockReturnValue('test-challenge');
 		mockStartRegistration.mockResolvedValue({ id: 'cred-abc-123' });
 
 		const result = await registerPasskey('user-1', 'test@example.com');
 
-		expect(globalThis.fetch).toHaveBeenCalledWith('/api/passkey/register-options', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ userId: 'user-1', userName: 'test@example.com' })
+		expect(mockGenerateChallenge).toHaveBeenCalledTimes(1);
+		expect(mockStartRegistration).toHaveBeenCalledWith({
+			optionsJSON: {
+				challenge: 'test-challenge',
+				rp: { name: 'Consensus', id: 'localhost' },
+				user: { id: 'user-1', name: 'test@example.com', displayName: 'test@example.com' },
+				pubKeyCredParams: [
+					{ type: 'public-key', alg: -7 },
+					{ type: 'public-key', alg: -257 }
+				],
+				timeout: 60000,
+				attestation: 'none',
+				authenticatorSelection: {
+					residentKey: 'preferred',
+					userVerification: 'preferred'
+				}
+			}
 		});
-
-		expect(mockStartRegistration).toHaveBeenCalledWith({ optionsJSON: mockResponse });
 		expect(result).toEqual({ credentialId: 'cred-abc-123' });
 	});
 
-	it('throws when API response is not ok', async () => {
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: false,
-			status: 500,
-			json: () => Promise.resolve({ error: 'Internal Server Error' })
+	it('uses window.location.hostname for rpId', async () => {
+		Object.defineProperty(globalThis, 'window', {
+			value: { location: { hostname: 'consensus.carmenio.com' } },
+			writable: true,
+			configurable: true
 		});
+		mockGenerateChallenge.mockReturnValue('prod-challenge');
+		mockStartRegistration.mockResolvedValue({ id: 'cred-prod' });
 
-		await expect(registerPasskey('user-1', 'test@example.com')).rejects.toThrow(
-			/Failed to register passkey/
-		);
-	});
+		await registerPasskey('user-2', 'bob@test.com');
 
-	it('throws when network request fails', async () => {
-		globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
-
-		await expect(registerPasskey('user-1', 'test@example.com')).rejects.toThrow(
-			/Network error/
-		);
+		const callArgs = mockStartRegistration.mock.calls[0][0];
+		expect(callArgs.optionsJSON.rp.id).toBe('consensus.carmenio.com');
 	});
 
 	it('throws when startRegistration rejects (user cancelled)', async () => {
-		const mockResponse = {
-			challenge: 'test-challenge',
-			rp: { name: 'Consensus', id: 'localhost' },
-			user: { id: 'user-1', name: 'test@example.com', displayName: 'Test User' },
-			pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-			timeout: 60000,
-			attestation: 'none',
-			authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' }
-		};
-
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () => Promise.resolve(mockResponse)
-		});
-
+		mockGenerateChallenge.mockReturnValue('test-challenge');
 		mockStartRegistration.mockRejectedValue(new Error('The ceremony was cancelled'));
 
 		await expect(registerPasskey('user-1', 'test@example.com')).rejects.toThrow(
@@ -122,71 +106,41 @@ describe('registerPasskey', () => {
 });
 
 describe('verifyPasskey', () => {
-	const originalFetch = globalThis.fetch;
-
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
-	afterEach(() => {
-		globalThis.fetch = originalFetch;
-	});
-
-	it('calls API and starts authentication, returns credentialId', async () => {
-		const mockResponse = {
-			challenge: 'test-challenge',
-			timeout: 60000,
-			userVerification: 'preferred',
-			rpId: 'localhost'
-		};
-
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () => Promise.resolve(mockResponse)
-		});
-
+	it('generates challenge client-side and starts authentication with correct options', async () => {
+		mockGenerateChallenge.mockReturnValue('auth-challenge');
 		mockStartAuthentication.mockResolvedValue({ id: 'cred-xyz-789' });
 
 		const result = await verifyPasskey();
 
-		expect(globalThis.fetch).toHaveBeenCalledWith('/api/passkey/auth-options', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' }
+		expect(mockGenerateChallenge).toHaveBeenCalledTimes(1);
+		expect(mockStartAuthentication).toHaveBeenCalledWith({
+			optionsJSON: {
+				challenge: 'auth-challenge',
+				timeout: 60000,
+				userVerification: 'preferred',
+				rpId: 'localhost'
+			}
 		});
-
-		expect(mockStartAuthentication).toHaveBeenCalledWith({ optionsJSON: mockResponse });
 		expect(result).toEqual({ credentialId: 'cred-xyz-789' });
 	});
 
-	it('throws when API response is not ok', async () => {
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: false,
-			status: 403,
-			json: () => Promise.resolve({ error: 'Forbidden' })
+	it('uses window.location.hostname for rpId', async () => {
+		Object.defineProperty(globalThis, 'window', {
+			value: { location: { hostname: 'myapp.example.com' } },
+			writable: true,
+			configurable: true
 		});
+		mockGenerateChallenge.mockReturnValue('auth-challenge');
+		mockStartAuthentication.mockResolvedValue({ id: 'cred-prod' });
 
-		await expect(verifyPasskey()).rejects.toThrow(/Failed to verify passkey/);
-	});
+		await verifyPasskey();
 
-	it('throws when network request fails', async () => {
-		globalThis.fetch = vi.fn().mockRejectedValue(new Error('Failed to fetch'));
-
-		await expect(verifyPasskey()).rejects.toThrow(/Failed to fetch/);
+		const callArgs = mockStartAuthentication.mock.calls[0][0];
+		expect(callArgs.optionsJSON.rpId).toBe('myapp.example.com');
 	});
 
 	it('throws when startAuthentication rejects (user cancelled)', async () => {
-		const mockResponse = {
-			challenge: 'test-challenge',
-			timeout: 60000,
-			userVerification: 'preferred',
-			rpId: 'localhost'
-		};
-
-		globalThis.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-			json: () => Promise.resolve(mockResponse)
-		});
-
+		mockGenerateChallenge.mockReturnValue('auth-challenge');
 		mockStartAuthentication.mockRejectedValue(new Error('The ceremony was cancelled'));
 
 		await expect(verifyPasskey()).rejects.toThrow(/The ceremony was cancelled/);

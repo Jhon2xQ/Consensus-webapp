@@ -14,8 +14,8 @@ export type {
 
 export type {
 	PasskeyResult,
-	RegisterOptionsResponse,
-	AuthOptionsResponse
+	RegisterOptions,
+	AuthOptions
 } from './passkey';
 
 export type { SemaphoreIdentityResult } from './semaphore';

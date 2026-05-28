@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type {
 	PasskeyResult,
-	RegisterOptionsResponse,
-	AuthOptionsResponse
+	RegisterOptions,
+	AuthOptions
 } from './passkey';
 
 describe('passkey types', () => {
@@ -11,8 +11,8 @@ describe('passkey types', () => {
 		expect(result.credentialId).toBe('abc-123');
 	});
 
-	it('RegisterOptionsResponse contains all required WebAuthn fields', () => {
-		const response: RegisterOptionsResponse = {
+	it('RegisterOptions contains all required WebAuthn fields', () => {
+		const response: RegisterOptions = {
 			challenge: 'dGVzdC1jaGFsbGVuZ2U',
 			rp: { name: 'Consensus', id: 'localhost' },
 			user: { id: 'user-1', name: 'alice@example.com', displayName: 'Alice' },
@@ -35,8 +35,8 @@ describe('passkey types', () => {
 		expect(response.authenticatorSelection.residentKey).toBe('preferred');
 	});
 
-	it('AuthOptionsResponse contains challenge and rpId', () => {
-		const response: AuthOptionsResponse = {
+	it('AuthOptions contains challenge and rpId', () => {
+		const response: AuthOptions = {
 			challenge: 'dGVzdC1hdXRoLWNoYWxsZW5nZQ',
 			timeout: 60000,
 			userVerification: 'preferred',
@@ -48,8 +48,8 @@ describe('passkey types', () => {
 		expect(response.timeout).toBe(60000);
 	});
 
-	it('RegisterOptionsResponse works with different rp.id (production domain)', () => {
-		const response: RegisterOptionsResponse = {
+	it('RegisterOptions works with different rp.id (production domain)', () => {
+		const response: RegisterOptions = {
 			challenge: 'abc123',
 			rp: { name: 'Consensus', id: 'consensus.carmenio.com' },
 			user: { id: 'u-99', name: 'bob@test.com', displayName: 'Bob' },
@@ -67,8 +67,8 @@ describe('passkey types', () => {
 		expect(response.authenticatorSelection.userVerification).toBe('required');
 	});
 
-	it('RegisterOptionsResponse handles empty pubKeyCredParams', () => {
-		const response: RegisterOptionsResponse = {
+	it('RegisterOptions handles empty pubKeyCredParams', () => {
+		const response: RegisterOptions = {
 			challenge: 'xyz',
 			rp: { name: 'Test', id: 'test.com' },
 			user: { id: '1', name: 'a@b.com', displayName: 'A' },
@@ -84,8 +84,8 @@ describe('passkey types', () => {
 		expect(response.pubKeyCredParams).toHaveLength(0);
 	});
 
-	it('AuthOptionsResponse works with production rpId', () => {
-		const response: AuthOptionsResponse = {
+	it('AuthOptions works with production rpId', () => {
+		const response: AuthOptions = {
 			challenge: 'prod-challenge-value',
 			timeout: 120000,
 			userVerification: 'required',
