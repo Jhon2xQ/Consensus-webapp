@@ -15,8 +15,9 @@
 	let { team = null, errors = {}, submitting = false, oncancel }: Props = $props();
 
 	// Dialog content remounts on open/close, so $state initialization from prop is safe.
-	let name = $state(team?.name ?? '');
-	let avatarUrl = $state(team?.avatarUrl ?? '');
+	// IIFE closures capture initial values without state_referenced_locally warning.
+	let name = $state((() => team?.name ?? '')());
+	let avatarUrl = $state((() => team?.avatarUrl ?? '')());
 
 	let localErrors = $state<Record<string, string>>({});
 

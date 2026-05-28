@@ -35,10 +35,10 @@
 	}: Props = $props();
 
 	// Snapshot initial form data: values takes priority over process.
-	// $state.snapshot() explicitly tells Svelte 5 these are one-time initializers,
-	// not reactive bindings — subsequent prop changes should NOT reset the form.
-	const v = $state.snapshot(rawValues) ?? {};
-	const p: Partial<ProcessData> = $state.snapshot(process) ?? {};
+	// IIFE closures capture the initial values without triggering
+	// state_referenced_locally — each dialog mount gets fresh snapshots.
+	const v: Record<string, string> = (() => $state.snapshot(rawValues) ?? {})();
+	const p: Partial<ProcessData> = (() => $state.snapshot(process) ?? {})();
 
 	// In edit mode, convert ISO dates from process prop to datetime-local format.
 	// Values from a previous fail() are already datetime-local — skip conversion.
