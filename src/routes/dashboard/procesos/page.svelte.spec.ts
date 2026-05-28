@@ -48,7 +48,7 @@ function mockData(processes: ElectoralProcess[], error: string | null = null) {
 describe('Procesos +page.svelte', () => {
 	it('shows loading skeleton when data is undefined', async () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		render(ProcesosPage, { data: undefined as any });
+		render(ProcesosPage, { data: undefined as any, form: undefined as any });
 
 		// Header should still be visible
 		await expect.element(page.getByRole('heading', { level: 1 })).toHaveTextContent('Procesos Electorales');
@@ -66,7 +66,8 @@ describe('Procesos +page.svelte', () => {
 
 	it('shows error state with message and retry button', async () => {
 		render(ProcesosPage, {
-			data: mockData([], 'Error al cargar los procesos. Intentalo de nuevo más tarde.')
+			data: mockData([], 'Error al cargar los procesos. Intentalo de nuevo más tarde.'),
+			form: undefined as any
 		});
 
 		// Error message visible
@@ -82,7 +83,7 @@ describe('Procesos +page.svelte', () => {
 	});
 
 	it('shows empty state with create process link', async () => {
-		render(ProcesosPage, { data: mockData([]) });
+		render(ProcesosPage, { data: mockData([]), form: undefined as any });
 
 		// Empty state text
 		await expect.element(page.getByText('No hay procesos electorales')).toBeInTheDocument();
@@ -101,7 +102,8 @@ describe('Procesos +page.svelte', () => {
 
 	it('renders single-column table with process cards when data has processes', async () => {
 		render(ProcesosPage, {
-			data: mockData([mockProcess1, mockProcess2])
+			data: mockData([mockProcess1, mockProcess2]),
+			form: undefined as any
 		});
 
 		// Table element exists
@@ -135,7 +137,8 @@ describe('Procesos +page.svelte', () => {
 
 	it('renders correct action button hrefs in process cards', async () => {
 		render(ProcesosPage, {
-			data: mockData([mockProcess1])
+			data: mockData([mockProcess1]),
+			form: undefined as any
 		});
 
 		// "Ver equipos" button links to /dashboard/equipos?processId={id}
@@ -159,7 +162,8 @@ describe('Procesos +page.svelte', () => {
 
 	it('shows date ranges and results in process cards', async () => {
 		render(ProcesosPage, {
-			data: mockData([mockProcess1])
+			data: mockData([mockProcess1]),
+			form: undefined as any
 		});
 
 		// Date labels visible (use nth(1) for "Compromiso" to skip the status badge)
@@ -177,7 +181,8 @@ describe('Procesos +page.svelte', () => {
 			description: null
 		};
 		render(ProcesosPage, {
-			data: mockData([votingProcess])
+			data: mockData([votingProcess]),
+			form: undefined as any
 		});
 
 		// VOTING status translates to 'Votación' badge
@@ -193,7 +198,8 @@ describe('Procesos +page.svelte', () => {
 	it('does not render description when process has null description', async () => {
 		// mockProcess2 has description: null
 		render(ProcesosPage, {
-			data: mockData([mockProcess2])
+			data: mockData([mockProcess2]),
+			form: undefined as any
 		});
 
 		// Process name visible

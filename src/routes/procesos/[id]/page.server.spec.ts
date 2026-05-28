@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { load } from './+page.server';
+import type { ElectoralProcess } from '$lib/types/electoral-process';
+import type { Team } from '$lib/types/team';
+import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
+
+type LoadResult = {
+	process: ElectoralProcess;
+	teams: Team[];
+	enrollmentSummary: EnrollmentSummary | null;
+	teamsError: boolean;
+	enrollmentError: boolean;
+	userSub: string | null;
+	userEnrollment: Enrollment | null;
+};
 
 // Mocks
 const mockGetPublicProcessById = vi.hoisted(() => vi.fn());
@@ -65,19 +78,19 @@ describe('+page.server.ts load', () => {
 	});
 
 	it('includes userSub from locals.user.sub', async () => {
-		const result = await load({
+		const result = (await load({
 			params: { id: 'proc-1' },
 			locals: mockLocals
-		} as any);
+		} as any)) as LoadResult;
 
 		expect(result.userSub).toBe('user-abc-123');
 	});
 
 	it('returns null userSub when user is not authenticated', async () => {
-		const result = await load({
+		const result = (await load({
 			params: { id: 'proc-1' },
 			locals: { logtoClient: {} }
-		} as any);
+		} as any)) as LoadResult;
 
 		expect(result.userSub).toBeNull();
 	});
@@ -93,20 +106,20 @@ describe('+page.server.ts load', () => {
 		};
 		mockGetUserEnrollment.mockResolvedValue(mockEnrollment);
 
-		const result = await load({
+		const result = (await load({
 			params: { id: 'proc-1' },
 			locals: mockLocals
-		} as any);
+		} as any)) as LoadResult;
 
 		expect(mockGetUserEnrollment).toHaveBeenCalledWith(mockLocals, 'proc-1', 'user-abc-123');
 		expect(result.userEnrollment).toEqual(mockEnrollment);
 	});
 
 	it('returns null userEnrollment when user is not authenticated', async () => {
-		const result = await load({
+		const result = (await load({
 			params: { id: 'proc-1' },
 			locals: { logtoClient: {} }
-		} as any);
+		} as any)) as LoadResult;
 
 		expect(mockGetUserEnrollment).not.toHaveBeenCalled();
 		expect(result.userEnrollment).toBeNull();
@@ -115,19 +128,19 @@ describe('+page.server.ts load', () => {
 	it('returns null userEnrollment when getUserEnrollment throws', async () => {
 		mockGetUserEnrollment.mockRejectedValue(new Error('API error'));
 
-		const result = await load({
+		const result = (await load({
 			params: { id: 'proc-1' },
 			locals: mockLocals
-		} as any);
+		} as any)) as LoadResult;
 
 		expect(result.userEnrollment).toBeNull();
 	});
 
 	it('still returns existing fields (process, teams, enrollmentSummary)', async () => {
-		const result = await load({
+		const result = (await load({
 			params: { id: 'proc-1' },
 			locals: mockLocals
-		} as any);
+		} as any)) as LoadResult;
 
 		expect(result.process).toEqual(mockProcess);
 		expect(result.teams).toEqual([]);
