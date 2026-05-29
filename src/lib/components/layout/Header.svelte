@@ -161,7 +161,7 @@
 										class="text-xs text-brand-black flex items-center gap-1.5 hover:text-brand-red transition-colors disabled:opacity-50"
 									>
 										<Shield class="size-3.5" />
-										{registering ? 'Registrando...' : 'Registrar dispositivo'}
+										{registering ? 'Registrando...' : 'Registrar credencial'}
 									</button>
 								{:else if passkeyStatus === 'registered'}
 									<button
