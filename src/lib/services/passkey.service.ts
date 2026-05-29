@@ -29,7 +29,7 @@ export async function registerPasskey(
 	const options: RegisterOptions = {
 		challenge,
 		rp: { name: 'Consensus', id: rpId },
-		user: { id: userId, name: userName, displayName: userName },
+		user: { id: userId, name: 'CONSENSUS', displayName: 'CONSENSUS' },
 		pubKeyCredParams: [
 			{ type: 'public-key', alg: -7 },
 			{ type: 'public-key', alg: -257 }

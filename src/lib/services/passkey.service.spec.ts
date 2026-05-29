@@ -64,7 +64,7 @@ describe('registerPasskey', () => {
 			optionsJSON: {
 				challenge: 'test-challenge',
 				rp: { name: 'Consensus', id: 'localhost' },
-				user: { id: 'user-1', name: 'test@example.com', displayName: 'test@example.com' },
+				user: { id: 'user-1', name: 'CONSENSUS', displayName: 'CONSENSUS' },
 				pubKeyCredParams: [
 					{ type: 'public-key', alg: -7 },
 					{ type: 'public-key', alg: -257 }
