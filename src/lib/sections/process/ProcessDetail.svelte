@@ -16,7 +16,6 @@
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
 	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
-	import { getPasskeyStatus, isPasskeyVerified, getCredentialId } from '$lib/services/passkey-state.svelte';
 	import { verifyPasskey } from '$lib/services/passkey.service';
 	import { deriveIdentity } from '$lib/services/semaphore.service';
 
@@ -39,10 +38,6 @@
 		userSub = null,
 		userEnrollment = null
 	}: Props = $props();
-
-	// Passkey reactive state
-	let passkeyVerified = $derived(isPasskeyVerified());
-	let passkeyStatus = $derived(getPasskeyStatus());
 
 	// Action state
 	let submitting = $state<'none' | 'commitment' | 'vote'>('none');
@@ -106,20 +101,11 @@
 		actionError = null;
 
 		try {
-			// Verify passkey if not already verified
-			if (!passkeyVerified) {
-				await verifyPasskey();
-			}
-
-			const credentialId = getCredentialId();
-			if (!credentialId) {
-				actionError = 'Registrá un passkey primero';
-				submitting = 'none';
-				return;
-			}
+			// Verify passkey — always shows modal/QR, returns credentialId fresh
+			const passkeyResult = await verifyPasskey();
 
 			// Derive identity
-			const identity = await deriveIdentity(userSub, credentialId, process.id);
+			const identity = await deriveIdentity(userSub, passkeyResult.credentialId, process.id);
 
 			// POST commitment
 			const response = await fetch(`/api/public/processes/${process.id}/commitments`, {
@@ -151,20 +137,11 @@
 		actionError = null;
 
 		try {
-			// Verify passkey if not already verified
-			if (!passkeyVerified) {
-				await verifyPasskey();
-			}
-
-			const credentialId = getCredentialId();
-			if (!credentialId) {
-				actionError = 'Verificá tu passkey primero';
-				submitting = 'none';
-				return;
-			}
+			// Verify passkey — always shows modal/QR, returns credentialId fresh
+			const passkeyResult = await verifyPasskey();
 
 			// Derive identity
-			const identity = await deriveIdentity(userSub, credentialId, process.id);
+			const identity = await deriveIdentity(userSub, passkeyResult.credentialId, process.id);
 
 			// POST vote
 			const response = await fetch(`/api/public/processes/${process.id}/votes`, {
