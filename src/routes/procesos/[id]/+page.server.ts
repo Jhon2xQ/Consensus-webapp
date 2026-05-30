@@ -1,10 +1,10 @@
-import { error } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { getPublicProcessById } from '$lib/server/public-process.service';
 import { getPublicTeamsForProcess } from '$lib/server/team.service';
 import { getPublicEnrollmentSummary } from '$lib/server/public-enrollment.service';
-import { getUserEnrollment } from '$lib/server/enrollment.service';
+import { getUserEnrollment, updateCommitment } from '$lib/server/enrollment.service';
 import { ApiError } from '$lib/server/api';
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad, Actions } from './$types';
 import type { Team } from '$lib/types/team';
 import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
 
@@ -67,3 +67,39 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		userEnrollment
 	};
 };
+
+export const actions = {
+	'update-commitment': async ({ params, locals, request }) => {
+		const processId = params.id;
+		const formData = await request.formData();
+		const commitment = (formData.get('commitment') as string)?.trim();
+
+		if (!commitment) {
+			return fail(400, { error: 'El compromiso es obligatorio' });
+		}
+
+		// Validate process is in COMMITMENT phase before allowing update
+		try {
+			const process = await getPublicProcessById(processId);
+			if (process.estatus !== 'COMMITMENT') {
+				return fail(400, { error: 'El proceso no está en fase de compromiso' });
+			}
+		} catch (err) {
+			if (err instanceof ApiError && err.status === 404) {
+				return fail(404, { error: 'Proceso no encontrado' });
+			}
+			throw err;
+		}
+
+		try {
+			await updateCommitment(locals, processId, commitment);
+		} catch (err) {
+			if (err instanceof ApiError) {
+				return fail(err.status, { error: err.message });
+			}
+			throw err;
+		}
+
+		throw redirect(303, '/procesos/' + processId);
+	}
+} satisfies Actions;
