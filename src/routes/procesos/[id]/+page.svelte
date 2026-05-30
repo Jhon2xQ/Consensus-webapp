@@ -14,7 +14,7 @@
 		userEnrollment: Enrollment | null;
 	};
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form?: { error?: string } | null } = $props();
 </script>
 
 <main>
@@ -26,5 +26,6 @@
 		enrollmentError={data.enrollmentError}
 		userSub={data.userSub}
 		userEnrollment={data.userEnrollment}
+		formError={form?.error ?? null}
 	/>
 </main>

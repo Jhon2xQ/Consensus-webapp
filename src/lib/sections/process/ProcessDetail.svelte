@@ -27,6 +27,7 @@
 		enrollmentError: boolean;
 		userSub: string | null;
 		userEnrollment: Enrollment | null;
+		formError?: string | null;
 	};
 
 	let {
@@ -36,12 +37,15 @@
 		teamsError = false,
 		enrollmentError = false,
 		userSub = null,
-		userEnrollment = null
+		userEnrollment = null,
+		formError = null
 	}: Props = $props();
 
 	// Action state
 	let submitting = $state<'none' | 'commitment' | 'vote'>('none');
 	let actionError = $state<string | null>(null);
+	let commitmentForm = $state<HTMLFormElement | null>(null);
+	let pendingCommitment = $state('');
 
 	// Process phase checks
 	let isCommitmentPhase = $derived(process.estatus === 'COMMITMENT');
@@ -107,19 +111,9 @@
 			// Derive identity
 			const identity = await deriveIdentity(userSub, passkeyResult.credentialId, process.id);
 
-			// POST commitment
-			const response = await fetch(`/api/public/processes/${process.id}/commitments`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					commitment: identity.commitment
-				})
-			});
-
-			if (!response.ok) {
-				const data = await response.json().catch(() => null);
-				throw new Error(data?.message ?? 'Error al enviar compromiso');
-			}
+			// Set commitment value and submit the hidden form
+			pendingCommitment = identity.commitment;
+			commitmentForm?.requestSubmit();
 		} catch (err) {
 			actionError = err instanceof Error ? err.message : 'Error al enviar compromiso';
 		} finally {
@@ -326,6 +320,16 @@
 
 		<!-- Action buttons -->
 		{#if isCommitmentPhase || isVotingPhase}
+			<!-- Hidden form for commitment submission via SvelteKit form action -->
+			<form
+				bind:this={commitmentForm}
+				method="POST"
+				action="?/update-commitment"
+				class="hidden"
+			>
+				<input type="hidden" name="commitment" bind:value={pendingCommitment} />
+			</form>
+
 			<div class="mt-6 space-y-3">
 				{#if isCommitmentPhase}
 					{#if hasCommitted}
@@ -379,9 +383,9 @@
 					</p>
 				{/if}
 
-				{#if actionError}
-					<p class="text-xs text-red-600 text-center">{actionError}</p>
-				{/if}
+			{#if formError || actionError}
+				<p class="text-xs text-red-600 text-center">{formError ?? actionError}</p>
+			{/if}
 			</div>
 		{/if}
 	</div>

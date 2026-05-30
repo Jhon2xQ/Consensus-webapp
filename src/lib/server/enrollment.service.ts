@@ -65,3 +65,20 @@ export async function getUserEnrollment(
 	const enrollments = await getEnrollments(locals, processId);
 	return enrollments.find((e) => e.userId === userId) ?? null;
 }
+
+/**
+ * Update (set or change) the commitment for a user's enrollment.
+ * Calls PUT /api/private/processes/{processId}/enrollments
+ */
+export async function updateCommitment(
+	locals: App.Locals,
+	processId: string,
+	commitment: string
+): Promise<Enrollment> {
+	const response = await fetchBackendJson<ApiResponse<Enrollment>>(
+		locals,
+		`/api/private/processes/${processId}/enrollments`,
+		{ method: 'PUT', body: { commitment } }
+	);
+	return response.data;
+}
