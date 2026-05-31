@@ -16,6 +16,7 @@
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
 	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
+	import { tick } from 'svelte';
 	import { verifyPasskey } from '$lib/services/passkey.service';
 	import { deriveIdentity } from '$lib/services/semaphore.service';
 
@@ -113,6 +114,7 @@
 
 			// Set commitment value and submit the hidden form
 			pendingCommitment = identity.commitment;
+			await tick();
 			commitmentForm?.requestSubmit();
 		} catch (err) {
 			actionError = err instanceof Error ? err.message : 'Error al enviar compromiso';
