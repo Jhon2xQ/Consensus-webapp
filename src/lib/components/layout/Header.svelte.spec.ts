@@ -14,26 +14,10 @@ vi.mock('$app/state', () => ({
 // Mock passkey services
 const mockSupportsPasskeys = vi.hoisted(() => vi.fn(() => true));
 const mockRegisterPasskey = vi.hoisted(() => vi.fn());
-const mockVerifyPasskey = vi.hoisted(() => vi.fn());
 
 vi.mock('$lib/services/passkey.service', () => ({
 	supportsPasskeys: mockSupportsPasskeys,
-	registerPasskey: mockRegisterPasskey,
-	verifyPasskey: mockVerifyPasskey
-}));
-
-let mockPasskeyStatus = 'none';
-let mockPasskeyVerified = false;
-let mockPasskeyCredentialId: string | null = null;
-
-vi.mock('$lib/services/passkey-state.svelte.ts', () => ({
-	getPasskeyStatus: () => mockPasskeyStatus,
-	isPasskeyVerified: () => mockPasskeyVerified,
-	getCredentialId: () => mockPasskeyCredentialId,
-	setCredentialId: vi.fn(),
-	setStatus: vi.fn(),
-	setError: vi.fn(),
-	resetPasskeyState: vi.fn()
+	registerPasskey: mockRegisterPasskey
 }));
 
 describe('Header.svelte', () => {
@@ -134,9 +118,6 @@ describe('Header.svelte', () => {
 
 		describe('passkey section', () => {
 			beforeEach(() => {
-				mockPasskeyStatus = 'none';
-				mockPasskeyVerified = false;
-				mockPasskeyCredentialId = null;
 				mockSupportsPasskeys.mockReturnValue(true);
 			});
 
@@ -147,29 +128,11 @@ describe('Header.svelte', () => {
 				await expect.element(page.getByText('Dispositivo', { exact: true })).toBeInTheDocument();
 			});
 
-			it('shows "Registrar dispositivo" button when status is none', async () => {
-				mockPasskeyStatus = 'none';
+			it('shows "Registrar credencial" button when WebAuthn is supported', async () => {
 				render(Header);
 				const trigger = page.getByRole('button', { name: 'María García' });
 				await trigger.click();
-				await expect.element(page.getByText('Registrar dispositivo')).toBeInTheDocument();
-			});
-
-			it('shows "Verificar dispositivo" button when status is registered', async () => {
-				mockPasskeyStatus = 'registered';
-				render(Header);
-				const trigger = page.getByRole('button', { name: 'María García' });
-				await trigger.click();
-				await expect.element(page.getByText('Verificar dispositivo')).toBeInTheDocument();
-			});
-
-			it('shows "Dispositivo verificado" when passkey is verified', async () => {
-				mockPasskeyStatus = 'verified';
-				mockPasskeyVerified = true;
-				render(Header);
-				const trigger = page.getByRole('button', { name: 'María García' });
-				await trigger.click();
-				await expect.element(page.getByText('Dispositivo verificado')).toBeInTheDocument();
+				await expect.element(page.getByText('Registrar credencial')).toBeInTheDocument();
 			});
 
 			it('shows unsupported browser message when WebAuthn is not available', async () => {

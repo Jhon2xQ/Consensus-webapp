@@ -1,10 +1,6 @@
 import { Identity } from '@semaphore-protocol/core';
 import type { SemaphoreIdentityResult } from '$lib/types/semaphore';
 
-const FIELD_PRIME = BigInt(
-	'21888242871839275222246405745257275088548364400416034343698204186575808495617'
-);
-
 /**
  * Derive a deterministic Semaphore identity from userId + credentialId + processId.
  *

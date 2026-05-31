@@ -7,20 +7,6 @@ import type { Team } from '$lib/types/team';
 import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
 
 // Mock passkey services
-let mockPasskeyStatus = 'none';
-let mockPasskeyVerified = false;
-let mockPasskeyCredentialId: string | null = null;
-
-vi.mock('$lib/services/passkey-state.svelte.ts', () => ({
-	getPasskeyStatus: () => mockPasskeyStatus,
-	isPasskeyVerified: () => mockPasskeyVerified,
-	getCredentialId: () => mockPasskeyCredentialId,
-	setCredentialId: vi.fn(),
-	setStatus: vi.fn(),
-	setError: vi.fn(),
-	resetPasskeyState: vi.fn()
-}));
-
 const mockVerifyPasskey = vi.hoisted(() => vi.fn());
 const mockDeriveIdentity = vi.hoisted(() => vi.fn());
 
@@ -204,9 +190,6 @@ describe('ProcessDetail.svelte', () => {
 
 	describe('action buttons', () => {
 		beforeEach(() => {
-			mockPasskeyStatus = 'none';
-			mockPasskeyVerified = false;
-			mockPasskeyCredentialId = null;
 			vi.clearAllMocks();
 		});
 
