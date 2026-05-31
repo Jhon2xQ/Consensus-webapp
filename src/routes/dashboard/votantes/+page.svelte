@@ -24,8 +24,14 @@
 	import { Plus, Trash2, Users } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { toast } from 'svelte-sonner';
 
 	let { data, form } = $props();
+
+	$effect(() => {
+		const err = form?.errors?._form;
+		if (err) toast.error(err);
+	});
 
 	let createOpen = $state(false);
 	let deleteOpen = $state(false);

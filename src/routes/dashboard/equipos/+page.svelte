@@ -23,8 +23,14 @@
 	import { Plus, Pencil, Trash2, Users } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { toast } from 'svelte-sonner';
 
 	let { data, form } = $props();
+
+	$effect(() => {
+		const err = form?.errors?._form;
+		if (err) toast.error(err);
+	});
 
 	let createOpen = $state(false);
 	let editOpen = $state(false);
@@ -133,7 +139,7 @@
 						<TableRow>
 							<TableHead>Nombre</TableHead>
 							<TableHead>Avatar</TableHead>
-							<TableHead class="w-[120px] text-right">Acciones</TableHead>
+							<TableHead class="w-30 text-right">Acciones</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
