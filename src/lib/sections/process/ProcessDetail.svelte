@@ -28,7 +28,6 @@
 		enrollmentError: boolean;
 		userSub: string | null;
 		userEnrollment: Enrollment | null;
-		formError?: string | null;
 	};
 
 	let {
@@ -38,8 +37,7 @@
 		teamsError = false,
 		enrollmentError = false,
 		userSub = null,
-		userEnrollment = null,
-		formError = null
+		userEnrollment = null
 	}: Props = $props();
 
 	// Action state
@@ -385,8 +383,8 @@
 					</p>
 				{/if}
 
-			{#if formError || actionError}
-				<p class="text-xs text-red-600 text-center">{formError ?? actionError}</p>
+			{#if actionError}
+				<p class="text-xs text-red-600 text-center">{actionError}</p>
 			{/if}
 			</div>
 		{/if}

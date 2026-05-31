@@ -3,6 +3,7 @@
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
 	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
+	import { toast } from 'svelte-sonner';
 
 	type PageData = {
 		process: ElectoralProcess;
@@ -15,6 +16,10 @@
 	};
 
 	let { data, form }: { data: PageData; form?: { error?: string } | null } = $props();
+
+	$effect(() => {
+		if (form?.error) toast.error(form.error);
+	});
 </script>
 
 <main>
@@ -26,6 +31,5 @@
 		enrollmentError={data.enrollmentError}
 		userSub={data.userSub}
 		userEnrollment={data.userEnrollment}
-		formError={form?.error ?? null}
 	/>
 </main>

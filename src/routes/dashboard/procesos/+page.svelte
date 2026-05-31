@@ -19,6 +19,7 @@
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { toast } from 'svelte-sonner';
 
 	let { data, form } = $props();
 
@@ -27,7 +28,9 @@
 	const rawSize = $derived(Number(page.url.searchParams.get('size') ?? '5'));
 	const currentSize = $derived(rawSize === 10 ? 10 : rawSize === 20 ? 20 : 5);
 
-	const successMessage = $derived(page.url.searchParams.get('success'));
+	$effect(() => {
+		if (form?.error) toast.error(form.error);
+	});
 
 	let deleteTarget = $state<ElectoralProcess | null>(null);
 	let showDeleteDialog = $state(false);
@@ -77,20 +80,6 @@
 			</Button>
 		</div>
 	</div>
-
-	<!-- Form action errors -->
-	{#if form?.error}
-		<div class="p-4 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive text-sm">
-			{form.error}
-		</div>
-	{/if}
-
-	<!-- Action success message (from redirect query param) -->
-	{#if successMessage}
-		<div class="p-4 rounded-lg border border-green-200 bg-green-50 text-green-700 text-sm">
-			{successMessage}
-		</div>
-	{/if}
 
 	<!-- Loading skeleton -->
 	{#if !data}
