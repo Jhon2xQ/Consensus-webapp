@@ -42,19 +42,20 @@ beforeEach(() => {
 // delete action
 // ============================================================
 describe('delete action', () => {
-	it('calls deleteProcess with correct id and returns success', async () => {
+	it('calls deleteProcess with correct id and redirects with success', async () => {
 		mockDeleteProcess.mockResolvedValue(undefined);
 
 		const formData = createFormData({ id: 'proc-123' });
 		const request = createRequest(formData);
 
-		const result = await actions.delete({
-			request,
-			locals: mockLocals
-		} as any);
+		await expect(
+			actions.delete({ request, locals: mockLocals } as any)
+		).rejects.toMatchObject({
+			status: 303,
+			location: '/dashboard/procesos?success=Proceso+eliminado+exitosamente'
+		});
 
 		expect(mockDeleteProcess).toHaveBeenCalledWith(mockLocals, 'proc-123');
-		expect(result).toEqual({ success: true });
 	});
 
 	it('returns fail(400) when id is missing from formData', async () => {
