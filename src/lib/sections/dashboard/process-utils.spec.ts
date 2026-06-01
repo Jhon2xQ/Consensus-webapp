@@ -12,24 +12,21 @@ import {
 	STATUS_COLORS
 } from './process-utils';
 import type { ElectoralProcessStatus } from '$lib/types/electoral-process';
+import { PROCESS_STATUSES } from '$lib/types/electoral-process';
 
 describe('process-utils', () => {
 	describe('getStatusLabel', () => {
 		it('returns Spanish label for each status', () => {
-			expect(getStatusLabel('NONE')).toBe('Inactivo');
+			expect(getStatusLabel('OPEN')).toBe('Abierto');
 			expect(getStatusLabel('COMMITMENT')).toBe('Compromiso');
+			expect(getStatusLabel('SEALED')).toBe('Sellado');
 			expect(getStatusLabel('VOTING')).toBe('Votación');
+			expect(getStatusLabel('COUNTING')).toBe('Conteo');
 			expect(getStatusLabel('CLOSED')).toBe('Cerrado');
 		});
 
 		it('covers all statuses defined in the type', () => {
-			const allStatuses: ElectoralProcessStatus[] = [
-				'NONE',
-				'COMMITMENT',
-				'VOTING',
-				'CLOSED'
-			];
-			for (const status of allStatuses) {
+			for (const status of PROCESS_STATUSES) {
 				expect(getStatusLabel(status)).toBeTruthy();
 			}
 		});
@@ -37,13 +34,7 @@ describe('process-utils', () => {
 
 	describe('getStatusColor', () => {
 		it('returns a color string for each status', () => {
-			const allStatuses: ElectoralProcessStatus[] = [
-				'NONE',
-				'COMMITMENT',
-				'VOTING',
-				'CLOSED'
-			];
-			for (const status of allStatuses) {
+			for (const status of PROCESS_STATUSES) {
 				const color = getStatusColor(status);
 				expect(color).toBeTruthy();
 				expect(typeof color).toBe('string');

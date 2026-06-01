@@ -1,18 +1,11 @@
 import type { ElectoralProcessStatus } from '$lib/types/electoral-process';
+import { STATUS_LABELS, STATUS_COLORS } from '$lib/types/process-status';
 
-export const STATUS_LABELS: Record<ElectoralProcessStatus, string> = {
-	NONE: 'Inactivo',
-	COMMITMENT: 'Compromiso',
-	VOTING: 'Votación',
-	CLOSED: 'Cerrado'
-};
+// Re-export the central status maps so existing imports from `$lib/sections/dashboard/process-utils`
+// keep working after the maps moved to `$lib/types/process-status`.
+export { STATUS_LABELS, STATUS_COLORS, isActiveProcess } from '$lib/types/process-status';
 
-export const STATUS_COLORS: Record<ElectoralProcessStatus, string> = {
-	NONE: 'bg-gray-100 text-gray-600 border-gray-200',
-	COMMITMENT: 'bg-blue-50 text-blue-700 border-blue-200',
-	VOTING: 'bg-green-50 text-green-700 border-green-200',
-	CLOSED: 'bg-red-50 text-red-700 border-red-200'
-};
+const FALLBACK_COLOR = 'bg-gray-100 text-gray-600 border-gray-200';
 
 export function parseLocalDate(iso: string): Date {
 	// Handle both ISO-8601 (e.g., "2026-05-25T14:30:00Z") and date-only ("2026-05-25")
@@ -66,5 +59,5 @@ export function getStatusLabel(status: ElectoralProcessStatus): string {
 }
 
 export function getStatusColor(status: ElectoralProcessStatus): string {
-	return STATUS_COLORS[status] ?? STATUS_COLORS.NONE;
+	return STATUS_COLORS[status] ?? FALLBACK_COLOR;
 }

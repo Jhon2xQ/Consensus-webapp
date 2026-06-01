@@ -1,8 +1,24 @@
 export type ElectoralProcessStatus =
-	| 'NONE'
+	| 'OPEN'
 	| 'COMMITMENT'
+	| 'SEALED'
 	| 'VOTING'
+	| 'COUNTING'
 	| 'CLOSED';
+
+export const PROCESS_STATUSES: readonly ElectoralProcessStatus[] = [
+	'OPEN',
+	'COMMITMENT',
+	'SEALED',
+	'VOTING',
+	'COUNTING',
+	'CLOSED'
+] as const;
+
+export type ProcessState = {
+	processId: string;
+	state: ElectoralProcessStatus;
+};
 
 export type ElectoralProcess = {
 	id: string;

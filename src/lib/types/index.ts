@@ -1,7 +1,10 @@
 export type {
 	ElectoralProcess,
-	ElectoralProcessStatus
+	ElectoralProcessStatus,
+	ProcessState
 } from './electoral-process';
+
+export { PROCESS_STATUSES } from './electoral-process';
 
 export type { Team, CreateTeamBody, UpdateTeamBody } from './team';
 export type { Enrollment, CreateEnrollmentBody, EnrollmentSummary } from './enrollment';
