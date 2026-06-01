@@ -46,16 +46,20 @@
 	]);
 
 	const statusOrder: ElectoralProcessStatus[] = [
+		'OPEN',
 		'COMMITMENT',
+		'SEALED',
 		'VOTING',
-		'CLOSED',
-		'NONE'
+		'COUNTING',
+		'CLOSED'
 	];
 
 	const statusBarColors: Record<ElectoralProcessStatus, string> = {
-		NONE: 'bg-gray-300',
+		OPEN: 'bg-amber-500',
 		COMMITMENT: 'bg-blue-500',
+		SEALED: 'bg-purple-500',
 		VOTING: 'bg-green-500',
+		COUNTING: 'bg-orange-500',
 		CLOSED: 'bg-red-400'
 	};
 

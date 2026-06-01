@@ -1,4 +1,6 @@
 import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
+import { PROCESS_STATUSES } from '$lib/types/electoral-process';
+import { isActiveProcess } from '$lib/types/process-status';
 import type { Team } from '$lib/types/team';
 import type { Enrollment } from '$lib/types/enrollment';
 
@@ -6,12 +8,9 @@ import type { Enrollment } from '$lib/types/enrollment';
  * Count processes by status.
  */
 export function getStatusDistribution(processes: ElectoralProcess[]): Record<ElectoralProcessStatus, number> {
-	const distribution: Record<ElectoralProcessStatus, number> = {
-		NONE: 0,
-		COMMITMENT: 0,
-		VOTING: 0,
-		CLOSED: 0
-	};
+	const distribution = Object.fromEntries(
+		PROCESS_STATUSES.map((status) => [status, 0])
+	) as Record<ElectoralProcessStatus, number>;
 
 	for (const process of processes) {
 		distribution[process.estatus]++;
@@ -46,10 +45,10 @@ export function getTeamsPerProcess(teams: Team[]): Map<string, number> {
 }
 
 /**
- * Count active processes (COMMITMENT or VOTING).
+ * Count active processes (any state except CLOSED).
  */
 export function getActiveProcessCount(processes: ElectoralProcess[]): number {
-	return processes.filter((p) => p.estatus === 'COMMITMENT' || p.estatus === 'VOTING').length;
+	return processes.filter((p) => isActiveProcess(p.estatus)).length;
 }
 
 /**

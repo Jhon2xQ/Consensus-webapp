@@ -40,6 +40,48 @@ const mockProcess2: ElectoralProcess = {
 	createdBy: 'user-1'
 };
 
+const mockProcessOpen: ElectoralProcess = {
+	id: '3',
+	name: 'Proceso Abierto 2026',
+	scope: 'Nacional',
+	description: 'Inscripciones abiertas',
+	estatus: 'OPEN',
+	commitmentStart: '2026-08-01',
+	commitmentEnd: '2026-09-01',
+	votingStart: '2026-10-01',
+	votingEnd: '2026-10-05',
+	results: '2026-10-10',
+	createdBy: 'user-1'
+};
+
+const mockProcessSealed: ElectoralProcess = {
+	id: '4',
+	name: 'Proceso Sellado 2026',
+	scope: 'Municipal',
+	description: 'En sellado',
+	estatus: 'SEALED',
+	commitmentStart: '2026-04-01',
+	commitmentEnd: '2026-05-15',
+	votingStart: '2026-06-01',
+	votingEnd: '2026-06-05',
+	results: '2026-06-10',
+	createdBy: 'user-1'
+};
+
+const mockProcessCounting: ElectoralProcess = {
+	id: '5',
+	name: 'Proceso en Conteo 2026',
+	scope: 'Provincial',
+	description: 'Contando votos',
+	estatus: 'COUNTING',
+	commitmentStart: '2026-03-01',
+	commitmentEnd: '2026-04-15',
+	votingStart: '2026-05-01',
+	votingEnd: '2026-05-15',
+	results: '2026-05-20',
+	createdBy: 'user-1'
+};
+
 function mockData(processes: ElectoralProcess[], error: string | null = null) {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return { processes, error, user: undefined } as any;
@@ -193,6 +235,30 @@ describe('Procesos +page.svelte', () => {
 
 		// No description should be rendered (it's null)
 		await expect.element(page.getByText('Referendo Provincial 2026')).toBeInTheDocument();
+	});
+
+	it('renders "Abierto" badge for OPEN process', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessOpen]),
+			form: undefined as any
+		});
+		await expect.element(page.getByText('Abierto', { exact: true })).toBeInTheDocument();
+	});
+
+	it('renders "Sellado" badge for SEALED process', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealed]),
+			form: undefined as any
+		});
+		await expect.element(page.getByText('Sellado', { exact: true })).toBeInTheDocument();
+	});
+
+	it('renders "Conteo" badge for COUNTING process', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessCounting]),
+			form: undefined as any
+		});
+		await expect.element(page.getByText('Conteo', { exact: true })).toBeInTheDocument();
 	});
 
 	it('does not render description when process has null description', async () => {

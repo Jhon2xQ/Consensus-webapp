@@ -6,6 +6,7 @@
 	import { cn } from '$lib/utils.js';
 	import { Calendar, Vote, Trophy, ArrowRight } from '@lucide/svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process.js';
+	import { STATUS_LABELS, STATUS_COLORS, isActiveProcess } from '$lib/types/process-status.js';
 
 	type Props = {
 		processes: ElectoralProcess[];
@@ -32,13 +33,11 @@
 	let hasPrevPage = $derived(page > 1);
 
 	function getStatusLabel(estatus: ElectoralProcessStatus): string {
-		return estatus === 'CLOSED' ? 'CERRADO' : 'ABIERTO';
+		return STATUS_LABELS[estatus] ?? estatus;
 	}
 
 	function getStatusStyle(estatus: ElectoralProcessStatus): string {
-		return estatus === 'CLOSED'
-			? 'bg-brand-gray-200 text-brand-gray-800 border-brand-gray-300'
-			: 'bg-red-50 text-brand-red border-red-200';
+		return STATUS_COLORS[estatus] ?? 'bg-brand-gray-200 text-brand-gray-800 border-brand-gray-300';
 	}
 
 	function formatDateTime(iso: string): string {
@@ -87,7 +86,7 @@
 			<!-- Process Cards -->
 			<div class="flex flex-col gap-4">
 				{#each processes as process (process.id)}
-					{@const isOpen = process.estatus !== 'CLOSED'}
+					{@const isOpen = isActiveProcess(process.estatus)}
 					<Card class={cn('overflow-hidden', isOpen && 'ring-2 ring-red-200 border-red-300')}>
 						<CardContent class="p-0">
 							<div class="grid grid-cols-1 md:grid-cols-[1.25fr_1fr_1fr_1fr_1fr]">

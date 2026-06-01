@@ -8,7 +8,8 @@ import {
 	getMaxStatusCount,
 	getProcessNameById
 } from './dashboard-utils';
-import type { ElectoralProcess } from '$lib/types/electoral-process';
+import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
+import { PROCESS_STATUSES } from '$lib/types/electoral-process';
 import type { Team } from '$lib/types/team';
 import type { Enrollment } from '$lib/types/enrollment';
 
@@ -86,14 +87,37 @@ describe('dashboard-utils', () => {
 			expect(dist.COMMITMENT).toBe(2);
 			expect(dist.VOTING).toBe(1);
 			expect(dist.CLOSED).toBe(1);
-			expect(dist.NONE).toBe(0);
+			expect(dist.OPEN).toBe(0);
+			expect(dist.SEALED).toBe(0);
+			expect(dist.COUNTING).toBe(0);
 		});
 
 		it('returns all zeros for empty array', () => {
 			const dist = getStatusDistribution([]);
-			expect(dist.COMMITMENT).toBe(0);
-			expect(dist.VOTING).toBe(0);
-			expect(dist.CLOSED).toBe(0);
+			for (const status of PROCESS_STATUSES) {
+				expect(dist[status]).toBe(0);
+			}
+		});
+
+		it('counts all six statuses correctly when given one process per state', () => {
+			const onePerState: ElectoralProcess[] = PROCESS_STATUSES.map((status, i) => ({
+				id: String(i + 1),
+				name: `Process ${status}`,
+				scope: 'Nacional',
+				description: null,
+				estatus: status,
+				commitmentStart: '2026-01-01',
+				commitmentEnd: '2026-02-01',
+				votingStart: '2026-03-01',
+				votingEnd: '2026-03-05',
+				results: '2026-03-10',
+				createdBy: 'user-1'
+			}));
+
+			const dist = getStatusDistribution(onePerState);
+			for (const status of PROCESS_STATUSES) {
+				expect(dist[status]).toBe(1);
+			}
 		});
 	});
 
@@ -135,12 +159,56 @@ describe('dashboard-utils', () => {
 	});
 
 	describe('getActiveProcessCount', () => {
-		it('counts COMMITMENT and VOTING processes', () => {
+		it('counts all non-CLOSED processes (any active state)', () => {
 			expect(getActiveProcessCount(mockProcesses)).toBe(3);
 		});
 
 		it('returns 0 for empty array', () => {
 			expect(getActiveProcessCount([])).toBe(0);
+		});
+
+		it('includes OPEN, SEALED and COUNTING in the active count', () => {
+			const processes: ElectoralProcess[] = PROCESS_STATUSES.map((status, i) => ({
+				id: String(i + 1),
+				name: `Process ${status}`,
+				scope: 'Nacional',
+				description: null,
+				estatus: status,
+				commitmentStart: '2026-01-01',
+				commitmentEnd: '2026-02-01',
+				votingStart: '2026-03-01',
+				votingEnd: '2026-03-05',
+				results: '2026-03-10',
+				createdBy: 'user-1'
+			}));
+
+			// 6 total, 1 CLOSED → 5 active
+			expect(getActiveProcessCount(processes)).toBe(5);
+		});
+
+		it('excludes only CLOSED from the active count', () => {
+			const statuses: ElectoralProcessStatus[] = [
+				'OPEN',
+				'COMMITMENT',
+				'SEALED',
+				'VOTING',
+				'COUNTING'
+			];
+			const processes: ElectoralProcess[] = statuses.map((status, i) => ({
+				id: String(i + 1),
+				name: `Process ${status}`,
+				scope: 'Nacional',
+				description: null,
+				estatus: status,
+				commitmentStart: '2026-01-01',
+				commitmentEnd: '2026-02-01',
+				votingStart: '2026-03-01',
+				votingEnd: '2026-03-05',
+				results: '2026-03-10',
+				createdBy: 'user-1'
+			}));
+
+			expect(getActiveProcessCount(processes)).toBe(5);
 		});
 	});
 

@@ -97,10 +97,10 @@ describe('ProcessDetail.svelte', () => {
 		});
 	});
 
-	describe('status badge labels', () => {
-		it('shows "Sin estado" for NONE status', async () => {
-			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'NONE' } }));
-			await expect.element(page.getByText('Sin estado', { exact: true })).toBeInTheDocument();
+	describe('status badge labels (6-state set)', () => {
+		it('shows "Abierto" for OPEN status', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'OPEN' } }));
+			await expect.element(page.getByText('Abierto', { exact: true })).toBeInTheDocument();
 		});
 
 		it('shows "Compromiso" for COMMITMENT status', async () => {
@@ -109,10 +109,20 @@ describe('ProcessDetail.svelte', () => {
 			await expect.element(badge).toBeInTheDocument();
 		});
 
+		it('shows "Sellado" for SEALED status', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'SEALED' } }));
+			await expect.element(page.getByText('Sellado', { exact: true })).toBeInTheDocument();
+		});
+
 		it('shows "Votación" for VOTING status', async () => {
 			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'VOTING' } }));
 			const badge = page.getByText('Votación', { exact: true }).first();
 			await expect.element(badge).toBeInTheDocument();
+		});
+
+		it('shows "Conteo" for COUNTING status', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'COUNTING' } }));
+			await expect.element(page.getByText('Conteo', { exact: true })).toBeInTheDocument();
 		});
 
 		it('shows "Cerrado" for CLOSED status', async () => {
@@ -203,8 +213,20 @@ describe('ProcessDetail.svelte', () => {
 			await expect.element(page.getByRole('button', { name: 'Realizar voto' })).toBeInTheDocument();
 		});
 
-		it('does not show action buttons when estatus is NONE', async () => {
-			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'NONE' } }));
+		it('does not show action buttons when estatus is OPEN', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'OPEN' } }));
+			await expect.element(page.getByRole('button', { name: 'Enviar compromiso' })).not.toBeInTheDocument();
+			await expect.element(page.getByRole('button', { name: 'Realizar voto' })).not.toBeInTheDocument();
+		});
+
+		it('does not show action buttons when estatus is SEALED', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'SEALED' } }));
+			await expect.element(page.getByRole('button', { name: 'Enviar compromiso' })).not.toBeInTheDocument();
+			await expect.element(page.getByRole('button', { name: 'Realizar voto' })).not.toBeInTheDocument();
+		});
+
+		it('does not show action buttons when estatus is COUNTING', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'COUNTING' } }));
 			await expect.element(page.getByRole('button', { name: 'Enviar compromiso' })).not.toBeInTheDocument();
 			await expect.element(page.getByRole('button', { name: 'Realizar voto' })).not.toBeInTheDocument();
 		});

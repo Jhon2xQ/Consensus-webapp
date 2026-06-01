@@ -14,6 +14,7 @@
 		Shield
 	} from '@lucide/svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
+	import { STATUS_LABELS, STATUS_COLORS } from '$lib/types/process-status';
 	import type { Team } from '$lib/types/team';
 	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
 	import { tick } from 'svelte';
@@ -22,6 +23,7 @@
 
 	type Props = {
 		process: ElectoralProcess;
+		liveStatus?: ElectoralProcessStatus | null;
 		teams: Team[];
 		enrollmentSummary: EnrollmentSummary | null;
 		teamsError: boolean;
@@ -32,6 +34,7 @@
 
 	let {
 		process,
+		liveStatus = null,
 		teams,
 		enrollmentSummary = null,
 		teamsError = false,
@@ -40,6 +43,11 @@
 		userEnrollment = null
 	}: Props = $props();
 
+	// Use the live status from the /state endpoint when available; fall back
+	// to the snapshot from the detail load. liveStatus is the source of truth
+	// for the badge and for action gating.
+	let effectiveStatus: ElectoralProcessStatus = $derived(liveStatus ?? process.estatus);
+
 	// Action state
 	let submitting = $state<'none' | 'commitment' | 'vote'>('none');
 	let actionError = $state<string | null>(null);
@@ -47,32 +55,20 @@
 	let pendingCommitment = $state('');
 
 	// Process phase checks
-	let isCommitmentPhase = $derived(process.estatus === 'COMMITMENT');
-	let isVotingPhase = $derived(process.estatus === 'VOTING');
+	let isCommitmentPhase = $derived(effectiveStatus === 'COMMITMENT');
+	let isVotingPhase = $derived(effectiveStatus === 'VOTING');
 
 	// Already committed/voted checks
 	let hasCommitted = $derived(userEnrollment?.commitment !== null && userEnrollment?.commitment !== undefined);
 	let hasVoted = $derived(userEnrollment?.hasVoted === true);
 
-	// ── Status helpers (inline, matching ProcessList pattern) ──
+	// ── Status helpers (delegate to central maps) ──
 	function getStatusLabel(estatus: ElectoralProcessStatus): string {
-		const labels: Record<ElectoralProcessStatus, string> = {
-			NONE: 'Sin estado',
-			COMMITMENT: 'Compromiso',
-			VOTING: 'Votación',
-			CLOSED: 'Cerrado'
-		};
-		return labels[estatus] ?? estatus;
+		return STATUS_LABELS[estatus] ?? estatus;
 	}
 
 	function getStatusColor(estatus: ElectoralProcessStatus): string {
-		const colors: Record<ElectoralProcessStatus, string> = {
-			NONE: 'bg-gray-100 text-gray-600 border-gray-200',
-			COMMITMENT: 'bg-blue-50 text-blue-700 border-blue-200',
-			VOTING: 'bg-green-50 text-green-700 border-green-200',
-			CLOSED: 'bg-red-50 text-red-700 border-red-200'
-		};
-		return colors[estatus] ?? colors.NONE;
+		return STATUS_COLORS[estatus] ?? 'bg-gray-100 text-gray-600 border-gray-200';
 	}
 
 	// ── Date formatting (inline) ──
@@ -173,9 +169,9 @@
 			</h1>
 			<Badge
 				variant="outline"
-				class={cn('text-xs font-semibold px-3 py-1 w-fit', getStatusColor(process.estatus))}
+				class={cn('text-xs font-semibold px-3 py-1 w-fit', getStatusColor(effectiveStatus))}
 			>
-				{getStatusLabel(process.estatus)}
+				{getStatusLabel(effectiveStatus)}
 			</Badge>
 		</div>
 

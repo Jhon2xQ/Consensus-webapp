@@ -36,6 +36,33 @@ const mockProcessClosed: ElectoralProcess = {
 	estatus: 'CLOSED'
 };
 
+const mockProcessOpen: ElectoralProcess = {
+	...mockProcess,
+	id: '4',
+	name: 'Proceso Abierto',
+	scope: 'Nacional',
+	description: null,
+	estatus: 'OPEN'
+};
+
+const mockProcessSealed: ElectoralProcess = {
+	...mockProcess,
+	id: '5',
+	name: 'Proceso Sellado',
+	scope: 'Provincial',
+	description: null,
+	estatus: 'SEALED'
+};
+
+const mockProcessCounting: ElectoralProcess = {
+	...mockProcess,
+	id: '6',
+	name: 'Proceso en Conteo',
+	scope: 'Municipal',
+	description: null,
+	estatus: 'COUNTING'
+};
+
 function defaultProps(overrides?: Record<string, unknown>) {
 	return {
 		processes: [mockProcess],
@@ -81,24 +108,62 @@ describe('ProcessList.svelte (public)', () => {
 			await expect.element(page.getByText('Elecciones Provinciales Buenos Aires')).toBeInTheDocument();
 		});
 
-		it('renders ABIERTO badge for non-CLOSED process', async () => {
-			render(ProcessList, defaultProps());
-			await expect.element(page.getByText('ABIERTO', { exact: true })).toBeInTheDocument();
+		it('renders the canonical Spanish label for each status (no more ABIERTO/CERRADO binary)', async () => {
+			render(
+				ProcessList,
+				defaultProps({
+					processes: [
+						mockProcessOpen,
+						mockProcess,
+						mockProcessSealed,
+						mockProcessNoDesc,
+						mockProcessCounting,
+						mockProcessClosed
+					],
+					totalElements: 6
+				})
+			);
+			// Per-state Spanish labels from the central STATUS_LABELS map.
+			// Use .first() because "Compromiso" / "Votación" can also appear in
+			// the column headers of cards in those states.
+			await expect.element(page.getByText('Abierto', { exact: true })).toBeInTheDocument();
+			await expect.element(page.getByText('Compromiso', { exact: true }).first()).toBeInTheDocument();
+			await expect.element(page.getByText('Sellado', { exact: true })).toBeInTheDocument();
+			await expect.element(page.getByText('Votación', { exact: true }).first()).toBeInTheDocument();
+			await expect.element(page.getByText('Conteo', { exact: true })).toBeInTheDocument();
+			await expect.element(page.getByText('Cerrado', { exact: true })).toBeInTheDocument();
 		});
 
-		it('renders CERRADO badge for CLOSED process', async () => {
+		it('renders "Abierto" badge for OPEN process', async () => {
+			render(ProcessList, defaultProps({ processes: [mockProcessOpen] }));
+			await expect.element(page.getByText('Abierto', { exact: true })).toBeInTheDocument();
+		});
+
+		it('renders "Sellado" badge for SEALED process', async () => {
+			render(ProcessList, defaultProps({ processes: [mockProcessSealed] }));
+			await expect.element(page.getByText('Sellado', { exact: true })).toBeInTheDocument();
+		});
+
+		it('renders "Conteo" badge for COUNTING process', async () => {
+			render(ProcessList, defaultProps({ processes: [mockProcessCounting] }));
+			await expect.element(page.getByText('Conteo', { exact: true })).toBeInTheDocument();
+		});
+
+		it('renders "Cerrado" badge for CLOSED process', async () => {
 			render(ProcessList, defaultProps({ processes: [mockProcessClosed] }));
-			await expect.element(page.getByText('CERRADO', { exact: true })).toBeInTheDocument();
+			await expect.element(page.getByText('Cerrado', { exact: true })).toBeInTheDocument();
 		});
 
 		it('renders commitment column header', async () => {
 			render(ProcessList, defaultProps());
-			await expect.element(page.getByText('Compromiso', { exact: true })).toBeInTheDocument();
+			// default mockProcess is COMMITMENT, so badge says "Compromiso" too.
+			// .first() scopes to a single match (column header or badge — either proves the column exists).
+			await expect.element(page.getByText('Compromiso', { exact: true }).first()).toBeInTheDocument();
 		});
 
 		it('renders voting column header', async () => {
 			render(ProcessList, defaultProps());
-			await expect.element(page.getByText('Votación', { exact: true })).toBeInTheDocument();
+			await expect.element(page.getByText('Votación', { exact: true }).first()).toBeInTheDocument();
 		});
 
 		it('renders results column header', async () => {
