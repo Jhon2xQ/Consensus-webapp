@@ -17,7 +17,7 @@ vi.mock('$lib/server/api', async (importOriginal) => {
 });
 
 // ── Import after mocks ──
-import { getPublicProcesses } from './public-process.service';
+import { getPublicProcesses, getProcessState, ProcessStateUnavailableError } from './public-process.service';
 
 const mockProcess: ElectoralProcess = {
 	id: '1',
@@ -134,5 +134,105 @@ describe('getPublicProcesses', () => {
 		mockFetchPublicJson.mockRejectedValue(networkError);
 
 		await expect(getPublicProcesses({ page: 1, size: 5 })).rejects.toThrow('Failed to fetch');
+	});
+});
+
+// =====================================================================
+// getProcessState — calls /api/public/processes/{id}/state
+// =====================================================================
+
+function mockStateResponse(state: string): { data: { processId: string; state: string } } {
+	return {
+		data: { processId: '1', state }
+	};
+}
+
+describe('getProcessState', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('calls fetchPublicJson with the /state path for the given id', async () => {
+		mockFetchPublicJson.mockResolvedValue(mockStateResponse('COMMITMENT'));
+
+		await getProcessState('proc-1');
+
+		expect(mockFetchPublicJson).toHaveBeenCalledWith('/api/public/processes/proc-1/state');
+	});
+
+	it('returns the state field from the response', async () => {
+		mockFetchPublicJson.mockResolvedValue(mockStateResponse('COMMITMENT'));
+
+		const result = await getProcessState('proc-1');
+
+		expect(result).toBe('COMMITMENT');
+	});
+
+	it('returns OPEN when the endpoint reports OPEN', async () => {
+		mockFetchPublicJson.mockResolvedValue(mockStateResponse('OPEN'));
+
+		const result = await getProcessState('proc-1');
+
+		expect(result).toBe('OPEN');
+	});
+
+	it('returns SEALED when the endpoint reports SEALED', async () => {
+		mockFetchPublicJson.mockResolvedValue(mockStateResponse('SEALED'));
+
+		const result = await getProcessState('proc-1');
+
+		expect(result).toBe('SEALED');
+	});
+
+	it('returns COUNTING when the endpoint reports COUNTING', async () => {
+		mockFetchPublicJson.mockResolvedValue(mockStateResponse('COUNTING'));
+
+		const result = await getProcessState('proc-1');
+
+		expect(result).toBe('COUNTING');
+	});
+
+	it('returns CLOSED when the endpoint reports CLOSED', async () => {
+		mockFetchPublicJson.mockResolvedValue(mockStateResponse('CLOSED'));
+
+		const result = await getProcessState('proc-1');
+
+		expect(result).toBe('CLOSED');
+	});
+
+	it('returns VOTING when the endpoint reports VOTING', async () => {
+		mockFetchPublicJson.mockResolvedValue(mockStateResponse('VOTING'));
+
+		const result = await getProcessState('proc-1');
+
+		expect(result).toBe('VOTING');
+	});
+
+	it('propagates ApiError(404) so callers can map to a not-found failure', async () => {
+		const apiError = new ApiError(404, 'API_ERROR', 'Request failed with status 404');
+		mockFetchPublicJson.mockRejectedValue(apiError);
+
+		await expect(getProcessState('proc-missing')).rejects.toBe(apiError);
+	});
+
+	it('throws ProcessStateUnavailableError on 5xx so callers can degrade gracefully', async () => {
+		const apiError = new ApiError(500, 'API_ERROR', 'Request failed with status 500');
+		mockFetchPublicJson.mockRejectedValue(apiError);
+
+		const err: unknown = await getProcessState('proc-1').catch((e) => e);
+		expect(err).toBeInstanceOf(ProcessStateUnavailableError);
+		expect((err as ProcessStateUnavailableError).processId).toBe('proc-1');
+		// Original cause is preserved for debugging
+		expect((err as ProcessStateUnavailableError).cause).toBe(apiError);
+	});
+
+	it('throws ProcessStateUnavailableError on network errors (not ApiError)', async () => {
+		const networkError = new Error('Failed to fetch');
+		mockFetchPublicJson.mockRejectedValue(networkError);
+
+		const err: unknown = await getProcessState('proc-1').catch((e) => e);
+		expect(err).toBeInstanceOf(ProcessStateUnavailableError);
+		expect((err as ProcessStateUnavailableError).processId).toBe('proc-1');
+		expect((err as ProcessStateUnavailableError).cause).toBe(networkError);
 	});
 });

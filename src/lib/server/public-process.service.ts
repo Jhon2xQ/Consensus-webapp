@@ -1,5 +1,10 @@
 import { fetchPublicJson } from '$lib/server/api';
-import type { ElectoralProcess } from '$lib/types/electoral-process';
+import { ApiError } from '$lib/server/api';
+import type {
+	ElectoralProcess,
+	ElectoralProcessStatus,
+	ProcessState
+} from '$lib/types/electoral-process';
 import type { ApiResponse, PaginatedResponse } from '$lib/types/api-response';
 
 export type PublicProcessQueryParams = {
@@ -14,6 +19,22 @@ export type PublicProcessResult = {
 	totalPages: number;
 	totalElements: number;
 };
+
+/**
+ * Thrown when the live /state endpoint is unreachable or returns a server error.
+ * Callers can use this to degrade gracefully (e.g. fall back to the status
+ * snapshot from the detail load). 404s are NOT wrapped in this — they're
+ * propagated as ApiError so callers can map them to a not-found failure.
+ */
+export class ProcessStateUnavailableError extends Error {
+	constructor(
+		public readonly processId: string,
+		public readonly cause: unknown
+	) {
+		super(`Failed to fetch state for process ${processId}`);
+		this.name = 'ProcessStateUnavailableError';
+	}
+}
 
 /**
  * Fetch paginated public electoral processes.
@@ -54,4 +75,33 @@ export async function getPublicProcessById(id: string): Promise<ElectoralProcess
 		`/api/public/processes/${id}`
 	);
 	return response.data;
+}
+
+/**
+ * Fetch the real-time status of a process via the dedicated /state endpoint.
+ * The backend computes the state from the process dates in real-time, so this
+ * is the source of truth for any decision that should respect the current
+ * phase (e.g. gating commitment submissions).
+ *
+ * 404 is propagated as ApiError so callers can fail the request. 5xx and
+ * network errors are wrapped in ProcessStateUnavailableError so callers can
+ * degrade gracefully (e.g. fall back to the `estatus` field from the detail
+ * load).
+ *
+ * @throws {ApiError} When the backend returns 404 (process not found).
+ * @throws {ProcessStateUnavailableError} On 5xx or network failure.
+ */
+export async function getProcessState(id: string): Promise<ElectoralProcessStatus> {
+	let response: ApiResponse<ProcessState>;
+	try {
+		response = await fetchPublicJson<ApiResponse<ProcessState>>(
+			`/api/public/processes/${id}/state`
+		);
+	} catch (err) {
+		if (err instanceof ApiError && err.status === 404) {
+			throw err;
+		}
+		throw new ProcessStateUnavailableError(id, err);
+	}
+	return response.data.state;
 }
