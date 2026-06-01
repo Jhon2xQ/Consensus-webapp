@@ -139,7 +139,7 @@ Obtiene una inscripción por su ID.
 Acepta un array JSON de inscripciones. Todas se crean atómicamente —
 cualquier fallo de validación revierte el batch completo.
 
-Solo se permite crear inscripciones cuando el proceso está en estado `NONE` o `COMMITMENT`.
+Solo se permite crear inscripciones cuando el proceso está en estado `OPEN` o `COMMITMENT`.
 
 > **Auth**: ✅ Bearer JWT — Requiere rol `consensus-creator`
 

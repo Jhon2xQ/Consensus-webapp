@@ -59,7 +59,7 @@ Lista todos los procesos electorales con paginación.
         "scope": "string",
         "description": "string | null",
         "createdBy": "string",
-        "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
+        "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
         "commitmentStart": "instant (ISO-8601)",
         "commitmentEnd": "instant (ISO-8601)",
         "votingStart": "instant (ISO-8601)",
@@ -102,7 +102,7 @@ Obtiene un proceso electoral por su ID.
     "scope": "string",
     "description": "string | null",
     "createdBy": "string",
-    "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
+    "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
     "votingStart": "instant (ISO-8601)",
@@ -146,7 +146,7 @@ Obtiene el estado del proceso electoral. El estado se calcula en tiempo real bas
   "message": "Operation successful",
   "data": {
     "processId": "uuid",
-    "state": "NONE | COMMITMENT | VOTING | CLOSED"
+    "state": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED"
   },
   "timestamp": 1234567890
 }
@@ -156,9 +156,11 @@ Obtiene el estado del proceso electoral. El estado se calcula en tiempo real bas
 
 | Estado       | Condición                                                                                          |
 | ------------ | -------------------------------------------------------------------------------------------------- |
-| `NONE`       | Antes de `commitmentStart`, entre `commitmentEnd` y `votingStart`, o entre `votingEnd` y `results` |
-| `COMMITMENT` | `commitmentStart ≤ now ≤ commitmentEnd`                                                            |
-| `VOTING`     | `votingStart ≤ now ≤ votingEnd`                                                                    |
+| `OPEN`       | `now < commitmentStart`                                                                            |
+| `COMMITMENT` | `commitmentStart ≤ now ≤ commitmentEnd` (inclusivo en ambos extremos)                              |
+| `SEALED`     | `commitmentEnd < now < votingStart` (estricto en ambos extremos)                                   |
+| `VOTING`     | `votingStart ≤ now ≤ votingEnd` (inclusivo en ambos extremos)                                      |
+| `COUNTING`   | `votingEnd < now < results` (estricto en ambos extremos)                                           |
 | `CLOSED`     | `results ≤ now`                                                                                    |
 
 ### Respuesta `404 Not Found`
@@ -202,7 +204,7 @@ Lista los procesos electorales creados por el usuario autenticado con paginació
         "scope": "string",
         "description": "string | null",
         "createdBy": "string",
-        "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
+        "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
         "commitmentStart": "instant (ISO-8601)",
         "commitmentEnd": "instant (ISO-8601)",
         "votingStart": "instant (ISO-8601)",
@@ -267,7 +269,7 @@ Obtiene un proceso electoral por su ID. Mismo comportamiento que el endpoint pú
     "scope": "string",
     "description": "string | null",
     "createdBy": "string",
-    "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
+    "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
     "votingStart": "instant (ISO-8601)",
@@ -334,7 +336,7 @@ Crea un nuevo proceso electoral.
 }
 ```
 
-> `estatus` no se incluye en la creación. El sistema asigna `NONE` por defecto y la máquina de estados lo transiciona automáticamente según las fechas del proceso.
+> `estatus` no se incluye en la creación. El sistema asigna `OPEN` por defecto y la máquina de estados lo transiciona automáticamente según las fechas del proceso.
 
 ### Respuesta `201 Created`
 
@@ -348,7 +350,7 @@ Crea un nuevo proceso electoral.
     "scope": "string",
     "description": "string | null",
     "createdBy": "string",
-    "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
+    "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
     "votingStart": "instant (ISO-8601)",
@@ -424,7 +426,7 @@ Actualiza un proceso electoral existente. Todos los campos son opcionales.
     "scope": "string",
     "description": "string | null",
     "createdBy": "string",
-    "estatus": "NONE | COMMITMENT | VOTING | CLOSED",
+    "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
     "votingStart": "instant (ISO-8601)",
