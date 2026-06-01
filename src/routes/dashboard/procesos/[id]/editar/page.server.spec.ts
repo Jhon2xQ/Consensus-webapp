@@ -59,7 +59,7 @@ describe('load function', () => {
 			votingEnd: '2026-03-15T00:00:00Z',
 			results: '2026-04-01T00:00:00Z',
 			scope: 'Elecciones 2026',
-			estatus: 'NONE',
+			estatus: 'OPEN',
 			createdBy: 'user-1'
 		};
 		mockGetProcessById.mockResolvedValue(mockProcess);
