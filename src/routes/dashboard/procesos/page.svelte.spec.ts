@@ -17,6 +17,7 @@ const mockProcess1: ElectoralProcess = {
 	name: 'Elecciones Nacionales 2026',
 	scope: 'Nacional',
 	description: 'Proceso electoral para elegir representantes nacionales en todas las provincias del país.',
+	groupId: null,
 	estatus: 'COMMITMENT',
 	commitmentStart: '2026-03-01',
 	commitmentEnd: '2026-04-30',
@@ -31,6 +32,7 @@ const mockProcess2: ElectoralProcess = {
 	name: 'Elecciones Provinciales Buenos Aires',
 	scope: 'Provincial',
 	description: null,
+	groupId: null,
 	estatus: 'COMMITMENT',
 	commitmentStart: '2026-04-01',
 	commitmentEnd: '2026-05-15',
@@ -45,6 +47,7 @@ const mockProcessOpen: ElectoralProcess = {
 	name: 'Proceso Abierto 2026',
 	scope: 'Nacional',
 	description: 'Inscripciones abiertas',
+	groupId: null,
 	estatus: 'OPEN',
 	commitmentStart: '2026-08-01',
 	commitmentEnd: '2026-09-01',
@@ -59,6 +62,22 @@ const mockProcessSealed: ElectoralProcess = {
 	name: 'Proceso Sellado 2026',
 	scope: 'Municipal',
 	description: 'En sellado',
+	groupId: null,
+	estatus: 'SEALED',
+	commitmentStart: '2026-04-01',
+	commitmentEnd: '2026-05-15',
+	votingStart: '2026-06-01',
+	votingEnd: '2026-06-05',
+	results: '2026-06-10',
+	createdBy: 'user-1'
+};
+
+const mockProcessSealedWithGroup: ElectoralProcess = {
+	id: '6',
+	name: 'Proceso Sellado Con Grupo 2026',
+	scope: 'Municipal',
+	description: 'Ya tiene grupo on-chain',
+	groupId: '0xabc123',
 	estatus: 'SEALED',
 	commitmentStart: '2026-04-01',
 	commitmentEnd: '2026-05-15',
@@ -73,6 +92,7 @@ const mockProcessCounting: ElectoralProcess = {
 	name: 'Proceso en Conteo 2026',
 	scope: 'Provincial',
 	description: 'Contando votos',
+	groupId: null,
 	estatus: 'COUNTING',
 	commitmentStart: '2026-03-01',
 	commitmentEnd: '2026-04-15',
@@ -275,5 +295,81 @@ describe('Procesos +page.svelte', () => {
 		// (it has none, so the line-clamp-2 p tag should not be rendered)
 		const lineClampElements = document.querySelectorAll('.line-clamp-2');
 		expect(lineClampElements.length).toBe(0);
+	});
+});
+
+// ============================================================
+// Relayer action buttons — enablement by estatus + groupId
+// ============================================================
+describe('Relayer action buttons', () => {
+	it('enables "Crear grupo" when estatus is SEALED and groupId is null', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealed]),
+			form: undefined as any
+		});
+
+		const btn = page.getByRole('button', { name: 'Crear grupo on-chain' });
+		await expect.element(btn).toBeInTheDocument();
+		await expect.element(btn).toBeEnabled();
+	});
+
+	it('disables "Crear grupo" when groupId is already set (group already created)', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealedWithGroup]),
+			form: undefined as any
+		});
+
+		const btn = page.getByRole('button', { name: 'Crear grupo on-chain' });
+		await expect.element(btn).toBeInTheDocument();
+		await expect.element(btn).toBeDisabled();
+	});
+
+	it('disables "Crear grupo" when estatus is not SEALED', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessCounting]),
+			form: undefined as any
+		});
+
+		const btn = page.getByRole('button', { name: 'Crear grupo on-chain' });
+		await expect.element(btn).toBeInTheDocument();
+		await expect.element(btn).toBeDisabled();
+	});
+
+	it('disables "Sincronizar compromisos" when groupId is null (no group yet)', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealed]),
+			form: undefined as any
+		});
+
+		const btn = page.getByRole('button', { name: 'Sincronizar compromisos' });
+		await expect.element(btn).toBeInTheDocument();
+		await expect.element(btn).toBeDisabled();
+	});
+
+	it('enables "Sincronizar compromisos" when estatus is SEALED and groupId is set', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealedWithGroup]),
+			form: undefined as any
+		});
+
+		const btn = page.getByRole('button', { name: 'Sincronizar compromisos' });
+		await expect.element(btn).toBeInTheDocument();
+		await expect.element(btn).toBeEnabled();
+	});
+
+	it('disables "Sincronizar compromisos" when estatus is not SEALED even if groupId is set', async () => {
+		const votingWithGroup: ElectoralProcess = {
+			...mockProcessSealedWithGroup,
+			id: '7',
+			estatus: 'VOTING'
+		};
+		render(ProcesosPage, {
+			data: mockData([votingWithGroup]),
+			form: undefined as any
+		});
+
+		const btn = page.getByRole('button', { name: 'Sincronizar compromisos' });
+		await expect.element(btn).toBeInTheDocument();
+		await expect.element(btn).toBeDisabled();
 	});
 });

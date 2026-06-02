@@ -10,7 +10,7 @@
 		DialogFooter,
 		DialogClose
 	} from '$lib/components/ui/dialog';
-	import { Plus, Pencil, Trash2, CircleAlert, Users, UserCheck } from '@lucide/svelte';
+	import { Plus, Pencil, Trash2, CircleAlert, Users, UserCheck, Network, RefreshCw } from '@lucide/svelte';
 	import {
 		getStatusLabel,
 		getStatusColor,
@@ -34,6 +34,10 @@
 
 	let deleteTarget = $state<ElectoralProcess | null>(null);
 	let showDeleteDialog = $state(false);
+	let createGroupTarget = $state<ElectoralProcess | null>(null);
+	let showCreateGroupDialog = $state(false);
+	let syncMembersTarget = $state<ElectoralProcess | null>(null);
+	let showSyncMembersDialog = $state(false);
 
 	function handleDeleteClick(process: ElectoralProcess) {
 		deleteTarget = process;
@@ -44,6 +48,33 @@
 		showDeleteDialog = false;
 		deleteTarget = null;
 	}
+
+	function handleCreateGroupClick(process: ElectoralProcess) {
+		createGroupTarget = process;
+		showCreateGroupDialog = true;
+	}
+
+	function closeCreateGroupDialog() {
+		showCreateGroupDialog = false;
+		createGroupTarget = null;
+	}
+
+	function handleSyncMembersClick(process: ElectoralProcess) {
+		syncMembersTarget = process;
+		showSyncMembersDialog = true;
+	}
+
+	function closeSyncMembersDialog() {
+		showSyncMembersDialog = false;
+		syncMembersTarget = null;
+	}
+
+	const canCreateGroup = $derived(
+		(process: ElectoralProcess) => process.estatus === 'SEALED' && process.groupId === null
+	);
+	const canSyncMembers = $derived(
+		(process: ElectoralProcess) => process.estatus === 'SEALED' && process.groupId !== null
+	);
 
 	function changeSize(size: number) {
 		goto(`?size=${size}`);
@@ -197,6 +228,34 @@
 										>
 											<UserCheck class="size-3.5 mr-1" />
 											Ver votantes
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={!canCreateGroup(process)}
+											onclick={() => handleCreateGroupClick(process)}
+											title={canCreateGroup(process)
+												? 'Crear el grupo Semaphore on-chain'
+												: process.groupId !== null
+													? 'Este proceso ya tiene un grupo asignado'
+													: 'Solo disponible en estado Sellado'}
+										>
+											<Network class="size-3.5 mr-1" />
+											Crear grupo on-chain
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={!canSyncMembers(process)}
+											onclick={() => handleSyncMembersClick(process)}
+											title={canSyncMembers(process)
+												? 'Sincronizar compromisos de votantes on-chain'
+												: process.groupId === null
+													? 'Primero creá el grupo on-chain'
+													: 'Solo disponible en estado Sellado'}
+										>
+											<RefreshCw class="size-3.5 mr-1" />
+											Sincronizar compromisos
 										</Button>
 										<div class="flex-1"></div>
 										<Button
