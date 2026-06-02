@@ -16,7 +16,12 @@ vi.mock('$lib/server/api', async (importOriginal) => {
 });
 
 // ── Import after mocks ──
-import { createGroup } from './relayer.service';
+import { createGroup, syncMembers } from './relayer.service';
+
+type SyncMembersResult = {
+	count: number;
+	transactionHash: string | null;
+};
 
 // ── Helpers ──
 const mockLocals = {} as App.Locals;
@@ -78,5 +83,57 @@ describe('createGroup', () => {
 		mockFetchBackendJson.mockRejectedValue(apiError);
 
 		await expect(createGroup(mockLocals, 'missing')).rejects.toThrow(ApiError);
+	});
+});
+
+// ── syncMembers tests ──
+describe('syncMembers', () => {
+	function mockSyncResponse(data: SyncMembersResult) {
+		return {
+			success: true,
+			message: 'OK',
+			data,
+			timestamp: '2026-01-01T00:00:00Z'
+		};
+	}
+
+	it('calls POST /api/private/processes/{id}/members and returns { count, transactionHash }', async () => {
+		mockFetchBackendJson.mockResolvedValue(
+			mockSyncResponse({ count: 5, transactionHash: '0xtxhash' })
+		);
+
+		const result = await syncMembers(mockLocals, 'proc-1');
+
+		expect(mockFetchBackendJson).toHaveBeenCalledWith(
+			mockLocals,
+			'/api/private/processes/proc-1/members',
+			{ method: 'POST' }
+		);
+		expect(result).toEqual({ count: 5, transactionHash: '0xtxhash' });
+	});
+
+	it('returns count and transactionHash from the response', async () => {
+		mockFetchBackendJson.mockResolvedValue(
+			mockSyncResponse({ count: 12, transactionHash: '0xother' })
+		);
+
+		const result = await syncMembers(mockLocals, 'proc-1');
+
+		expect(result.count).toBe(12);
+		expect(result.transactionHash).toBe('0xother');
+	});
+
+	it('propagates ApiError(400) when no group has been created yet', async () => {
+		const apiError = new ApiError(400, 'BAD_REQUEST', 'No group assigned to this process');
+		mockFetchBackendJson.mockRejectedValue(apiError);
+
+		await expect(syncMembers(mockLocals, 'proc-1')).rejects.toThrow(ApiError);
+	});
+
+	it('propagates ApiError(404) when the process does not exist', async () => {
+		const apiError = new ApiError(404, 'NOT_FOUND', 'Electoral process not found');
+		mockFetchBackendJson.mockRejectedValue(apiError);
+
+		await expect(syncMembers(mockLocals, 'missing')).rejects.toThrow(ApiError);
 	});
 });
