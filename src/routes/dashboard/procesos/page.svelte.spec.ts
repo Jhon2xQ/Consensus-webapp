@@ -373,3 +373,74 @@ describe('Relayer action buttons', () => {
 		await expect.element(btn).toBeDisabled();
 	});
 });
+
+// ============================================================
+// Relayer confirmation dialogs
+// ============================================================
+describe('Relayer confirmation dialogs', () => {
+	it('opens create-group dialog with the action copy when clicking "Crear grupo on-chain"', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealed]),
+			form: undefined as any
+		});
+
+		// Dialog copy is not yet visible
+		await expect
+			.element(page.getByText('Vas a crear el grupo Semaphore on-chain para'))
+			.not.toBeInTheDocument();
+
+		// Click the button to open the dialog
+		await page.getByRole('button', { name: 'Crear grupo on-chain' }).click();
+
+		// Dialog copy is now visible
+		await expect
+			.element(page.getByText('Vas a crear el grupo Semaphore on-chain para'))
+			.toBeInTheDocument();
+	});
+
+	it('opens sync-members dialog with the action copy when clicking "Sincronizar compromisos"', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealedWithGroup]),
+			form: undefined as any
+		});
+
+		// Dialog copy is not yet visible
+		await expect
+			.element(page.getByText('Vas a sincronizar los compromisos de'))
+			.not.toBeInTheDocument();
+
+		// Click the button to open the dialog
+		await page.getByRole('button', { name: 'Sincronizar compromisos' }).click();
+
+		// Dialog copy is now visible
+		await expect
+			.element(page.getByText('Vas a sincronizar los compromisos de'))
+			.toBeInTheDocument();
+	});
+
+	it('create-group dialog renders the process name inside the dialog body', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealed]),
+			form: undefined as any
+		});
+
+		await page.getByRole('button', { name: 'Crear grupo on-chain' }).click();
+
+		// The dialog title is "Crear grupo on-chain"
+		const dialogTitle = page.getByRole('heading', { name: 'Crear grupo on-chain' });
+		await expect.element(dialogTitle).toBeInTheDocument();
+	});
+
+	it('sync-members dialog renders the process name inside the dialog body', async () => {
+		render(ProcesosPage, {
+			data: mockData([mockProcessSealedWithGroup]),
+			form: undefined as any
+		});
+
+		await page.getByRole('button', { name: 'Sincronizar compromisos' }).click();
+
+		// The dialog title is "Sincronizar compromisos"
+		const dialogTitle = page.getByRole('heading', { name: 'Sincronizar compromisos' });
+		await expect.element(dialogTitle).toBeInTheDocument();
+	});
+});

@@ -69,12 +69,12 @@
 		syncMembersTarget = null;
 	}
 
-	const canCreateGroup = $derived(
-		(process: ElectoralProcess) => process.estatus === 'SEALED' && process.groupId === null
-	);
-	const canSyncMembers = $derived(
-		(process: ElectoralProcess) => process.estatus === 'SEALED' && process.groupId !== null
-	);
+	function canCreateGroup(process: ElectoralProcess): boolean {
+		return process.estatus === 'SEALED' && process.groupId === null;
+	}
+	function canSyncMembers(process: ElectoralProcess): boolean {
+		return process.estatus === 'SEALED' && process.groupId !== null;
+	}
 
 	function changeSize(size: number) {
 		goto(`?size=${size}`);
@@ -302,6 +302,50 @@
 			<form method="POST" action="?/delete" class="space-y-4">
 				<input type="hidden" name="id" value={deleteTarget?.id ?? ''} />
 				<Button type="submit" variant="destructive">Eliminar</Button>
+			</form>
+		</DialogFooter>
+	</DialogContent>
+</Dialog>
+
+<!-- Create Group Confirmation Dialog -->
+<Dialog bind:open={showCreateGroupDialog}>
+	<DialogContent>
+		<DialogHeader>
+			<DialogTitle>Crear grupo on-chain</DialogTitle>
+			<DialogDescription>
+				Vas a crear el grupo Semaphore on-chain para
+				<strong>{createGroupTarget?.name}</strong>. Esta acción es irreversible. ¿Continuar?
+			</DialogDescription>
+		</DialogHeader>
+		<DialogFooter>
+			<DialogClose>
+				<Button variant="outline" onclick={closeCreateGroupDialog}>Cancelar</Button>
+			</DialogClose>
+			<form method="POST" action="?/createGroup" class="space-y-4">
+				<input type="hidden" name="id" value={createGroupTarget?.id ?? ''} />
+				<Button type="submit">Crear grupo on-chain</Button>
+			</form>
+		</DialogFooter>
+	</DialogContent>
+</Dialog>
+
+<!-- Sync Members Confirmation Dialog -->
+<Dialog bind:open={showSyncMembersDialog}>
+	<DialogContent>
+		<DialogHeader>
+			<DialogTitle>Sincronizar compromisos</DialogTitle>
+			<DialogDescription>
+				Vas a sincronizar los compromisos de
+				<strong>{syncMembersTarget?.name}</strong> on-chain. Esta acción es irreversible. ¿Continuar?
+			</DialogDescription>
+		</DialogHeader>
+		<DialogFooter>
+			<DialogClose>
+				<Button variant="outline" onclick={closeSyncMembersDialog}>Cancelar</Button>
+			</DialogClose>
+			<form method="POST" action="?/syncMembers" class="space-y-4">
+				<input type="hidden" name="id" value={syncMembersTarget?.id ?? ''} />
+				<Button type="submit">Sincronizar compromisos</Button>
 			</form>
 		</DialogFooter>
 	</DialogContent>
