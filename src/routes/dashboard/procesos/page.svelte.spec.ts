@@ -1,37 +1,15 @@
 import { page } from 'vitest/browser';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ProcesosPage from './+page.svelte';
 import type { ElectoralProcess } from '$lib/types/electoral-process';
-import { goto } from '$app/navigation';
-
-// Hoisted mutable page state — the page reads `page.url` reactively, so we expose
-// a single URL object that tests can mutate before render to simulate URL changes.
-const { mockPageState, mockToast } = vi.hoisted(() => ({
-	mockPageState: { url: new URL('http://localhost/dashboard/procesos') },
-	mockToast: {
-		success: vi.fn(),
-		error: vi.fn(),
-		info: vi.fn(),
-		warning: vi.fn(),
-		loading: vi.fn(),
-		message: vi.fn(),
-		dismiss: vi.fn(),
-		custom: vi.fn(),
-		promise: vi.fn()
-	}
-}));
 
 vi.mock('$app/state', () => ({
-	page: mockPageState
+	page: { url: new URL('http://localhost/dashboard/procesos') }
 }));
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn()
-}));
-
-vi.mock('svelte-sonner', () => ({
-	toast: mockToast
 }));
 
 const mockProcess1: ElectoralProcess = {
@@ -128,13 +106,6 @@ function mockData(processes: ElectoralProcess[], error: string | null = null) {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return { processes, error, user: undefined } as any;
 }
-
-beforeEach(() => {
-	// Reset URL and clear toast call history before every test.
-	// (vi.clearAllMocks also clears the toast mock history.)
-	mockPageState.url = new URL('http://localhost/dashboard/procesos');
-	vi.clearAllMocks();
-});
 
 describe('Procesos +page.svelte', () => {
 	it('shows loading skeleton when data is undefined', async () => {
@@ -471,47 +442,5 @@ describe('Relayer confirmation dialogs', () => {
 		// The dialog title is "Sincronizar compromisos"
 		const dialogTitle = page.getByRole('heading', { name: 'Sincronizar compromisos' });
 		await expect.element(dialogTitle).toBeInTheDocument();
-	});
-});
-
-// ============================================================
-// Success toast on ?success= query param (W-2 / S-1)
-// ============================================================
-describe('Success toast on ?success=', () => {
-	it('shows toast.success when URL has ?success=Grupo+creado+exitosamente', async () => {
-		mockPageState.url = new URL(
-			'http://localhost/dashboard/procesos?success=Grupo+creado+exitosamente'
-		);
-
-		render(ProcesosPage, {
-			data: mockData([], null),
-			form: undefined as any
-		});
-
-		expect(mockToast.success).toHaveBeenCalledWith('Grupo creado exitosamente');
-	});
-
-	it('cleans the URL after showing the success toast', async () => {
-		mockPageState.url = new URL('http://localhost/dashboard/procesos?success=Test');
-
-		render(ProcesosPage, {
-			data: mockData([], null),
-			form: undefined as any
-		});
-
-		expect(goto).toHaveBeenCalledWith(
-			'/dashboard/procesos',
-			expect.objectContaining({ replaceState: true, keepFocus: true, noScroll: true })
-		);
-	});
-
-	it('does not show success toast when URL has no ?success=', async () => {
-		// default URL — no ?success= (set by top-level beforeEach)
-		render(ProcesosPage, {
-			data: mockData([], null),
-			form: undefined as any
-		});
-
-		expect(mockToast.success).not.toHaveBeenCalled();
 	});
 });

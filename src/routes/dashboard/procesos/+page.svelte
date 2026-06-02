@@ -32,14 +32,6 @@
 		if (form?.error) toast.error(form.error);
 	});
 
-	$effect(() => {
-		const success = page.url.searchParams.get('success');
-		if (success) {
-			toast.success(success);
-			goto(page.url.pathname, { replaceState: true, keepFocus: true, noScroll: true });
-		}
-	});
-
 	let deleteTarget = $state<ElectoralProcess | null>(null);
 	let showDeleteDialog = $state(false);
 	let createGroupTarget = $state<ElectoralProcess | null>(null);
