@@ -94,7 +94,12 @@ export const actions = {
 		} catch (e) {
 			if (e instanceof ApiError) {
 				if (e.status === 400) {
-					return fail(400, { error: 'Primero creá el grupo on-chain' });
+					const isNoGroup = /no group|sin grupo|no tiene grupo/i.test(e.message);
+					return fail(400, {
+						error: isNoGroup
+							? 'Primero creá el grupo on-chain'
+							: 'El proceso ya no está en estado Sellado'
+					});
 				}
 				if (e.status === 401) {
 					return fail(401, { error: 'No estás autenticado' });
