@@ -130,9 +130,10 @@ function mockData(processes: ElectoralProcess[], error: string | null = null) {
 }
 
 beforeEach(() => {
-	// Reset URL and toast mocks before every test (vitest's clearAllMocks also
-	// clears them, but we want a known default URL for tests that don't set it).
+	// Reset URL and clear toast call history before every test.
+	// (vi.clearAllMocks also clears the toast mock history.)
 	mockPageState.url = new URL('http://localhost/dashboard/procesos');
+	vi.clearAllMocks();
 });
 
 describe('Procesos +page.svelte', () => {
