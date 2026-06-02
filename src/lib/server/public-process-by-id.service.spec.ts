@@ -22,6 +22,7 @@ const mockProcess: ElectoralProcess = {
 	name: 'Test Process',
 	scope: 'Nacional',
 	description: 'A test process',
+	groupId: null,
 	estatus: 'COMMITMENT',
 	commitmentStart: '2026-01-01T00:00:00Z',
 	commitmentEnd: '2026-02-01T00:00:00Z',

@@ -29,6 +29,7 @@ const mockProcess: ElectoralProcess = {
 	name: 'Elecciones Nacionales 2026',
 	scope: 'Nacional',
 	description: 'Proceso electoral para elegir representantes nacionales.',
+	groupId: null,
 	estatus: 'COMMITMENT',
 	commitmentStart: '2026-03-01T00:00:00Z',
 	commitmentEnd: '2026-04-30T00:00:00Z',

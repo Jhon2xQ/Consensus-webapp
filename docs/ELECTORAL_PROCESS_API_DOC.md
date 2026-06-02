@@ -3,6 +3,8 @@
 Base path (public): `/api/public/processes`
 Base path (private): `/api/private/processes`
 
+> ⚠️ **Breaking change (public endpoints)**: los endpoints `GET /api/public/processes` y `GET /api/public/processes/{id}` ya NO exponen el campo `createdBy` (Logto user ID del creador). Si tu cliente dependía de este campo en los endpoints públicos, migrá a los endpoints privados correspondientes: `GET /api/private/processes` y `GET /api/private/processes/{id}` (requieren rol `consensus-creator`). Nota: `groupId` SÍ se expone en los endpoints públicos (es el ID del grupo Semaphore on-chain, público por diseño).
+
 ---
 
 ## Índice Rápido
@@ -58,7 +60,7 @@ Lista todos los procesos electorales con paginación.
         "name": "string",
         "scope": "string",
         "description": "string | null",
-        "createdBy": "string",
+        "groupId": "string | null",
         "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
         "commitmentStart": "instant (ISO-8601)",
         "commitmentEnd": "instant (ISO-8601)",
@@ -75,6 +77,8 @@ Lista todos los procesos electorales con paginación.
   "timestamp": 1234567890
 }
 ```
+
+> **Nota**: este endpoint NO expone `createdBy` (Logto user ID del creador) por privacidad. `groupId` SÍ se expone — es el ID del grupo Semaphore on-chain (público por diseño) y puede ser `null` hasta que se cree el grupo (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `GET /api/private/processes`.
 
 ---
 
@@ -101,7 +105,7 @@ Obtiene un proceso electoral por su ID.
     "name": "string",
     "scope": "string",
     "description": "string | null",
-    "createdBy": "string",
+    "groupId": "string | null",
     "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
@@ -112,6 +116,8 @@ Obtiene un proceso electoral por su ID.
   "timestamp": 1234567890
 }
 ```
+
+> **Nota**: este endpoint NO expone `createdBy` (Logto user ID del creador) por privacidad. `groupId` SÍ se expone — es el ID del grupo Semaphore on-chain (público por diseño) y puede ser `null` hasta que se cree el grupo (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `GET /api/private/processes/{id}`.
 
 ### Respuesta `404 Not Found`
 
@@ -204,6 +210,7 @@ Lista los procesos electorales creados por el usuario autenticado con paginació
         "scope": "string",
         "description": "string | null",
         "createdBy": "string",
+        "groupId": "string | null",
         "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
         "commitmentStart": "instant (ISO-8601)",
         "commitmentEnd": "instant (ISO-8601)",
@@ -220,6 +227,8 @@ Lista los procesos electorales creados por el usuario autenticado con paginació
   "timestamp": 1234567890
 }
 ```
+
+> **Nota**: `groupId` es `null` hasta que se cree el grupo Semaphore (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `docs/RELAYER_API_DOC.md`.
 
 ### Respuesta `401 Unauthorized`
 
@@ -269,6 +278,7 @@ Obtiene un proceso electoral por su ID. Mismo comportamiento que el endpoint pú
     "scope": "string",
     "description": "string | null",
     "createdBy": "string",
+    "groupId": "string | null",
     "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
@@ -279,6 +289,8 @@ Obtiene un proceso electoral por su ID. Mismo comportamiento que el endpoint pú
   "timestamp": 1234567890
 }
 ```
+
+> **Nota**: `groupId` es `null` hasta que se cree el grupo Semaphore (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `docs/RELAYER_API_DOC.md`.
 
 ### Respuesta `401 Unauthorized`
 
@@ -350,6 +362,7 @@ Crea un nuevo proceso electoral.
     "scope": "string",
     "description": "string | null",
     "createdBy": "string",
+    "groupId": "string | null",
     "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
@@ -362,6 +375,8 @@ Crea un nuevo proceso electoral.
 ```
 
 > `estatus` en la respuesta siempre es un valor no-nulo, calculado por la máquina de estados.
+>
+> `groupId` se devuelve como `null` en este endpoint — el grupo Semaphore se crea en un paso posterior (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `docs/RELAYER_API_DOC.md`.
 
 ### Respuesta `400 Bad Request`
 
@@ -426,6 +441,7 @@ Actualiza un proceso electoral existente. Todos los campos son opcionales.
     "scope": "string",
     "description": "string | null",
     "createdBy": "string",
+    "groupId": "string | null",
     "estatus": "OPEN | COMMITMENT | SEALED | VOTING | COUNTING | CLOSED",
     "commitmentStart": "instant (ISO-8601)",
     "commitmentEnd": "instant (ISO-8601)",
@@ -436,6 +452,8 @@ Actualiza un proceso electoral existente. Todos los campos son opcionales.
   "timestamp": 1234567890
 }
 ```
+
+> `groupId` refleja el valor persistido del proceso (puede ser `null` si aún no se creó el grupo Semaphore — ver `docs/RELAYER_API_DOC.md`).
 
 ### Respuesta `400 Bad Request`
 

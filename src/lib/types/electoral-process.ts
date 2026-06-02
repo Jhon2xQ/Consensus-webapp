@@ -25,6 +25,7 @@ export type ElectoralProcess = {
 	name: string;
 	scope: string;
 	description: string | null;
+	groupId: string | null;
 	estatus: ElectoralProcessStatus;
 	commitmentStart: string;
 	commitmentEnd: string;

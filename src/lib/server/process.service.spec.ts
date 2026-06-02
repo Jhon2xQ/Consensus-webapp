@@ -31,6 +31,7 @@ const createMockProcess = (overrides?: Partial<ElectoralProcess>): ElectoralProc
 	name: 'Test Process',
 	scope: 'Nacional',
 	description: null,
+	groupId: null,
 	estatus: 'COMMITMENT',
 	commitmentStart: '2026-01-01',
 	commitmentEnd: '2026-02-01',
