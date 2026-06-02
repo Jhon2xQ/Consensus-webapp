@@ -271,9 +271,9 @@ describe('syncMembers action', () => {
 		expect(mockSyncMembers).toHaveBeenCalledWith(mockLocals, 'proc-1');
 	});
 
-	it('returns fail(400) when syncMembers throws ApiError 400 (no group / wrong state)', async () => {
+	it('returns fail(400) when syncMembers throws ApiError 400 (no group) returns no-group message', async () => {
 		mockSyncMembers.mockRejectedValue(
-			new ApiError(400, 'BAD_REQUEST', 'No group assigned to this process')
+			new ApiError(400, 'BAD_REQUEST', 'No group assigned to this process. Create a group first')
 		);
 
 		const formData = createFormData({ id: 'proc-1' });
@@ -286,6 +286,27 @@ describe('syncMembers action', () => {
 
 		expect(result).toHaveProperty('status', 400);
 		expect((result as any).data.error).toBe('Primero creá el grupo on-chain');
+	});
+
+	it('returns fail(400) when syncMembers throws ApiError 400 (wrong state) returns state message', async () => {
+		mockSyncMembers.mockRejectedValue(
+			new ApiError(
+				400,
+				'BAD_REQUEST',
+				'Members can only be synced during SEALED window, current state: OPEN'
+			)
+		);
+
+		const formData = createFormData({ id: 'proc-1' });
+		const request = createRequest(formData);
+
+		const result = await actions.syncMembers({
+			request,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 400);
+		expect((result as any).data.error).toBe('El proceso ya no está en estado Sellado');
 	});
 
 	it('returns fail(401) when syncMembers throws ApiError 401', async () => {
