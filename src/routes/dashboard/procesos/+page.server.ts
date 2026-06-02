@@ -79,5 +79,36 @@ export const actions = {
 		}
 
 		throw redirect(303, '/dashboard/procesos?success=Grupo+creado+exitosamente');
+	},
+
+	syncMembers: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const id = formData.get('id') as string;
+
+		if (!id) {
+			return fail(400, { error: 'ID de proceso requerido' });
+		}
+
+		try {
+			await syncMembers(locals, id);
+		} catch (e) {
+			if (e instanceof ApiError) {
+				if (e.status === 400) {
+					return fail(400, { error: 'Primero creá el grupo on-chain' });
+				}
+				if (e.status === 401) {
+					return fail(401, { error: 'No estás autenticado' });
+				}
+				if (e.status === 404) {
+					return fail(404, { error: 'Proceso no encontrado' });
+				}
+				if (e.status === 502) {
+					return fail(502, { error: 'Error del Relayer. Reintentá más tarde' });
+				}
+			}
+			return fail(500, { error: 'Error al sincronizar los compromisos' });
+		}
+
+		throw redirect(303, '/dashboard/procesos?success=Sincronizacion+exitosa');
 	}
 } satisfies Actions;

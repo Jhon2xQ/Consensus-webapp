@@ -250,3 +250,115 @@ describe('createGroup action', () => {
 		expect((result as any).data.error).toBe('Error al crear el grupo');
 	});
 });
+
+// ============================================================
+// syncMembers action
+// ============================================================
+describe('syncMembers action', () => {
+	it('calls syncMembers and redirects with success message', async () => {
+		mockSyncMembers.mockResolvedValue({ count: 5, transactionHash: '0xtxhash' });
+
+		const formData = createFormData({ id: 'proc-1' });
+		const request = createRequest(formData);
+
+		await expect(
+			actions.syncMembers({ request, locals: mockLocals } as any)
+		).rejects.toMatchObject({
+			status: 303,
+			location: '/dashboard/procesos?success=Sincronizacion+exitosa'
+		});
+
+		expect(mockSyncMembers).toHaveBeenCalledWith(mockLocals, 'proc-1');
+	});
+
+	it('returns fail(400) when syncMembers throws ApiError 400 (no group / wrong state)', async () => {
+		mockSyncMembers.mockRejectedValue(
+			new ApiError(400, 'BAD_REQUEST', 'No group assigned to this process')
+		);
+
+		const formData = createFormData({ id: 'proc-1' });
+		const request = createRequest(formData);
+
+		const result = await actions.syncMembers({
+			request,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 400);
+		expect((result as any).data.error).toBe('Primero creá el grupo on-chain');
+	});
+
+	it('returns fail(401) when syncMembers throws ApiError 401', async () => {
+		mockSyncMembers.mockRejectedValue(new ApiError(401, 'UNAUTHORIZED', 'Not authenticated'));
+
+		const formData = createFormData({ id: 'proc-1' });
+		const request = createRequest(formData);
+
+		const result = await actions.syncMembers({
+			request,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 401);
+		expect((result as any).data.error).toBe('No estás autenticado');
+	});
+
+	it('returns fail(404) when syncMembers throws ApiError 404', async () => {
+		mockSyncMembers.mockRejectedValue(new ApiError(404, 'NOT_FOUND', 'Proceso no encontrado'));
+
+		const formData = createFormData({ id: 'missing' });
+		const request = createRequest(formData);
+
+		const result = await actions.syncMembers({
+			request,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 404);
+		expect((result as any).data.error).toBe('Proceso no encontrado');
+	});
+
+	it('returns fail(502) when syncMembers throws ApiError 502 (relayer down)', async () => {
+		mockSyncMembers.mockRejectedValue(new ApiError(502, 'BAD_GATEWAY', 'Relayer down'));
+
+		const formData = createFormData({ id: 'proc-1' });
+		const request = createRequest(formData);
+
+		const result = await actions.syncMembers({
+			request,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 502);
+		expect((result as any).data.error).toBe('Error del Relayer. Reintentá más tarde');
+	});
+
+	it('returns fail(500) on non-ApiError exception', async () => {
+		mockSyncMembers.mockRejectedValue(new Error('Network failure'));
+
+		const formData = createFormData({ id: 'proc-1' });
+		const request = createRequest(formData);
+
+		const result = await actions.syncMembers({
+			request,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 500);
+		expect((result as any).data.error).toBe('Error al sincronizar los compromisos');
+	});
+
+	it('returns fail(400) when id is missing from formData', async () => {
+		const formData = createFormData({ otherField: 'value' });
+		const request = createRequest(formData);
+
+		const result = await actions.syncMembers({
+			request,
+			locals: mockLocals
+		} as any);
+
+		expect(result).toHaveProperty('status', 400);
+		expect((result as any).data.error).toBe('ID de proceso requerido');
+		expect(mockSyncMembers).not.toHaveBeenCalled();
+	});
+});
