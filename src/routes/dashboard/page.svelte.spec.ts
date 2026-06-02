@@ -23,6 +23,18 @@ describe('Dashboard +page.svelte', () => {
 		await expect.element(page.getByText('Procesos Activos')).toBeInTheDocument();
 	});
 
+	it('describes Procesos Activos as non-CLOSED processes (6-state rule)', async () => {
+		render(DashboardPage);
+
+		await expect.element(page.getByText('Procesos aún sin cerrar')).toBeInTheDocument();
+	});
+
+	it('does not render the misleading "compromiso o votación" sub-description', async () => {
+		render(DashboardPage);
+
+		await expect.element(page.getByText('En fase de compromiso o votación')).not.toBeInTheDocument();
+	});
+
 	it('renders quick action buttons', async () => {
 		render(DashboardPage);
 

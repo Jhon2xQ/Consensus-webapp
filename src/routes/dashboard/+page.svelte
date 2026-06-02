@@ -40,7 +40,7 @@
 			title: 'Procesos Activos',
 			value: activeProcesses,
 			icon: Activity,
-			description: 'En fase de compromiso o votación',
+			description: 'Procesos aún sin cerrar',
 			variant: 'success'
 		}
 	]);
