@@ -20,6 +20,29 @@ vi.mock('$lib/services/semaphore.service', () => ({
 	deriveIdentity: mockDeriveIdentity
 }));
 
+// Mock proof service
+const mockBuildVotingProof = vi.hoisted(() => vi.fn());
+const mockSubmitVotingProof = vi.hoisted(() => vi.fn());
+
+vi.mock('$lib/services/proof.service', () => ({
+	buildVotingProof: mockBuildVotingProof,
+	submitVotingProof: mockSubmitVotingProof
+}));
+
+// Mock $app/navigation
+const mockGoto = vi.hoisted(() => vi.fn());
+const mockInvalidateAll = vi.hoisted(() => vi.fn());
+
+vi.mock('$app/navigation', () => ({
+	goto: mockGoto,
+	invalidateAll: mockInvalidateAll
+}));
+
+// Mock $env/dynamic/public
+vi.mock('$env/dynamic/public', () => ({
+	env: { PUBLIC_RELAYER_API_URL: 'https://relayer.example.com' }
+}));
+
 // Mock fetch for API calls
 const mockFetch = vi.hoisted(() => vi.fn());
 vi.stubGlobal('fetch', mockFetch);
@@ -209,9 +232,9 @@ describe('ProcessDetail.svelte', () => {
 			await expect.element(page.getByRole('button', { name: 'Enviar compromiso' })).toBeInTheDocument();
 		});
 
-		it('shows "Realizar voto" button when estatus is VOTING', async () => {
-			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'VOTING' } }));
-			await expect.element(page.getByRole('button', { name: 'Realizar voto' })).toBeInTheDocument();
+		it('shows vote prompt when estatus is VOTING with no team selected', async () => {
+			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'VOTING', groupId: 'group-1' } }));
+			await expect.element(page.getByRole('button', { name: 'Elegí un equipo para votar' })).toBeInTheDocument();
 		});
 
 		it('does not show action buttons when estatus is OPEN', async () => {
@@ -277,6 +300,455 @@ describe('ProcessDetail.svelte', () => {
 		it('does not show QR instruction text before submission', async () => {
 			render(ProcessDetail, defaultProps({ process: { ...mockProcess, estatus: 'COMMITMENT' } }));
 			await expect.element(page.getByText('Escaneá el QR que aparece en pantalla con tu móvil')).not.toBeInTheDocument();
+		});
+	});
+
+	describe('team selection (VOTING phase)', () => {
+		beforeEach(() => {
+			vi.clearAllMocks();
+		});
+
+		const votingProps = (overrides?: Record<string, unknown>) => ({
+			...defaultProps({
+				process: { ...mockProcess, estatus: 'VOTING', groupId: 'group-1' },
+				...overrides
+			})
+		});
+
+		it('shows "Elegí un equipo para votar" when no team selected', async () => {
+			render(ProcessDetail, votingProps());
+			await expect
+				.element(page.getByRole('button', { name: 'Elegí un equipo para votar' }))
+				.toBeInTheDocument();
+		});
+
+		it('clicking a team card makes it the selected team', async () => {
+			render(ProcessDetail, votingProps());
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await expect
+				.element(page.getByRole('button', { name: /Votar por Equipo Alpha/ }))
+				.toBeInTheDocument();
+		});
+
+		it('clicking a different team changes the selection', async () => {
+			render(ProcessDetail, votingProps());
+			// Select Alpha first
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await expect
+				.element(page.getByRole('button', { name: /Votar por Equipo Alpha/ }))
+				.toBeInTheDocument();
+			// Switch to Beta
+			await page.getByRole('button', { name: /Equipo Beta/ }).click();
+			await expect
+				.element(page.getByRole('button', { name: /Votar por Equipo Beta/ }))
+				.toBeInTheDocument();
+		});
+
+		it('button is disabled when hasVoted is true', async () => {
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'some-commitment-hash',
+				hasVoted: true
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+			const btn = page.getByRole('button', { name: 'Ya votaste' });
+			await expect.element(btn).toBeInTheDocument();
+			await expect.element(btn).toBeDisabled();
+		});
+
+		it('button is disabled when groupId is null', async () => {
+			render(ProcessDetail, votingProps({ process: { ...mockProcess, estatus: 'VOTING', groupId: null } }));
+			// Select a team first
+			const teamCards = page.getByRole('button', { name: /Equipo Alpha/ });
+			await teamCards.first().click();
+			// Button shows the "no configurado" copy and is disabled
+			const btn = page.getByRole('button', { name: /El grupo on-chain no está configurado/ });
+			await expect.element(btn).toBeInTheDocument();
+			await expect.element(btn).toBeDisabled();
+		});
+
+		it('shows groupId null copy when group is not configured', async () => {
+			render(ProcessDetail, votingProps({ process: { ...mockProcess, estatus: 'VOTING', groupId: null } }));
+			await page.getByRole('button', { name: /Equipo Alpha/ }).click();
+			await expect
+				.element(page.getByRole('button', { name: /El grupo on-chain no está configurado/ }))
+				.toBeInTheDocument();
+		});
+
+		it('clicking the same team deselects it (toggle)', async () => {
+			render(ProcessDetail, votingProps());
+			// Select Alpha — team card is a <button> inside the teams grid
+			const teamCards = page.getByRole('button', { name: /Equipo Alpha/ });
+			await teamCards.first().click();
+			await expect
+				.element(page.getByRole('button', { name: /Votar por Equipo Alpha/ }))
+				.toBeInTheDocument();
+			// Click the team card again to deselect (use .first() to target the card, not the vote button)
+			await teamCards.first().click();
+			await expect
+				.element(page.getByRole('button', { name: /Elegí un equipo para votar/ }))
+				.toBeInTheDocument();
+		});
+	});
+
+	describe('voting confirmation dialog', () => {
+		beforeEach(() => {
+			vi.clearAllMocks();
+		});
+
+		const votingProps = (overrides?: Record<string, unknown>) => ({
+			...defaultProps({
+				process: { ...mockProcess, estatus: 'VOTING', groupId: 'group-1' },
+				...overrides
+			})
+		});
+
+		it('clicking "Votar por [team]" opens the confirmation dialog', async () => {
+			render(ProcessDetail, votingProps());
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await expect
+				.element(page.getByRole('heading', { name: 'Confirmar voto' }))
+				.toBeInTheDocument();
+		});
+
+		it('dialog shows team name in confirmation copy', async () => {
+			render(ProcessDetail, votingProps());
+			await page.getByRole('button', { name: /Equipo Beta/ }).click();
+			await page.getByRole('button', { name: /Votar por Equipo Beta/ }).click();
+			await expect
+				.element(page.getByText(/Confirmás tu voto por Equipo Beta/))
+				.toBeInTheDocument();
+		});
+
+		it('clicking "Cancelar" closes the dialog without starting flow', async () => {
+			render(ProcessDetail, votingProps());
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			// The cancel button inside the dialog
+			await page.getByText('Cancelar', { exact: true }).click();
+			await expect
+				.element(page.getByRole('heading', { name: 'Confirmar voto' }))
+				.not.toBeInTheDocument();
+			// Team is still selected, so button shows "Votar por [team]"
+			await expect
+				.element(page.getByRole('button', { name: /Votar por Equipo Alpha/ }))
+				.toBeInTheDocument();
+			// verifyPasskey was NOT called
+			expect(mockVerifyPasskey).not.toHaveBeenCalled();
+		});
+
+		it('clicking "Confirmar voto" completes the full voting flow', async () => {
+			// Mock invalidateAll as no-op to prevent page reload in test environment
+			mockInvalidateAll.mockResolvedValue(undefined as never);
+
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			// Mock fetch for members
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ data: ['111', '222', '333'] })
+			});
+			mockBuildVotingProof.mockResolvedValueOnce({
+				merkleTreeDepth: 20,
+				merkleTreeRoot: 'root',
+				nullifier: 'null',
+				message: 'Equipo Alpha',
+				scope: '1',
+				points: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+			});
+			mockSubmitVotingProof.mockResolvedValueOnce({
+				success: true,
+				data: { transaction: { hash: '0xabc' } }
+			});
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			// Select team
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			// Click vote button
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			// Confirm in dialog
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			// Mocks resolve immediately so flow completes — M2M callback hasn't arrived yet
+			await expect
+				.element(page.getByText(/confirmando en blockchain/))
+				.toBeInTheDocument();
+
+			// Verify all services were called in order
+			expect(mockVerifyPasskey).toHaveBeenCalledOnce();
+			expect(mockDeriveIdentity).toHaveBeenCalledOnce();
+			expect(mockBuildVotingProof).toHaveBeenCalledOnce();
+			expect(mockSubmitVotingProof).toHaveBeenCalledOnce();
+			expect(mockInvalidateAll).toHaveBeenCalled();
+		});
+	});
+
+	describe('voting flow states', () => {
+		beforeEach(() => {
+			vi.clearAllMocks();
+		});
+
+		const votingProps = (overrides?: Record<string, unknown>) => ({
+			...defaultProps({
+				process: { ...mockProcess, estatus: 'VOTING', groupId: 'group-1' },
+				...overrides
+			})
+		});
+
+		it('returns to idle when user cancels passkey modal', async () => {
+			mockVerifyPasskey.mockRejectedValueOnce(new DOMException('The operation was cancelled', 'NotAllowedError'));
+
+			render(ProcessDetail, votingProps());
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			// Should NOT show error — returns to idle silently
+			await expect
+				.element(page.getByText(/Error/))
+				.not.toBeInTheDocument();
+			// Team selection should still be available (vote button visible)
+			await expect
+				.element(page.getByRole('button', { name: /Votar por Equipo Alpha/ }))
+				.toBeInTheDocument();
+		});
+
+		it('shows passkey mismatch error when commitments differ', async () => {
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-wrong' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'different-commitment' } },
+				commitment: 'different-commitment'
+			});
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'expected-commitment',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			await expect
+				.element(page.getByText(/Usá la misma credencial/))
+				.toBeInTheDocument();
+		});
+
+		it('shows error when relayer returns 5xx', async () => {
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ data: ['111', '222'] })
+			});
+			mockBuildVotingProof.mockResolvedValueOnce({
+				merkleTreeDepth: 20,
+				merkleTreeRoot: 'root',
+				nullifier: 'null',
+				message: 'Equipo Alpha',
+				scope: '1',
+				points: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+			});
+			mockSubmitVotingProof.mockRejectedValueOnce({
+				kind: 'relayer-5xx',
+				message: 'Relayer error: 500'
+			});
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			await expect
+				.element(page.getByText(/El relayer no está disponible/))
+				.toBeInTheDocument();
+		});
+
+		it('shows error when fetch commitments returns 401', async () => {
+			// Mock invalidateAll as no-op to prevent page reload in test environment
+			mockInvalidateAll.mockResolvedValue(undefined as never);
+
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			// buildVotingProof is mocked at module level — simulate a 401 error from inside it
+			mockBuildVotingProof.mockRejectedValueOnce(
+				new Error('Failed to fetch commitments: 401')
+			);
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			await expect
+				.element(page.getByText(/sesión expiró/))
+				.toBeInTheDocument();
+		});
+
+		it('shows translated nullifier error instead of raw English', async () => {
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ data: ['111', '222'] })
+			});
+			mockBuildVotingProof.mockResolvedValueOnce({
+				merkleTreeDepth: 20,
+				merkleTreeRoot: 'root',
+				nullifier: 'null',
+				message: 'Equipo Alpha',
+				scope: '1',
+				points: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+			});
+			mockSubmitVotingProof.mockRejectedValueOnce({
+				kind: 'relayer-4xx',
+				message: 'nullifier already used'
+			});
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			await expect
+				.element(page.getByText(/Ya emitiste tu voto para este proceso/))
+				.toBeInTheDocument();
+		});
+
+		it('shows "confirmando en blockchain" when M2M callback is pending', async () => {
+			mockInvalidateAll.mockResolvedValue(undefined as never);
+
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ data: ['111', '222'] })
+			});
+			mockBuildVotingProof.mockResolvedValueOnce({
+				merkleTreeDepth: 20,
+				merkleTreeRoot: 'root',
+				nullifier: 'null',
+				message: 'Equipo Alpha',
+				scope: '1',
+				points: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+			});
+			mockSubmitVotingProof.mockResolvedValueOnce({
+				success: true,
+				data: { transaction: { hash: '0xabc' } }
+			});
+
+			// M2M callback hasn't arrived yet — server still says hasVoted=false
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			await expect
+				.element(page.getByText(/confirmando en blockchain/))
+				.toBeInTheDocument();
+		});
+
+		it('shows error when proof generation fails', async () => {
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({ data: ['111', '222'] })
+			});
+			mockBuildVotingProof.mockRejectedValueOnce({
+				kind: 'merkle-failed',
+				message: 'Error al generar la prueba ZK'
+			});
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			await expect
+				.element(page.getByText(/Error al generar la prueba/))
+				.toBeInTheDocument();
 		});
 	});
 });

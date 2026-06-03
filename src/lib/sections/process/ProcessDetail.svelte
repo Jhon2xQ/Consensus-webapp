@@ -2,6 +2,15 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle,
+		DialogDescription,
+		DialogFooter,
+		DialogClose
+	} from '$lib/components/ui/dialog';
 	import { cn } from '$lib/utils.js';
 	import {
 		ArrowLeft,
@@ -11,15 +20,20 @@
 		Clock,
 		CheckCircle,
 		Send,
-		Shield
+		Shield,
+		Loader2
 	} from '@lucide/svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import { STATUS_LABELS, STATUS_COLORS } from '$lib/types/process-status';
 	import type { Team } from '$lib/types/team';
 	import type { EnrollmentSummary, Enrollment } from '$lib/types/enrollment';
+	import type { VotingStage, ProofError } from '$lib/types/proof';
+	import { VOTING_STAGE_MESSAGE } from '$lib/types/proof';
 	import { tick } from 'svelte';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { verifyPasskey } from '$lib/services/passkey.service';
 	import { deriveIdentity } from '$lib/services/semaphore.service';
+	import { buildVotingProof, submitVotingProof } from '$lib/services/proof.service';
 
 	type Props = {
 		process: ElectoralProcess;
@@ -48,19 +62,33 @@
 	// for the badge and for action gating.
 	let effectiveStatus: ElectoralProcessStatus = $derived(liveStatus ?? process.estatus);
 
-	// Action state
-	let submitting = $state<'none' | 'commitment' | 'vote'>('none');
+	// Action state — commitment uses the old pattern; voting uses the new state machine
+	let submitting = $state<'none' | 'commitment'>('none');
 	let actionError = $state<string | null>(null);
 	let commitmentForm = $state<HTMLFormElement | null>(null);
 	let pendingCommitment = $state('');
+
+	// Voting state machine
+	let selectedTeam = $state<Team | null>(null);
+	let votingFlow: VotingStage = $state('idle');
+	let actionErrorVote = $state<string | null>(null);
+	let showVoteDialog = $state(false);
+	let pendingM2mConfirm = $state(false);
 
 	// Process phase checks
 	let isCommitmentPhase = $derived(effectiveStatus === 'COMMITMENT');
 	let isVotingPhase = $derived(effectiveStatus === 'VOTING');
 
-	// Already committed/voted checks
+	// Already committed/voted checks — use optimistic local override
 	let hasCommitted = $derived(userEnrollment?.commitment !== null && userEnrollment?.commitment !== undefined);
 	let hasVoted = $derived(userEnrollment?.hasVoted === true);
+
+	// Auto-clear pending M2M confirmation when server confirms hasVoted
+	$effect(() => {
+		if (hasVoted && pendingM2mConfirm) {
+			pendingM2mConfirm = false;
+		}
+	});
 
 	// ── Status helpers (delegate to central maps) ──
 	function getStatusLabel(estatus: ElectoralProcessStatus): string {
@@ -89,7 +117,120 @@
 			.slice(0, 2);
 	}
 
-	// ── Action handlers ──
+	// ── Vote error message mapping ──
+	function getVoteErrorMessage(error: unknown): string {
+		if (error && typeof error === 'object' && 'kind' in error) {
+			const proofError = error as ProofError;
+			switch (proofError.kind) {
+				case 'snark-download':
+					return 'Error al descargar la librería de pruebas. Verificá tu conexión.';
+				case 'merkle-failed':
+					return 'Error al generar la prueba. Intentá de nuevo.';
+				case 'relayer-4xx':
+					if (proofError.message?.toLowerCase().includes('nullifier')) {
+						return 'Ya emitiste tu voto para este proceso.';
+					}
+					return proofError.message || 'Error del relayer. Intentá de nuevo.';
+				case 'relayer-5xx':
+					return 'El relayer no está disponible. Intentá más tarde.';
+				case 'validation':
+					return proofError.message || 'La prueba no fue válida.';
+			}
+		}
+		if (error instanceof Error) {
+			return error.message;
+		}
+		return 'Error al enviar el voto. Intentá de nuevo.';
+	}
+
+	// ── Team selection ──
+	function handleTeamClick(team: Team) {
+		if (votingFlow !== 'idle' || hasVoted) return;
+		if (selectedTeam?.id === team.id) {
+			selectedTeam = null;
+		} else {
+			selectedTeam = team;
+		}
+	}
+
+	// ── Vote dialog ──
+	function openVoteDialog() {
+		showVoteDialog = true;
+	}
+
+	function closeVoteDialog() {
+		showVoteDialog = false;
+	}
+
+	function confirmVote() {
+		showVoteDialog = false;
+		handleSubmitVote();
+	}
+
+	// ── Voting flow ──
+	async function handleSubmitVote() {
+		if (!userSub || !selectedTeam || !process.groupId || hasVoted) {
+			return;
+		}
+
+		actionErrorVote = null;
+
+		try {
+			// Step 1: Verify passkey
+			votingFlow = 'verifying-passkey';
+			const passkeyResult = await verifyPasskey();
+
+			// Step 2: Derive identity
+			const { identity } = await deriveIdentity(userSub, passkeyResult.credentialId, process.id);
+
+			// Step 3: Passkey mismatch check
+			if (userEnrollment?.commitment && identity.commitment.toString() !== userEnrollment.commitment) {
+				actionErrorVote = 'Usá la misma credencial con la que enviaste tu compromiso';
+				votingFlow = 'error';
+				return;
+			}
+
+			// Step 4: Build proof (fetches commitments internally)
+			votingFlow = 'building-proof';
+			const fetchCommitmentsUrl = `/api/private/processes/${process.id}/members`;
+			const fullProof = await buildVotingProof({
+				identity,
+				groupId: process.groupId,
+				processId: process.id,
+				teamName: selectedTeam.name,
+				fetchCommitmentsUrl,
+				voterSub: userSub
+			});
+
+			// Step 5: Submit to relayer
+			votingFlow = 'submitting';
+			await submitVotingProof({ groupId: process.groupId, proof: fullProof });
+
+			// Step 6: Success — optimistic update
+			votingFlow = 'success';
+			await invalidateAll();
+			// If M2M callback hasn't arrived yet, show pending confirmation copy
+			if (!userEnrollment?.hasVoted) {
+				pendingM2mConfirm = true;
+			}
+			await goto(`?success=${encodeURIComponent('Voto registrado')}`, { replaceState: true });
+		} catch (err) {
+			// Handle passkey cancellation (user closed modal) — silent return to idle
+			if (err instanceof DOMException && err.name === 'NotAllowedError') {
+				votingFlow = 'idle';
+				return;
+			}
+			// Handle 401 from fetch commitments (session expired)
+			if (err instanceof Error && err.message.includes('Failed to fetch commitments: 401')) {
+				actionErrorVote = 'Tu sesión expiró. Iniciá sesión de nuevo.';
+			} else {
+				actionErrorVote = getVoteErrorMessage(err);
+			}
+			votingFlow = 'error';
+		}
+	}
+
+	// ── Commitment handler (unchanged) ──
 	async function handleSubmitCommitment() {
 		if (!userSub) {
 			actionError = 'Debés estar autenticado para enviar un compromiso';
@@ -112,42 +253,6 @@
 			commitmentForm?.requestSubmit();
 		} catch (err) {
 			actionError = err instanceof Error ? err.message : 'Error al enviar compromiso';
-		} finally {
-			submitting = 'none';
-		}
-	}
-
-	async function handleSubmitVote() {
-		if (!userSub) {
-			actionError = 'Debés estar autenticado para votar';
-			return;
-		}
-
-		submitting = 'vote';
-		actionError = null;
-
-		try {
-			// Verify passkey — always shows modal/QR, returns credentialId fresh
-			const passkeyResult = await verifyPasskey();
-
-			// Derive identity
-			const identity = await deriveIdentity(userSub, passkeyResult.credentialId, process.id);
-
-			// POST vote
-			const response = await fetch(`/api/public/processes/${process.id}/votes`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					commitment: identity.commitment
-				})
-			});
-
-			if (!response.ok) {
-				const data = await response.json().catch(() => null);
-				throw new Error(data?.message ?? 'Error al enviar voto');
-			}
-		} catch (err) {
-			actionError = err instanceof Error ? err.message : 'Error al enviar voto';
 		} finally {
 			submitting = 'none';
 		}
@@ -250,13 +355,26 @@
 						{:else}
 							<div class="flex flex-col gap-3">
 								{#each teams as team (team.id)}
-									<div class="flex items-center gap-3 p-3 rounded-lg border border-brand-gray-200/60">
+									<button
+										class={cn(
+											'flex items-center gap-3 p-3 rounded-lg border transition-colors text-left w-full',
+											selectedTeam?.id === team.id
+												? 'border-brand-red bg-brand-red/5'
+												: 'border-brand-gray-200/60 hover:border-brand-gray-300',
+											(votingFlow !== 'idle' || hasVoted) && 'opacity-60 cursor-not-allowed'
+										)}
+										onclick={() => handleTeamClick(team)}
+										disabled={votingFlow !== 'idle' || hasVoted}
+									>
 										<!-- Avatar placeholder (initials circle) -->
 										<div class="size-9 rounded-full bg-brand-red/10 text-brand-red flex items-center justify-center text-xs font-bold shrink-0">
 											{getInitials(team.name)}
 										</div>
-										<span class="text-sm font-medium text-brand-black">{team.name}</span>
-									</div>
+										<span class="text-sm font-medium text-brand-black flex-1">{team.name}</span>
+										{#if selectedTeam?.id === team.id}
+											<CheckCircle class="size-5 text-brand-red shrink-0" />
+										{/if}
+									</button>
 								{/each}
 							</div>
 						{/if}
@@ -360,29 +478,93 @@
 							<Vote class="size-4 mr-2" />
 							Ya votaste
 						</Button>
-					{:else}
+					{:else if pendingM2mConfirm}
 						<Button
-							onclick={handleSubmitVote}
-							disabled={submitting !== 'none'}
+							disabled
+							class="w-full"
+							variant="default"
+						>
+							<Loader2 class="size-4 mr-2 animate-spin" />
+							Voto enviado — confirmando en blockchain...
+						</Button>
+					{:else if votingFlow === 'idle'}
+						<Button
+							onclick={selectedTeam ? openVoteDialog : undefined}
+							disabled={!selectedTeam || !process.groupId}
 							class="w-full bg-brand-red hover:bg-brand-red/90 text-white"
 							variant="default"
 						>
+							{#if !process.groupId}
+								El grupo on-chain no está configurado
+							{:else if selectedTeam}
+								Votar por {selectedTeam.name}
+							{:else}
+								Elegí un equipo para votar
+							{/if}
+						</Button>
+					{:else if votingFlow === 'success'}
+						<Button
+							disabled
+							class="w-full"
+							variant="default"
+						>
 							<Vote class="size-4 mr-2" />
-							Realizar voto
+							Ya votaste
+						</Button>
+					{:else}
+						<!-- Verifying / building / submitting states -->
+						<Button
+							disabled
+							class="w-full"
+							variant="default"
+						>
+							<Loader2 class="size-4 mr-2 animate-spin" />
+							{VOTING_STAGE_MESSAGE[votingFlow]}
 						</Button>
 					{/if}
 				{/if}
 
-				{#if submitting !== 'none'}
+				{#if votingFlow === 'error' && actionErrorVote}
+					<div class="flex flex-col gap-2">
+						<p class="text-xs text-red-600 text-center">{actionErrorVote}</p>
+						<Button
+							onclick={() => { votingFlow = 'idle'; actionErrorVote = null; }}
+							class="w-full"
+							variant="outline"
+						>
+							Reintentar
+						</Button>
+					</div>
+				{/if}
+
+				{#if isCommitmentPhase && submitting !== 'none'}
 					<p class="text-xs text-brand-gray-400 text-center">
 						Escaneá el QR que aparece en pantalla con tu móvil
 					</p>
 				{/if}
 
-			{#if actionError}
-				<p class="text-xs text-red-600 text-center">{actionError}</p>
-			{/if}
+				{#if actionError}
+					<p class="text-xs text-red-600 text-center">{actionError}</p>
+				{/if}
 			</div>
 		{/if}
 	</div>
 </section>
+
+<!-- Vote Confirmation Dialog -->
+<Dialog bind:open={showVoteDialog}>
+	<DialogContent>
+		<DialogHeader>
+			<DialogTitle>Confirmar voto</DialogTitle>
+			<DialogDescription>
+				¿Confirmás tu voto por <strong>{selectedTeam?.name}</strong>? Esta acción es irreversible.
+			</DialogDescription>
+		</DialogHeader>
+		<DialogFooter>
+			<DialogClose>
+				<Button variant="outline" onclick={closeVoteDialog}>Cancelar</Button>
+			</DialogClose>
+			<Button variant="destructive" onclick={confirmVote}>Confirmar voto</Button>
+		</DialogFooter>
+	</DialogContent>
+</Dialog>
