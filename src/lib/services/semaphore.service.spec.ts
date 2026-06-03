@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Identity } from '@semaphore-protocol/core';
 import { deriveIdentity } from './semaphore.service';
 
 describe('deriveIdentity', () => {
@@ -60,11 +61,11 @@ describe('deriveIdentity', () => {
 		expect(BigInt(result.commitment)).toBeLessThan(FIELD_PRIME);
 	});
 
-	it('does not return trapdoor or nullifier', async () => {
+	it('returns identity and commitment keys', async () => {
 		const result = await deriveIdentity('user-1', 'cred-1', 'process-1');
-		expect(result).not.toHaveProperty('trapdoor');
-		expect(result).not.toHaveProperty('nullifier');
-		expect(Object.keys(result)).toEqual(['commitment']);
+		expect(result).toHaveProperty('identity');
+		expect(result).toHaveProperty('commitment');
+		expect(Object.keys(result)).toEqual(['identity', 'commitment']);
 	});
 
 	it('works with realistic-looking IDs', async () => {
@@ -75,5 +76,35 @@ describe('deriveIdentity', () => {
 		);
 		expect(typeof result.commitment).toBe('string');
 		expect(BigInt(result.commitment)).toBeGreaterThan(0n);
+	});
+
+	it('identity is an instance of Identity', async () => {
+		const result = await deriveIdentity('user-1', 'cred-1', 'process-1');
+		expect(result.identity).toBeInstanceOf(Identity);
+	});
+
+	it('identity has commitment, secretScalar, publicKey, and privateKey properties', async () => {
+		const result = await deriveIdentity('user-1', 'cred-1', 'process-1');
+		expect(result.identity).toHaveProperty('commitment');
+		expect(result.identity).toHaveProperty('secretScalar');
+		expect(result.identity).toHaveProperty('publicKey');
+		expect(result.identity).toHaveProperty('privateKey');
+	});
+
+	it('commitment matches identity.commitment.toString()', async () => {
+		const result = await deriveIdentity('user-1', 'cred-1', 'process-1');
+		expect(result.commitment).toBe(result.identity.commitment.toString());
+	});
+
+	it('identity.commitment is a BigInt', async () => {
+		const result = await deriveIdentity('user-1', 'cred-1', 'process-1');
+		expect(typeof result.identity.commitment).toBe('bigint');
+	});
+
+	it('same inputs produce same identity', async () => {
+		const r1 = await deriveIdentity('user-1', 'cred-1', 'process-1');
+		const r2 = await deriveIdentity('user-1', 'cred-1', 'process-1');
+		expect(r1.identity.commitment).toBe(r2.identity.commitment);
+		expect(r1.identity.secretScalar).toBe(r2.identity.secretScalar);
 	});
 });

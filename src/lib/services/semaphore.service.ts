@@ -30,6 +30,6 @@ export async function deriveIdentity(
 	// derives trapdoor, nullifier, publicKey, and commitment from the private key.
 	const identity = new Identity(seedHex);
 
-	// Only return the commitment (public hash) — trapdoor and nullifier stay private
-	return { commitment: identity.commitment.toString() };
+	// Return full Identity plus commitment for backward compatibility
+	return { identity, commitment: identity.commitment.toString() };
 }
