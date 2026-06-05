@@ -7,6 +7,7 @@ import {
 import { getPublicTeamsForProcess } from '$lib/server/team.service';
 import { getPublicEnrollmentSummary } from '$lib/server/public-enrollment.service';
 import { getUserEnrollment, updateCommitment } from '$lib/server/enrollment.service';
+import { getProcessCommitments } from '$lib/server/commitments.service';
 import { ApiError } from '$lib/server/api';
 import type { PageServerLoad, Actions } from './$types';
 import type { Team } from '$lib/types/team';
@@ -74,6 +75,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
+	// Merkle tree commitments — only needed for authenticated voters.
+	// Anonymous visitors don't vote, so we skip the call (would 401 anyway).
+	let commitments: string[] = [];
+	let commitmentsError = false;
+
+	if (userSub) {
+		try {
+			commitments = await getProcessCommitments(locals, id);
+		} catch {
+			commitments = [];
+			commitmentsError = true;
+		}
+	}
+
 	return {
 		process: process.value,
 		liveState,
@@ -82,7 +97,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		teamsError,
 		enrollmentError,
 		userSub,
-		userEnrollment
+		userEnrollment,
+		commitments,
+		commitmentsError
 	};
 };
 

@@ -4,27 +4,16 @@ import type { VotingProofInput, VotingFullProof, ProofSubmissionResult, ProofErr
 /**
  * Build a zk-SNARK voting proof for the Semaphore Relayer.
  *
+ * Commitments must be pre-loaded server-side and passed in. The browser never
+ * calls the private backend directly (it's not reachable from the public CDN).
+ *
  * This function dynamically imports @semaphore-protocol/group and @semaphore-protocol/proof
  * to avoid loading WASM/snarkjs in the initial bundle.
  *
  * @throws {ProofError} When proof generation fails
  */
 export async function buildVotingProof(input: VotingProofInput): Promise<VotingFullProof> {
-	const { identity, processId, teamName, fetchCommitmentsUrl, voterSub } = input;
-
-	// Fetch commitments from backend
-	const response = await fetch(fetchCommitmentsUrl, {
-		headers: {
-			Authorization: `Bearer ${voterSub}`
-		}
-	});
-
-	if (!response.ok) {
-		throw new Error(`Failed to fetch commitments: ${response.status}`);
-	}
-
-	const { data } = await response.json();
-	const commitments: string[] = data;
+	const { identity, processId, teamName, commitments } = input;
 
 	// Convert string commitments to bigint for Group constructor
 	const members = commitments.map((c) => BigInt(c));

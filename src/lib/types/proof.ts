@@ -5,8 +5,7 @@ export type VotingProofInput = {
 	groupId: string;
 	processId: string;
 	teamName: string;
-	fetchCommitmentsUrl: string;
-	voterSub: string;
+	commitments: string[];
 };
 
 export type VotingFullProof = {

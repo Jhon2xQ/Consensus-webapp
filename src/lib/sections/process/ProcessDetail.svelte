@@ -44,6 +44,8 @@
 		enrollmentError: boolean;
 		userSub: string | null;
 		userEnrollment: Enrollment | null;
+		commitments: string[];
+		commitmentsError: boolean;
 	};
 
 	let {
@@ -54,7 +56,9 @@
 		teamsError = false,
 		enrollmentError = false,
 		userSub = null,
-		userEnrollment = null
+		userEnrollment = null,
+		commitments,
+		commitmentsError = false
 	}: Props = $props();
 
 	// Use the live status from the /state endpoint when available; fall back
@@ -173,6 +177,18 @@
 			return;
 		}
 
+		// Pre-check: Merkle tree must be available before prompting passkey
+		if (commitmentsError) {
+			actionErrorVote = 'No se pudieron cargar los compromisos. Recargá la página e intentá de nuevo.';
+			votingFlow = 'error';
+			return;
+		}
+		if (commitments.length === 0) {
+			actionErrorVote = 'Todavía no hay compromisos registrados en este proceso.';
+			votingFlow = 'error';
+			return;
+		}
+
 		actionErrorVote = null;
 
 		try {
@@ -190,16 +206,14 @@
 				return;
 			}
 
-			// Step 4: Build proof (fetches commitments internally)
+			// Step 4: Build proof with pre-loaded commitments
 			votingFlow = 'building-proof';
-			const fetchCommitmentsUrl = `/api/private/processes/${process.id}/members`;
 			const fullProof = await buildVotingProof({
 				identity,
 				groupId: process.groupId,
 				processId: process.id,
 				teamName: selectedTeam.name,
-				fetchCommitmentsUrl,
-				voterSub: userSub
+				commitments
 			});
 
 			// Step 5: Submit to relayer
@@ -220,12 +234,7 @@
 				votingFlow = 'idle';
 				return;
 			}
-			// Handle 401 from fetch commitments (session expired)
-			if (err instanceof Error && err.message.includes('Failed to fetch commitments: 401')) {
-				actionErrorVote = 'Tu sesión expiró. Iniciá sesión de nuevo.';
-			} else {
-				actionErrorVote = getVoteErrorMessage(err);
-			}
+			actionErrorVote = getVoteErrorMessage(err);
 			votingFlow = 'error';
 		}
 	}

@@ -83,6 +83,8 @@ function defaultProps(overrides?: Record<string, unknown>) {
 		enrollmentError: false,
 		userSub: 'user-abc-123',
 		userEnrollment: null,
+		commitments: ['1', '2', '3'],
+		commitmentsError: false,
 		...overrides
 	};
 }
@@ -597,20 +599,7 @@ describe('ProcessDetail.svelte', () => {
 				.toBeInTheDocument();
 		});
 
-		it('shows error when fetch commitments returns 401', async () => {
-			// Mock invalidateAll as no-op to prevent page reload in test environment
-			mockInvalidateAll.mockResolvedValue(undefined as never);
-
-			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
-			mockDeriveIdentity.mockResolvedValueOnce({
-				identity: { commitment: { toString: () => 'commitment-abc' } },
-				commitment: 'commitment-abc'
-			});
-			// buildVotingProof is mocked at module level — simulate a 401 error from inside it
-			mockBuildVotingProof.mockRejectedValueOnce(
-				new Error('Failed to fetch commitments: 401')
-			);
-
+		it('shows error before prompting passkey when commitmentsError is true', async () => {
 			const enrolledUser: Enrollment = {
 				id: 'enr-1',
 				electoralProcessId: '1',
@@ -619,14 +608,45 @@ describe('ProcessDetail.svelte', () => {
 				commitment: 'commitment-abc',
 				hasVoted: false
 			};
-			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+			render(ProcessDetail, votingProps({
+				userEnrollment: enrolledUser,
+				commitments: [],
+				commitmentsError: true
+			}));
 
 			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
 			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
 			await page.getByRole('button', { name: 'Confirmar voto' }).click();
 
+			// Pre-check fires BEFORE passkey verification
+			expect(mockVerifyPasskey).not.toHaveBeenCalled();
 			await expect
-				.element(page.getByText(/sesión expiró/))
+				.element(page.getByText(/Recargá la página/))
+				.toBeInTheDocument();
+		});
+
+		it('shows error before prompting passkey when commitments list is empty', async () => {
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({
+				userEnrollment: enrolledUser,
+				commitments: [],
+				commitmentsError: false
+			}));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			expect(mockVerifyPasskey).not.toHaveBeenCalled();
+			await expect
+				.element(page.getByText(/Todavía no hay compromisos registrados/))
 				.toBeInTheDocument();
 		});
 
@@ -635,10 +655,6 @@ describe('ProcessDetail.svelte', () => {
 			mockDeriveIdentity.mockResolvedValueOnce({
 				identity: { commitment: { toString: () => 'commitment-abc' } },
 				commitment: 'commitment-abc'
-			});
-			mockFetch.mockResolvedValueOnce({
-				ok: true,
-				json: () => Promise.resolve({ data: ['111', '222'] })
 			});
 			mockBuildVotingProof.mockResolvedValueOnce({
 				merkleTreeDepth: 20,
@@ -680,10 +696,6 @@ describe('ProcessDetail.svelte', () => {
 				identity: { commitment: { toString: () => 'commitment-abc' } },
 				commitment: 'commitment-abc'
 			});
-			mockFetch.mockResolvedValueOnce({
-				ok: true,
-				json: () => Promise.resolve({ data: ['111', '222'] })
-			});
 			mockBuildVotingProof.mockResolvedValueOnce({
 				merkleTreeDepth: 20,
 				merkleTreeRoot: 'root',
@@ -722,10 +734,6 @@ describe('ProcessDetail.svelte', () => {
 			mockDeriveIdentity.mockResolvedValueOnce({
 				identity: { commitment: { toString: () => 'commitment-abc' } },
 				commitment: 'commitment-abc'
-			});
-			mockFetch.mockResolvedValueOnce({
-				ok: true,
-				json: () => Promise.resolve({ data: ['111', '222'] })
 			});
 			mockBuildVotingProof.mockRejectedValueOnce({
 				kind: 'merkle-failed',

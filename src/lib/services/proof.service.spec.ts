@@ -39,15 +39,9 @@ beforeEach(() => {
 });
 
 describe('buildVotingProof', () => {
-	it('fetches commitments and builds group with bigint members', async () => {
+	it('builds group from pre-loaded commitments and generates proof', async () => {
 		const identity = new Identity('test-seed');
 		const commitments = ['12345', '67890', '11111'];
-
-		// Mock fetch response
-		mockFetch.mockResolvedValueOnce({
-			ok: true,
-			json: async () => ({ data: commitments })
-		});
 
 		// Mock generateProof
 		const mockProof = {
@@ -65,20 +59,10 @@ describe('buildVotingProof', () => {
 			groupId: 'group-1',
 			processId: 'proc-42',
 			teamName: 'Equipo A',
-			fetchCommitmentsUrl: '/api/private/processes/proc-42/members',
-			voterSub: 'user-1'
+			commitments
 		});
 
-		// Verify fetch was called correctly
-		expect(mockFetch).toHaveBeenCalledWith('/api/private/processes/proc-42/members', {
-			headers: {
-				Authorization: 'Bearer user-1'
-			}
-		});
-
-		// Verify Group was constructed with bigint members
-		// MockGroup is a class, so we can't check constructor args directly
-		// But we can verify generateProof was called with a Group instance
+		// Verify generateProof was called with a Group instance
 		expect(mockGenerateProof).toHaveBeenCalledWith(
 			identity,
 			expect.any(MockGroup),
@@ -90,34 +74,30 @@ describe('buildVotingProof', () => {
 		expect(result).toEqual(mockProof);
 	});
 
-	it('throws when fetch fails', async () => {
+	it('does not call fetch — commitments come pre-loaded', async () => {
 		const identity = new Identity('test-seed');
-
-		mockFetch.mockResolvedValueOnce({
-			ok: false,
-			status: 401
+		mockGenerateProof.mockResolvedValueOnce({
+			merkleTreeDepth: 20,
+			merkleTreeRoot: 'x',
+			nullifier: 'y',
+			message: 'Equipo A',
+			scope: 'proc-1',
+			points: []
 		});
 
-		await expect(
-			buildVotingProof({
-				identity,
-				groupId: 'group-1',
-				processId: 'proc-42',
-				teamName: 'Equipo A',
-				fetchCommitmentsUrl: '/api/private/processes/proc-42/members',
-				voterSub: 'user-1'
-			})
-		).rejects.toThrow('Failed to fetch commitments: 401');
+		await buildVotingProof({
+			identity,
+			groupId: 'group-1',
+			processId: 'proc-1',
+			teamName: 'Equipo A',
+			commitments: ['1', '2', '3']
+		});
+
+		expect(mockFetch).not.toHaveBeenCalled();
 	});
 
 	it('throws merkle-failed error when generateProof fails', async () => {
 		const identity = new Identity('test-seed');
-		const commitments = ['12345', '67890', '11111'];
-
-		mockFetch.mockResolvedValueOnce({
-			ok: true,
-			json: async () => ({ data: commitments })
-		});
 
 		mockGenerateProof.mockRejectedValueOnce(new Error('Snark computation failed'));
 
@@ -127,8 +107,7 @@ describe('buildVotingProof', () => {
 				groupId: 'group-1',
 				processId: 'proc-42',
 				teamName: 'Equipo A',
-				fetchCommitmentsUrl: '/api/private/processes/proc-42/members',
-				voterSub: 'user-1'
+				commitments: ['12345', '67890', '11111']
 			})
 		).rejects.toEqual({
 			kind: 'merkle-failed',
@@ -139,11 +118,6 @@ describe('buildVotingProof', () => {
 	it('converts string commitments to bigint for Group', async () => {
 		const identity = new Identity('test-seed');
 		const commitments = ['999999999999999999', '111111111111111111'];
-
-		mockFetch.mockResolvedValueOnce({
-			ok: true,
-			json: async () => ({ data: commitments })
-		});
 
 		const mockProof = {
 			merkleTreeDepth: 20,
@@ -160,13 +134,10 @@ describe('buildVotingProof', () => {
 			groupId: 'group-2',
 			processId: 'proc-43',
 			teamName: 'Equipo B',
-			fetchCommitmentsUrl: '/api/private/processes/proc-43/members',
-			voterSub: 'user-2'
+			commitments
 		});
 
 		// Verify generateProof was called with a Group instance
-		// The Group constructor receives bigint members, but we can't check constructor args directly
-		// We can verify the Group instance was passed to generateProof
 		expect(mockGenerateProof).toHaveBeenCalledWith(
 			identity,
 			expect.any(MockGroup),
