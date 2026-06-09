@@ -78,7 +78,7 @@ Lista todos los procesos electorales con paginación.
 }
 ```
 
-> **Nota**: este endpoint NO expone `createdBy` (Logto user ID del creador) por privacidad. `groupId` SÍ se expone — es el ID del grupo Semaphore on-chain (público por diseño) y puede ser `null` hasta que se cree el grupo (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `GET /api/private/processes`.
+> **Nota**: este endpoint NO expone `createdBy` (Logto user ID del creador) por privacidad. `groupId` SÍ se expone — es el ID del grupo Semaphore on-chain (público por diseño) y puede ser `null` hasta que se cree el grupo (estado `SEALED`, vía `POST /api/private/processes/{id}/group`). Ver `GET /api/private/processes`.
 
 ---
 
@@ -117,7 +117,7 @@ Obtiene un proceso electoral por su ID.
 }
 ```
 
-> **Nota**: este endpoint NO expone `createdBy` (Logto user ID del creador) por privacidad. `groupId` SÍ se expone — es el ID del grupo Semaphore on-chain (público por diseño) y puede ser `null` hasta que se cree el grupo (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `GET /api/private/processes/{id}`.
+> **Nota**: este endpoint NO expone `createdBy` (Logto user ID del creador) por privacidad. `groupId` SÍ se expone — es el ID del grupo Semaphore on-chain (público por diseño) y puede ser `null` hasta que se cree el grupo (estado `SEALED`, vía `POST /api/private/processes/{id}/group`). Ver `GET /api/private/processes/{id}`.
 
 ### Respuesta `404 Not Found`
 
@@ -228,7 +228,7 @@ Lista los procesos electorales creados por el usuario autenticado con paginació
 }
 ```
 
-> **Nota**: `groupId` es `null` hasta que se cree el grupo Semaphore (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `docs/RELAYER_API_DOC.md`.
+> **Nota**: `groupId` es `null` hasta que se cree el grupo Semaphore (estado `SEALED`, vía `POST /api/private/processes/{id}/group`). Ver `docs/RELAYER_API_DOC.md`.
 
 ### Respuesta `401 Unauthorized`
 
@@ -290,7 +290,7 @@ Obtiene un proceso electoral por su ID. Mismo comportamiento que el endpoint pú
 }
 ```
 
-> **Nota**: `groupId` es `null` hasta que se cree el grupo Semaphore (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `docs/RELAYER_API_DOC.md`.
+> **Nota**: `groupId` es `null` hasta que se cree el grupo Semaphore (estado `SEALED`, vía `POST /api/private/processes/{id}/group`). Ver `docs/RELAYER_API_DOC.md`.
 
 ### Respuesta `401 Unauthorized`
 
@@ -338,7 +338,6 @@ Crea un nuevo proceso electoral.
 ```
 {
   "name": "string (requerido)",
-  "scope": "string (requerido)",
   "description": "string (opcional)",
   "commitmentStart": "instant (ISO-8601, requerido)",
   "commitmentEnd": "instant (ISO-8601, requerido)",
@@ -348,6 +347,8 @@ Crea un nuevo proceso electoral.
 }
 ```
 
+> `scope` se genera automáticamente a partir del `name` usando SHA-256 → BigInt → string decimal. No se envía en el request.
+>
 > `estatus` no se incluye en la creación. El sistema asigna `OPEN` por defecto y la máquina de estados lo transiciona automáticamente según las fechas del proceso.
 
 ### Respuesta `201 Created`
@@ -376,7 +377,7 @@ Crea un nuevo proceso electoral.
 
 > `estatus` en la respuesta siempre es un valor no-nulo, calculado por la máquina de estados.
 >
-> `groupId` se devuelve como `null` en este endpoint — el grupo Semaphore se crea en un paso posterior (estado `SEALED`, vía `POST /api/private/processes/{id}/groups`). Ver `docs/RELAYER_API_DOC.md`.
+> `groupId` se devuelve como `null` en este endpoint — el grupo Semaphore se crea en un paso posterior (estado `SEALED`, vía `POST /api/private/processes/{id}/group`). Ver `docs/RELAYER_API_DOC.md`.
 
 ### Respuesta `400 Bad Request`
 
@@ -419,7 +420,6 @@ Actualiza un proceso electoral existente. Todos los campos son opcionales.
 ```
 {
   "name": "string (opcional)",
-  "scope": "string (opcional)",
   "description": "string (opcional)",
   "commitmentStart": "instant (ISO-8601, opcional)",
   "commitmentEnd": "instant (ISO-8601, opcional)",
