@@ -46,6 +46,6 @@ export type ProofSubmissionResult = {
 };
 
 export type ProofError = {
-	kind: 'snark-download' | 'merkle-failed' | 'relayer-4xx' | 'relayer-5xx' | 'validation';
+	kind: 'snark-download' | 'merkle-failed' | 'identity-not-in-group' | 'relayer-4xx' | 'relayer-5xx' | 'validation';
 	message?: string;
 };

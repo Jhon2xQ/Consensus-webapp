@@ -41,7 +41,7 @@ beforeEach(() => {
 describe('buildVotingProof', () => {
 	it('builds group from pre-loaded commitments and generates proof', async () => {
 		const identity = new Identity('test-seed');
-		const commitments = ['12345', '67890', '11111'];
+		const commitments = [identity.commitment.toString(), '67890', '11111'];
 
 		// Mock generateProof
 		const mockProof = {
@@ -66,8 +66,8 @@ describe('buildVotingProof', () => {
 		expect(mockGenerateProof).toHaveBeenCalledWith(
 			identity,
 			expect.any(MockGroup),
-			'Equipo A',
-			'proc-42'
+			48372189119763425552198978496551648004736015106475216423350523710744037816954n,
+			89061027359091757604669380787291759126923427694506796548474207502827945494064n
 		);
 
 		// Verify result
@@ -90,10 +90,27 @@ describe('buildVotingProof', () => {
 			groupId: 'group-1',
 			processId: 'proc-1',
 			teamName: 'Equipo A',
-			commitments: ['1', '2', '3']
+			commitments: [identity.commitment.toString()]
 		});
 
 		expect(mockFetch).not.toHaveBeenCalled();
+	});
+
+	it('throws identity-not-in-group when commitment is not in the array', async () => {
+		const identity = new Identity('other-seed');
+
+		await expect(
+			buildVotingProof({
+				identity,
+				groupId: 'group-1',
+				processId: 'proc-1',
+				teamName: 'Equipo A',
+				commitments: ['111', '222', '333']
+			})
+		).rejects.toEqual({
+			kind: 'identity-not-in-group',
+			message: 'Tu compromiso no se encuentra en el árbol de votantes. Verificá que hayas enviado tu compromiso desde este dispositivo.'
+		});
 	});
 
 	it('throws merkle-failed error when generateProof fails', async () => {
@@ -107,7 +124,7 @@ describe('buildVotingProof', () => {
 				groupId: 'group-1',
 				processId: 'proc-42',
 				teamName: 'Equipo A',
-				commitments: ['12345', '67890', '11111']
+				commitments: [identity.commitment.toString(), '67890', '11111']
 			})
 		).rejects.toEqual({
 			kind: 'merkle-failed',
@@ -117,7 +134,7 @@ describe('buildVotingProof', () => {
 
 	it('converts string commitments to bigint for Group', async () => {
 		const identity = new Identity('test-seed');
-		const commitments = ['999999999999999999', '111111111111111111'];
+		const commitments = [identity.commitment.toString(), '111111111111111111'];
 
 		const mockProof = {
 			merkleTreeDepth: 20,
@@ -141,8 +158,8 @@ describe('buildVotingProof', () => {
 		expect(mockGenerateProof).toHaveBeenCalledWith(
 			identity,
 			expect.any(MockGroup),
-			'Equipo B',
-			'proc-43'
+			34998467565892384141537495295439947866726190305254194210388848620590297824266n,
+			9221748722220242723228722385434345259831565202181691594216325347713215797523n
 		);
 	});
 });

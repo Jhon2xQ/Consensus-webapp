@@ -130,6 +130,8 @@
 					return 'Error al descargar la librería de pruebas. Verificá tu conexión.';
 				case 'merkle-failed':
 					return 'Error al generar la prueba. Intentá de nuevo.';
+				case 'identity-not-in-group':
+					return proofError.message || 'No se encontró tu compromiso en el árbol de votantes.';
 				case 'relayer-4xx':
 					if (proofError.message?.toLowerCase().includes('nullifier')) {
 						return 'Ya emitiste tu voto para este proceso.';

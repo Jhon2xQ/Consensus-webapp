@@ -758,5 +758,35 @@ describe('ProcessDetail.svelte', () => {
 				.element(page.getByText(/Error al generar la prueba/))
 				.toBeInTheDocument();
 		});
+
+		it('shows identity-not-in-group error when commitment is missing from the tree', async () => {
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			mockBuildVotingProof.mockRejectedValueOnce({
+				kind: 'identity-not-in-group',
+				message: 'No se encontró tu compromiso en el árbol de votantes.'
+			});
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			await expect
+				.element(page.getByText(/No se encontró tu compromiso/))
+				.toBeInTheDocument();
+		});
 	});
 });

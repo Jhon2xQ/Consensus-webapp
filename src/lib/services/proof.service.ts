@@ -2,6 +2,23 @@ import { env } from '$env/dynamic/public';
 import type { VotingProofInput, VotingFullProof, ProofSubmissionResult, ProofError } from '$lib/types/proof';
 
 /**
+ * Hash a string via SHA-256 and return a BigInt suitable for Semaphore circuits.
+ *
+ * Both message and scope are capped at 31 chars by Semaphore's internal
+ * encodeBytes32String. Rather than rely on that encoding (and deal with
+ * length-specific conditionals), we always hash via Web Crypto and convert
+ * to BigInt. This gives a uniform 256-bit output regardless of input length.
+ */
+async function toSemaphoreBigInt(value: string): Promise<bigint> {
+	const data = new TextEncoder().encode(value);
+	const hash = await crypto.subtle.digest('SHA-256', data);
+	const hex = Array.from(new Uint8Array(hash))
+		.map((b) => b.toString(16).padStart(2, '0'))
+		.join('');
+	return BigInt('0x' + hex);
+}
+
+/**
  * Build a zk-SNARK voting proof for the Semaphore Relayer.
  *
  * Commitments must be pre-loaded server-side and passed in. The browser never
@@ -14,6 +31,21 @@ import type { VotingProofInput, VotingFullProof, ProofSubmissionResult, ProofErr
  */
 export async function buildVotingProof(input: VotingProofInput): Promise<VotingFullProof> {
 	const { identity, processId, teamName, commitments } = input;
+
+	// Pre-check: identity must be in the Merkle tree, otherwise the proof
+	// generation will fail with an opaque error upstream.
+	const userCommitment = identity.commitment.toString();
+	if (!commitments.includes(userCommitment)) {
+		console.error(
+			'[ProofService] identity NOT in commitments array.',
+			'userCommitment:', userCommitment,
+			'commitments:', commitments
+		);
+		throw {
+			kind: 'identity-not-in-group',
+			message: 'Tu compromiso no se encuentra en el árbol de votantes. Verificá que hayas enviado tu compromiso desde este dispositivo.'
+		} satisfies ProofError;
+	}
 
 	// Convert string commitments to bigint for Group constructor
 	const members = commitments.map((c) => BigInt(c));
@@ -36,13 +68,23 @@ export async function buildVotingProof(input: VotingProofInput): Promise<VotingF
 	const group = new Group(members);
 
 	// Generate zk-SNARK proof
-	// message = teamName (what the user votes for)
-	// scope = processId (external nullifier to prevent double voting)
+	// message = SHA-256(teamName) → what the user votes for
+	// scope = SHA-256(processId) → external nullifier to prevent double voting
+	//
+	// Always hashing via SHA-256 (instead of conditionally encoding to bytes32)
+	// avoids Semaphore's 31-char encodeBytes32String limit entirely. Both values
+	// become uniform 256-bit BigInts regardless of input length.
+	const [message, scope] = await Promise.all([
+		toSemaphoreBigInt(teamName),
+		toSemaphoreBigInt(processId)
+	]);
+
 	let fullProof: VotingFullProof;
 
 	try {
-		fullProof = await generateProof(identity, group, teamName, processId);
-	} catch {
+		fullProof = await generateProof(identity, group, message, scope);
+	} catch (err) {
+		console.error('[ProofService] generateProof failed:', err);
 		throw {
 			kind: 'merkle-failed',
 			message: 'Error al generar la prueba ZK'
