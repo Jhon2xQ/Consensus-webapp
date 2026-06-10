@@ -159,7 +159,6 @@ describe('getProcessById', () => {
 describe('createProcess', () => {
 	const createBody: CreateProcessBody = {
 		name: 'Nuevo Proceso',
-		scope: 'Nacional',
 		description: 'Descripción de prueba',
 		commitmentStart: '2026-06-01',
 		commitmentEnd: '2026-06-15',
@@ -202,8 +201,7 @@ describe('createProcess', () => {
 // ── updateProcess tests ──
 describe('updateProcess', () => {
 	const updateBody: Partial<CreateProcessBody> = {
-		name: 'Proceso Actualizado',
-		scope: 'Provincial'
+		name: 'Proceso Actualizado'
 	};
 
 	it('calls PUT /api/private/processes/{id} with correct path and body', async () => {

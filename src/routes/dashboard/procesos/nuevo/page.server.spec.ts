@@ -37,60 +37,7 @@ function createRequest(formData: FormData): Request {
 	});
 }
 
-// ============================================================
-// default action: scope derivation
-// ============================================================
-describe('default action — scope derivation', () => {
-	it('derives body.scope from name instead of reading scope from FormData', async () => {
-		mockCreateProcess.mockResolvedValue({ id: 'new-proc', name: 'Mi Proceso' });
-
-		const formData = createFormData({
-			name: 'Mi Proceso',
-			description: 'Desc',
-			commitmentStart: '2026-01-01',
-			commitmentEnd: '2026-02-01',
-			votingStart: '2026-03-01',
-			votingEnd: '2026-03-15',
-			results: '2026-04-01'
-		});
-		const request = createRequest(formData);
-
-		try {
-			await actions.default({ request, locals: mockLocals } as any);
-		} catch (err: any) {
-			expect(err).toHaveProperty('status', 303);
-		}
-
-		expect(mockCreateProcess).toHaveBeenCalled();
-		const createBody = mockCreateProcess.mock.calls[0][1];
-		expect(createBody.scope).toBe('Mi Proceso');
-		expect(createBody.name).toBe('Mi Proceso');
-	});
-
-	it('trims name before using it as scope', async () => {
-		mockCreateProcess.mockResolvedValue({ id: 'new-proc', name: '  Elecciones 2026  ' });
-
-		const formData = createFormData({
-			name: '  Elecciones 2026  ',
-			commitmentStart: '2026-01-01',
-			commitmentEnd: '2026-02-01',
-			votingStart: '2026-03-01',
-			votingEnd: '2026-03-15',
-			results: '2026-04-01'
-		});
-		const request = createRequest(formData);
-
-		try {
-			await actions.default({ request, locals: mockLocals } as any);
-		} catch (err: any) {
-			expect(err).toHaveProperty('status', 303);
-		}
-
-		expect(mockCreateProcess).toHaveBeenCalled();
-		const createBody = mockCreateProcess.mock.calls[0][1];
-		expect(createBody.scope).toBe('Elecciones 2026');
-	});
-
+describe('scope validation', () => {
 	it('does NOT validate scope as a required field (removed)', async () => {
 		mockCreateProcess.mockResolvedValue({ id: 'new-proc', name: 'Test' });
 
