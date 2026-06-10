@@ -21,7 +21,8 @@
 		CheckCircle,
 		Send,
 		Shield,
-		Loader2
+		Loader2,
+		Copy
 	} from '@lucide/svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import { STATUS_LABELS, STATUS_COLORS } from '$lib/types/process-status';
@@ -78,6 +79,7 @@
 	let actionErrorVote = $state<string | null>(null);
 	let showVoteDialog = $state(false);
 	let pendingM2mConfirm = $state(false);
+	let scopeCopied = $state(false);
 
 	// Process phase checks
 	let isCommitmentPhase = $derived(effectiveStatus === 'COMMITMENT');
@@ -308,7 +310,24 @@
 
 						<div class="flex items-center gap-2 text-sm">
 							<span class="font-medium text-brand-black">Alcance:</span>
-							<span class="text-brand-gray-600">{process.scope}</span>
+							<span class="inline-flex items-center gap-1.5 rounded-md border border-brand-gray-200 bg-brand-gray-50 px-2.5 py-0.5 text-xs font-medium text-brand-gray-700">
+								{process.scope}
+								<button
+									onclick={() => {
+										navigator.clipboard.writeText(process.scope);
+										scopeCopied = true;
+										setTimeout(() => { scopeCopied = false; }, 1500);
+									}}
+									class="inline-flex items-center justify-center rounded p-0.5 text-brand-gray-400 hover:text-brand-red transition-colors"
+									aria-label="Copiar alcance"
+								>
+									{#if scopeCopied}
+										<CheckCircle class="size-3.5 text-green-500" />
+									{:else}
+										<Copy class="size-3.5" />
+									{/if}
+								</button>
+							</span>
 						</div>
 
 						<!-- Timeline: 2×2 grid -->
