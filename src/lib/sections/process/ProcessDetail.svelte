@@ -78,23 +78,21 @@
 	let votingFlow: VotingStage = $state('idle');
 	let actionErrorVote = $state<string | null>(null);
 	let showVoteDialog = $state(false);
-	let pendingM2mConfirm = $state(false);
+	// Optimistic local override — set true immediately when the relayer accepts
+	// the proof (or returns 409 nullifier), so the UI never gets stuck waiting
+	// for the server-side M2M callback to reconcile hasVoted.
+	let localHasVoted = $state(false);
 	let scopeCopied = $state(false);
 
 	// Process phase checks
 	let isCommitmentPhase = $derived(effectiveStatus === 'COMMITMENT');
 	let isVotingPhase = $derived(effectiveStatus === 'VOTING');
 
-	// Already committed/voted checks — use optimistic local override
+	// Already committed/voted checks — hasVoted unions the server's view with
+	// the optimistic local override so the UI flips to "Ya votaste" the moment
+	// the relayer confirms the proof, without waiting for the M2M callback.
 	let hasCommitted = $derived(userEnrollment?.commitment !== null && userEnrollment?.commitment !== undefined);
-	let hasVoted = $derived(userEnrollment?.hasVoted === true);
-
-	// Auto-clear pending M2M confirmation when server confirms hasVoted
-	$effect(() => {
-		if (hasVoted && pendingM2mConfirm) {
-			pendingM2mConfirm = false;
-		}
-	});
+	let hasVoted = $derived((userEnrollment?.hasVoted === true) || localHasVoted);
 
 	// ── Status helpers (delegate to central maps) ──
 	function getStatusLabel(estatus: ElectoralProcessStatus): string {
@@ -220,33 +218,31 @@
 				commitments
 			});
 
-			// Step 5: Submit to relayer
+			// Step 5: Submit to relayer. A 200 response means the proof was accepted,
+			// whether as first-time submission (success: true) or re-submit of an
+			// already on-chain proof (success: false). Both cases mean the user's
+			// vote exists on-chain. Any non-200 (5xx, 4xx, network) throws to the
+			// outer catch.
 			votingFlow = 'submitting';
-			const submission = await submitVotingProof({ groupId: process.groupId, proof: fullProof });
+			await submitVotingProof({ groupId: process.groupId, proof: fullProof });
 
-			// Step 6: Mark hasVoted = true via the server node (PUT to enrollments).
-			// The relayer confirmed the proof; if the server-side mark fails, the
-			// M2M callback will eventually reconcile. POST a record is NOT done
-			// here — another service captures on-chain events.
-			if (submission.success) {
-				try {
-					const markResponse = await fetch('?/mark-as-voted', { method: 'POST' });
-					if (!markResponse.ok) {
-						console.error('[Voting] mark-as-voted failed:', markResponse.status);
-					}
-				} catch (markErr) {
-					console.error('[Voting] mark-as-voted request error:', markErr);
-				}
+			// Step 6: Mark hasVoted locally + best-effort server-side PUT.
+			// localHasVoted flips the UI to "Ya votaste" immediately regardless
+			// of whether the PUT succeeds; the M2M callback or a reload reconciles.
+			const markResponse = await fetch('?/mark-as-voted', {
+				method: 'POST',
+				body: new URLSearchParams()
+			});
+			if (!markResponse.ok) {
+				console.error('[Voting] mark-as-voted failed:', markResponse.status);
 			}
+			localHasVoted = true;
 
-			// Step 7: Success — optimistic update
+			// Step 7: Success — localHasVoted above is what flips the button to
+			// "Ya votaste" immediately. invalidateAll re-fetches the server view
+			// so subsequent renders use the canonical hasVoted.
 			votingFlow = 'success';
 			await invalidateAll();
-			// If the server-side mark failed and M2M callback hasn't arrived yet,
-			// show pending confirmation copy as a fallback.
-			if (!userEnrollment?.hasVoted) {
-				pendingM2mConfirm = true;
-			}
 			await goto(`?success=${encodeURIComponent('Voto registrado')}`, { replaceState: true });
 		} catch (err) {
 			// Handle passkey cancellation (user closed modal) — silent return to idle
@@ -524,15 +520,6 @@
 							<Vote class="size-4 mr-2" />
 							Ya votaste
 						</Button>
-					{:else if pendingM2mConfirm}
-						<Button
-							disabled
-							class="w-full"
-							variant="default"
-						>
-							<Loader2 class="size-4 mr-2 animate-spin" />
-							Voto enviado — confirmando en blockchain...
-						</Button>
 					{:else if votingFlow === 'idle'}
 						<Button
 							onclick={selectedTeam ? openVoteDialog : undefined}
@@ -548,17 +535,8 @@
 								Elegí un equipo para votar
 							{/if}
 						</Button>
-					{:else if votingFlow === 'success'}
-						<Button
-							disabled
-							class="w-full"
-							variant="default"
-						>
-							<Vote class="size-4 mr-2" />
-							Ya votaste
-						</Button>
 					{:else}
-						<!-- Verifying / building / submitting states -->
+						<!-- Verifying / building / submitting / success states -->
 						<Button
 							disabled
 							class="w-full"

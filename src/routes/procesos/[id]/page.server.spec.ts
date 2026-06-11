@@ -412,29 +412,20 @@ describe('actions.update-commitment /state guard', () => {
 });
 
 // =====================================================================
-// mark-as-voted action — /state guard
+// mark-as-voted action — no /state guard
+//
+// The relayer already validates the proof against the live process state
+// at submission time. The action here only needs to reconcile the local
+// enrollment record, so it accepts the PUT regardless of current phase.
 // =====================================================================
 
-describe('actions.mark-as-voted /state guard', () => {
+describe('actions.mark-as-voted', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockGetProcessState.mockResolvedValue('VOTING');
 		mockMarkAsVoted.mockResolvedValue(undefined);
 	});
 
-	it('calls getProcessState to verify the live state', async () => {
-		await actions['mark-as-voted']({
-			params: { id: 'proc-1' },
-			locals: mockLocals,
-			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
-		} as any);
-
-		expect(mockGetProcessState).toHaveBeenCalledWith('proc-1');
-	});
-
-	it('proceeds to markAsVoted when state is VOTING', async () => {
-		mockGetProcessState.mockResolvedValue('VOTING');
-
+	it('proceeds to markAsVoted without checking the process state', async () => {
 		const result = await actions['mark-as-voted']({
 			params: { id: 'proc-1' },
 			locals: mockLocals,
@@ -443,55 +434,11 @@ describe('actions.mark-as-voted /state guard', () => {
 
 		expect(result).toEqual({ success: true });
 		expect(mockMarkAsVoted).toHaveBeenCalledWith(mockLocals, 'proc-1');
-	});
-
-	it('fails with 400 when state is COMMITMENT', async () => {
-		mockGetProcessState.mockResolvedValue('COMMITMENT');
-
-		const result = await actions['mark-as-voted']({
-			params: { id: 'proc-1' },
-			locals: mockLocals,
-			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
-		} as any);
-
-		expect(result).toHaveProperty('status', 400);
-		expect((result as any).data).toHaveProperty('error', 'El proceso no está en fase de votación');
-		expect(mockMarkAsVoted).not.toHaveBeenCalled();
-	});
-
-	it('fails with 400 when state is OPEN', async () => {
-		mockGetProcessState.mockResolvedValue('OPEN');
-
-		const result = await actions['mark-as-voted']({
-			params: { id: 'proc-1' },
-			locals: mockLocals,
-			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
-		} as any);
-
-		expect(result).toHaveProperty('status', 400);
-		expect(mockMarkAsVoted).not.toHaveBeenCalled();
-	});
-
-	it('fails with 503 when getProcessState throws ProcessStateUnavailableError', async () => {
-		const { ProcessStateUnavailableError } = await import(
-			'$lib/server/public-process.service'
-		);
-		mockGetProcessState.mockRejectedValue(
-			new ProcessStateUnavailableError('proc-1', new Error('Server down'))
-		);
-
-		const result = await actions['mark-as-voted']({
-			params: { id: 'proc-1' },
-			locals: mockLocals,
-			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
-		} as any);
-
-		expect(result).toHaveProperty('status', 503);
-		expect(mockMarkAsVoted).not.toHaveBeenCalled();
+		// The action must NOT call getProcessState — phase is irrelevant here.
+		expect(mockGetProcessState).not.toHaveBeenCalled();
 	});
 
 	it('fails with the ApiError status when markAsVoted throws ApiError', async () => {
-		mockGetProcessState.mockResolvedValue('VOTING');
 		const { ApiError } = await import('$lib/server/api');
 		mockMarkAsVoted.mockRejectedValue(new ApiError(422, 'API_ERROR', 'Invalid state'));
 

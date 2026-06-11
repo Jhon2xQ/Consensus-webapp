@@ -489,10 +489,12 @@ describe('ProcessDetail.svelte', () => {
 			// Confirm in dialog
 			await page.getByRole('button', { name: 'Confirmar voto' }).click();
 
-			// Mocks resolve immediately so flow completes — M2M callback hasn't arrived yet
-			await expect
-				.element(page.getByText(/confirmando en blockchain/))
-				.toBeInTheDocument();
+			// Mocks resolve immediately so the flow completes. With the
+			// localHasVoted override the button flips straight to "Ya votaste"
+			// without waiting for the server-side M2M callback to reconcile.
+			const votedBtn = page.getByRole('button', { name: 'Ya votaste' });
+			await expect.element(votedBtn).toBeInTheDocument();
+			await expect.element(votedBtn).toBeDisabled();
 
 			// Verify all services were called in order
 			expect(mockVerifyPasskey).toHaveBeenCalledOnce();
@@ -657,45 +659,11 @@ describe('ProcessDetail.svelte', () => {
 				.toBeInTheDocument();
 		});
 
-		it('shows translated nullifier error instead of raw English', async () => {
-			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
-			mockDeriveIdentity.mockResolvedValueOnce({
-				identity: { commitment: { toString: () => 'commitment-abc' } },
-				commitment: 'commitment-abc'
-			});
-			mockBuildVotingProof.mockResolvedValueOnce({
-				merkleTreeDepth: 20,
-				merkleTreeRoot: 'root',
-				nullifier: 'null',
-				message: 'Equipo Alpha',
-				scope: '1',
-				points: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
-			});
-			mockSubmitVotingProof.mockRejectedValueOnce({
-				kind: 'relayer-4xx',
-				message: 'nullifier already used'
-			});
-
-			const enrolledUser: Enrollment = {
-				id: 'enr-1',
-				electoralProcessId: '1',
-				email: 'test@example.com',
-				userId: 'user-abc-123',
-				commitment: 'commitment-abc',
-				hasVoted: false
-			};
-			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
-
-			await page.getByRole('button', { name: /Equipo Alpha/ }).click();
-			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
-			await page.getByRole('button', { name: 'Confirmar voto' }).click();
-
-			await expect
-				.element(page.getByText(/Ya emitiste tu voto para este proceso/))
-				.toBeInTheDocument();
-		});
-
-		it('shows "confirmando en blockchain" when M2M callback is pending', async () => {
+		it('flips to "Ya votaste" immediately after success, even if the server enrollment still says hasVoted=false', async () => {
+			// Regression: the old pendingM2mConfirm path left the user staring at
+			// "Voto enviado — confirmando en blockchain..." whenever the server
+			// mark beat the relayer (or vice versa). The localHasVoted override
+			// flips the button the moment the relayer accepts, with no spinner.
 			mockInvalidateAll.mockResolvedValue(undefined as never);
 
 			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
@@ -733,8 +701,116 @@ describe('ProcessDetail.svelte', () => {
 			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
 			await page.getByRole('button', { name: 'Confirmar voto' }).click();
 
+			// The spinner text is gone from the template — we expect the
+			// disabled "Ya votaste" button instead, even though the server's
+			// hasVoted is still false.
+			const votedBtn = page.getByRole('button', { name: 'Ya votaste' });
+			await expect.element(votedBtn).toBeInTheDocument();
+			await expect.element(votedBtn).toBeDisabled();
+			// The old spinner copy must NOT appear anywhere.
 			await expect
 				.element(page.getByText(/confirmando en blockchain/))
+				.not.toBeInTheDocument();
+		});
+
+		it('treats relayer success: false as vote accepted (already on-chain)', async () => {
+			// Regression: the relayer returns { success: false } when the proof
+			// is already on-chain (retry, wallet re-submit). In BOTH success: true
+			// and success: false the vote exists on-chain, so the UI flips to
+			// "Ya votaste" — no error shown.
+			mockInvalidateAll.mockResolvedValue(undefined as never);
+
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			mockBuildVotingProof.mockResolvedValueOnce({
+				merkleTreeDepth: 20,
+				merkleTreeRoot: 'root',
+				nullifier: 'null',
+				message: 'Equipo Alpha',
+				scope: '1',
+				points: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+			});
+			mockSubmitVotingProof.mockResolvedValueOnce({
+				success: false,
+				message: 'Nullifier already used'
+			});
+			// Best-effort PUT to mark-as-voted — must still be attempted
+			mockFetch.mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' });
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			// The "Ya emitiste tu voto" error must NOT appear — the relayer
+			// accepting the nullifier is treated as success, not failure.
+			await expect
+				.element(page.getByText(/Ya emitiste tu voto para este proceso/))
+				.not.toBeInTheDocument();
+
+			// Button flips to "Ya votaste" via the localHasVoted override.
+			const votedBtn = page.getByRole('button', { name: 'Ya votaste' });
+			await expect.element(votedBtn).toBeInTheDocument();
+			await expect.element(votedBtn).toBeDisabled();
+
+			// The mark-as-voted PUT was still attempted so the server can
+			// reconcile the enrollment.
+			const markCall = mockFetch.mock.calls.find(
+				(call) => typeof call[0] === 'string' && call[0].includes('/mark-as-voted')
+			);
+			expect(markCall).toBeDefined();
+		});
+
+		it('shows error when submitVotingProof throws (5xx, network)', async () => {
+			// Only actual failures (5xx, network) should surface as errors.
+			// The relayer returns { success, ... } consistently on all 4xx,
+			// so a 4xx without success in the body means a non-relayer error.
+			mockVerifyPasskey.mockResolvedValueOnce({ credentialId: 'cred-123' });
+			mockDeriveIdentity.mockResolvedValueOnce({
+				identity: { commitment: { toString: () => 'commitment-abc' } },
+				commitment: 'commitment-abc'
+			});
+			mockBuildVotingProof.mockResolvedValueOnce({
+				merkleTreeDepth: 20,
+				merkleTreeRoot: 'root',
+				nullifier: 'null',
+				message: 'Equipo Alpha',
+				scope: '1',
+				points: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+			});
+			mockSubmitVotingProof.mockRejectedValueOnce({
+				kind: 'relayer-5xx',
+				message: 'Relayer error: 502'
+			});
+
+			const enrolledUser: Enrollment = {
+				id: 'enr-1',
+				electoralProcessId: '1',
+				email: 'test@example.com',
+				userId: 'user-abc-123',
+				commitment: 'commitment-abc',
+				hasVoted: false
+			};
+			render(ProcessDetail, votingProps({ userEnrollment: enrolledUser }));
+
+			await page.getByRole('button', { name: /Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: /Votar por Equipo Alpha/ }).click();
+			await page.getByRole('button', { name: 'Confirmar voto' }).click();
+
+			await expect
+				.element(page.getByText(/El relayer no está disponible/))
 				.toBeInTheDocument();
 		});
 
