@@ -22,6 +22,7 @@ const mockGetPublicEnrollmentSummary = vi.hoisted(() => vi.fn());
 const mockGetUserEnrollment = vi.hoisted(() => vi.fn());
 const mockGetProcessState = vi.hoisted(() => vi.fn());
 const mockUpdateCommitment = vi.hoisted(() => vi.fn());
+const mockMarkAsVoted = vi.hoisted(() => vi.fn());
 
 vi.mock('$lib/server/public-process.service', async (importOriginal) => {
 	const actual = (await importOriginal()) as typeof import('$lib/server/public-process.service');
@@ -42,7 +43,8 @@ vi.mock('$lib/server/public-enrollment.service', () => ({
 
 vi.mock('$lib/server/enrollment.service', () => ({
 	getUserEnrollment: mockGetUserEnrollment,
-	updateCommitment: mockUpdateCommitment
+	updateCommitment: mockUpdateCommitment,
+	markAsVoted: mockMarkAsVoted
 }));
 
 vi.mock('@sveltejs/kit', () => ({
@@ -406,5 +408,100 @@ describe('actions.update-commitment /state guard', () => {
 		expect((result as any).data).toHaveProperty('error', 'El compromiso es obligatorio');
 		expect(mockGetProcessState).not.toHaveBeenCalled();
 		expect(mockUpdateCommitment).not.toHaveBeenCalled();
+	});
+});
+
+// =====================================================================
+// mark-as-voted action — /state guard
+// =====================================================================
+
+describe('actions.mark-as-voted /state guard', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockGetProcessState.mockResolvedValue('VOTING');
+		mockMarkAsVoted.mockResolvedValue(undefined);
+	});
+
+	it('calls getProcessState to verify the live state', async () => {
+		await actions['mark-as-voted']({
+			params: { id: 'proc-1' },
+			locals: mockLocals,
+			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
+		} as any);
+
+		expect(mockGetProcessState).toHaveBeenCalledWith('proc-1');
+	});
+
+	it('proceeds to markAsVoted when state is VOTING', async () => {
+		mockGetProcessState.mockResolvedValue('VOTING');
+
+		const result = await actions['mark-as-voted']({
+			params: { id: 'proc-1' },
+			locals: mockLocals,
+			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
+		} as any);
+
+		expect(result).toEqual({ success: true });
+		expect(mockMarkAsVoted).toHaveBeenCalledWith(mockLocals, 'proc-1');
+	});
+
+	it('fails with 400 when state is COMMITMENT', async () => {
+		mockGetProcessState.mockResolvedValue('COMMITMENT');
+
+		const result = await actions['mark-as-voted']({
+			params: { id: 'proc-1' },
+			locals: mockLocals,
+			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
+		} as any);
+
+		expect(result).toHaveProperty('status', 400);
+		expect((result as any).data).toHaveProperty('error', 'El proceso no está en fase de votación');
+		expect(mockMarkAsVoted).not.toHaveBeenCalled();
+	});
+
+	it('fails with 400 when state is OPEN', async () => {
+		mockGetProcessState.mockResolvedValue('OPEN');
+
+		const result = await actions['mark-as-voted']({
+			params: { id: 'proc-1' },
+			locals: mockLocals,
+			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
+		} as any);
+
+		expect(result).toHaveProperty('status', 400);
+		expect(mockMarkAsVoted).not.toHaveBeenCalled();
+	});
+
+	it('fails with 503 when getProcessState throws ProcessStateUnavailableError', async () => {
+		const { ProcessStateUnavailableError } = await import(
+			'$lib/server/public-process.service'
+		);
+		mockGetProcessState.mockRejectedValue(
+			new ProcessStateUnavailableError('proc-1', new Error('Server down'))
+		);
+
+		const result = await actions['mark-as-voted']({
+			params: { id: 'proc-1' },
+			locals: mockLocals,
+			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
+		} as any);
+
+		expect(result).toHaveProperty('status', 503);
+		expect(mockMarkAsVoted).not.toHaveBeenCalled();
+	});
+
+	it('fails with the ApiError status when markAsVoted throws ApiError', async () => {
+		mockGetProcessState.mockResolvedValue('VOTING');
+		const { ApiError } = await import('$lib/server/api');
+		mockMarkAsVoted.mockRejectedValue(new ApiError(422, 'API_ERROR', 'Invalid state'));
+
+		const result = await actions['mark-as-voted']({
+			params: { id: 'proc-1' },
+			locals: mockLocals,
+			request: new Request('http://localhost/procesos/proc-1?/mark-as-voted', { method: 'POST' })
+		} as any);
+
+		expect(result).toHaveProperty('status', 422);
+		expect((result as any).data).toHaveProperty('error', 'Invalid state');
 	});
 });

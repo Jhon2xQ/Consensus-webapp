@@ -6,7 +6,7 @@ import {
 } from '$lib/server/public-process.service';
 import { getPublicTeamsForProcess } from '$lib/server/team.service';
 import { getPublicEnrollmentSummary } from '$lib/server/public-enrollment.service';
-import { getUserEnrollment, updateCommitment } from '$lib/server/enrollment.service';
+import { getUserEnrollment, updateCommitment, markAsVoted } from '$lib/server/enrollment.service';
 import { getProcessCommitments } from '$lib/server/commitments.service';
 import { ApiError } from '$lib/server/api';
 import type { PageServerLoad, Actions } from './$types';
@@ -140,5 +140,35 @@ export const actions = {
 		}
 
 		throw redirect(303, '/procesos/' + processId);
+	},
+	'mark-as-voted': async ({ params, locals }) => {
+		const processId = params.id;
+
+		// Live state guard — only mark voted while still in the VOTING phase.
+		try {
+			const state = await getProcessState(processId);
+			if (state !== 'VOTING') {
+				return fail(400, { error: 'El proceso no está en fase de votación' });
+			}
+		} catch (err) {
+			if (err instanceof ApiError && err.status === 404) {
+				return fail(404, { error: 'Proceso no encontrado' });
+			}
+			if (err instanceof ProcessStateUnavailableError) {
+				return fail(503, { error: 'No se pudo verificar el estado del proceso' });
+			}
+			throw err;
+		}
+
+		try {
+			await markAsVoted(locals, processId);
+		} catch (err) {
+			if (err instanceof ApiError) {
+				return fail(err.status, { error: err.message });
+			}
+			throw err;
+		}
+
+		return { success: true };
 	}
 } satisfies Actions;

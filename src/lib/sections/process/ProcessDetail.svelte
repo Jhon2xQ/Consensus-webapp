@@ -222,12 +222,28 @@
 
 			// Step 5: Submit to relayer
 			votingFlow = 'submitting';
-			await submitVotingProof({ groupId: process.groupId, proof: fullProof });
+			const submission = await submitVotingProof({ groupId: process.groupId, proof: fullProof });
 
-			// Step 6: Success — optimistic update
+			// Step 6: Mark hasVoted = true via the server node (PUT to enrollments).
+			// The relayer confirmed the proof; if the server-side mark fails, the
+			// M2M callback will eventually reconcile. POST a record is NOT done
+			// here — another service captures on-chain events.
+			if (submission.success) {
+				try {
+					const markResponse = await fetch('?/mark-as-voted', { method: 'POST' });
+					if (!markResponse.ok) {
+						console.error('[Voting] mark-as-voted failed:', markResponse.status);
+					}
+				} catch (markErr) {
+					console.error('[Voting] mark-as-voted request error:', markErr);
+				}
+			}
+
+			// Step 7: Success — optimistic update
 			votingFlow = 'success';
 			await invalidateAll();
-			// If M2M callback hasn't arrived yet, show pending confirmation copy
+			// If the server-side mark failed and M2M callback hasn't arrived yet,
+			// show pending confirmation copy as a fallback.
 			if (!userEnrollment?.hasVoted) {
 				pendingM2mConfirm = true;
 			}

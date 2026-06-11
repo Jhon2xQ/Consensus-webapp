@@ -457,6 +457,8 @@ describe('ProcessDetail.svelte', () => {
 				ok: true,
 				json: () => Promise.resolve({ data: ['111', '222', '333'] })
 			});
+			// Mock fetch for ?/mark-as-voted form action
+			mockFetch.mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' });
 			mockBuildVotingProof.mockResolvedValueOnce({
 				merkleTreeDepth: 20,
 				merkleTreeRoot: 'root',
@@ -498,6 +500,11 @@ describe('ProcessDetail.svelte', () => {
 			expect(mockBuildVotingProof).toHaveBeenCalledOnce();
 			expect(mockSubmitVotingProof).toHaveBeenCalledOnce();
 			expect(mockInvalidateAll).toHaveBeenCalled();
+			// Verify mark-as-voted was POSTed to the form action
+			const markCall = mockFetch.mock.calls.find(
+				(call) => typeof call[0] === 'string' && call[0].includes('/mark-as-voted')
+			);
+			expect(markCall).toBeDefined();
 		});
 	});
 
@@ -696,6 +703,8 @@ describe('ProcessDetail.svelte', () => {
 				identity: { commitment: { toString: () => 'commitment-abc' } },
 				commitment: 'commitment-abc'
 			});
+			// Mock fetch for ?/mark-as-voted form action (server marks hasVoted)
+			mockFetch.mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' });
 			mockBuildVotingProof.mockResolvedValueOnce({
 				merkleTreeDepth: 20,
 				merkleTreeRoot: 'root',
