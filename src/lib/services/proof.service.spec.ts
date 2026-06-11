@@ -212,7 +212,7 @@ describe('submitVotingProof', () => {
 		expect(result).toEqual(mockResponse);
 	});
 
-	it('throws relayer-4xx error for 4xx responses', async () => {
+	it('returns { success: false, message } for 4xx responses (already on-chain)', async () => {
 		const proof = {
 			merkleTreeDepth: 20,
 			merkleTreeRoot: '123',
@@ -222,19 +222,18 @@ describe('submitVotingProof', () => {
 			points: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
 		};
 
+		// The relayer always includes { success, ... } in the body — even on 4xx.
 		mockFetch.mockResolvedValueOnce({
 			ok: false,
 			status: 409,
-			json: async () => ({ message: 'nullifier already used' })
+			json: async () => ({ success: false, message: 'Nullifier already used' })
 		});
 
-		await expect(submitVotingProof({ groupId: 'group-1', proof })).rejects.toEqual({
-			kind: 'relayer-4xx',
-			message: 'nullifier already used'
-		});
+		const result = await submitVotingProof({ groupId: 'group-1', proof });
+		expect(result).toEqual({ success: false, message: 'Nullifier already used' });
 	});
 
-	it('throws relayer-5xx error for 5xx responses', async () => {
+	it('throws relayer-5xx error for 5xx responses without success body', async () => {
 		const proof = {
 			merkleTreeDepth: 20,
 			merkleTreeRoot: '123',
@@ -247,7 +246,7 @@ describe('submitVotingProof', () => {
 		mockFetch.mockResolvedValueOnce({
 			ok: false,
 			status: 500,
-			json: async () => ({ message: 'Internal server error' })
+			json: async () => ({ message: 'Internal server error' }) // no `success` field
 		});
 
 		await expect(submitVotingProof({ groupId: 'group-1', proof })).rejects.toEqual({
@@ -256,7 +255,7 @@ describe('submitVotingProof', () => {
 		});
 	});
 
-	it('throws validation error for 400 responses', async () => {
+	it('throws relayer-5xx for 5xx when JSON parsing fails', async () => {
 		const proof = {
 			merkleTreeDepth: 20,
 			merkleTreeRoot: '123',
@@ -268,13 +267,13 @@ describe('submitVotingProof', () => {
 
 		mockFetch.mockResolvedValueOnce({
 			ok: false,
-			status: 400,
-			json: async () => ({ message: 'Invalid proof format' })
+			status: 502,
+			json: async () => { throw new Error('not json'); }
 		});
 
 		await expect(submitVotingProof({ groupId: 'group-1', proof })).rejects.toEqual({
-			kind: 'validation',
-			message: 'Invalid proof format'
+			kind: 'relayer-5xx',
+			message: 'Relayer error: 502'
 		});
 	});
 });

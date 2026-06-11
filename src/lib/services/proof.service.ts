@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public';
-import type { VotingProofInput, VotingFullProof, ProofSubmissionResult, ProofError } from '$lib/types/proof';
+import type { VotingProofInput, VotingFullProof, ProofError } from '$lib/types/proof';
 
 /**
  * Hash a string via SHA-256 and return a BigInt suitable for Semaphore circuits.
@@ -97,12 +97,18 @@ export async function buildVotingProof(input: VotingProofInput): Promise<VotingF
 /**
  * Submit a zk-SNARK proof to the Semaphore Relayer for on-chain validation.
  *
- * @throws {ProofError} When submission fails
+ * The relayer always returns `{ success, ... }` in the body regardless of the
+ * HTTP status code. This function returns that body when available.
+ *
+ * - `success: true` — first-time submission, proof published to chain
+ * - `success: false` — proof was already on-chain (nullifier used)
+ *
+ * Only throws on network errors, missing config, or unparseable 5xx responses.
  */
 export async function submitVotingProof(input: {
 	groupId: string;
 	proof: VotingFullProof;
-}): Promise<ProofSubmissionResult> {
+}): Promise<{ success: boolean; message?: string; data?: { transaction: { hash: string } } }> {
 	const { groupId, proof } = input;
 	const relayerUrl = env.PUBLIC_RELAYER_API_URL;
 
@@ -128,30 +134,17 @@ export async function submitVotingProof(input: {
 		})
 	});
 
-	if (response.ok) {
-		return await response.json();
+	// Try to parse the body — the relayer sends { success, ... } consistently
+	// across all status codes (200, 400, 409, etc.).
+	const body = await response.json().catch(() => null);
+
+	if (body && typeof body.success === 'boolean') {
+		return body;
 	}
 
-	// Handle error responses
-	const errorBody = await response.json().catch(() => ({}));
-
-	if (response.status >= 500) {
-		throw {
-			kind: 'relayer-5xx',
-			message: `Relayer error: ${response.status}`
-		};
-	}
-
-	if (response.status === 400) {
-		throw {
-			kind: 'validation',
-			message: errorBody.message || 'Validation error'
-		};
-	}
-
-	// 4xx (including 409 conflict for nullifier already used)
+	// 5xx without a parseable body — relayer is down.
 	throw {
-		kind: 'relayer-4xx',
-		message: errorBody.message || `Relayer error: ${response.status}`
+		kind: 'relayer-5xx',
+		message: `Relayer error: ${response.status}`
 	};
 }
