@@ -21,7 +21,11 @@ export type FetchOptions = {
  * Fetch an endpoint from the backend API with Logto access token authentication.
  * On 401, retries once with a fresh token.
  */
-export async function fetchBackend(locals: App.Locals, path: string, options?: FetchOptions): Promise<Response> {
+export async function fetchBackend(
+  locals: App.Locals,
+  path: string,
+  options?: FetchOptions,
+): Promise<Response> {
   return _request(locals, path, options, 0);
 }
 
@@ -29,7 +33,11 @@ export async function fetchBackend(locals: App.Locals, path: string, options?: F
  * Fetch an endpoint from the backend API and parse the response as JSON.
  * On 401, retries once with a fresh token.
  */
-export async function fetchBackendJson<T>(locals: App.Locals, path: string, options?: FetchOptions): Promise<T> {
+export async function fetchBackendJson<T>(
+  locals: App.Locals,
+  path: string,
+  options?: FetchOptions,
+): Promise<T> {
   const response = await _request(locals, path, options, 0);
   return response.json() as Promise<T>;
 }
@@ -38,12 +46,15 @@ export async function fetchBackendJson<T>(locals: App.Locals, path: string, opti
  * Fetch a PUBLIC endpoint from the backend API (no authentication).
  * Parses the response as JSON.
  */
-export async function fetchPublicJson<T>(path: string, options?: FetchOptions): Promise<T> {
-  const method = options?.method ?? 'GET';
+export async function fetchPublicJson<T>(
+  path: string,
+  options?: FetchOptions,
+): Promise<T> {
+  const method = options?.method ?? "GET";
   const url = `${privateEnv.backendApiUrl}${path}`;
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...options?.headers,
   };
 
@@ -54,7 +65,11 @@ export async function fetchPublicJson<T>(path: string, options?: FetchOptions): 
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, 'API_ERROR', `Request failed with status ${response.status}`);
+    throw new ApiError(
+      response.status,
+      "API_ERROR",
+      `Request failed with status ${response.status}`,
+    );
   }
 
   return response.json() as Promise<T>;
@@ -63,15 +78,24 @@ export async function fetchPublicJson<T>(path: string, options?: FetchOptions): 
 /**
  * Internal request helper with retry logic.
  */
-async function _request(locals: App.Locals, path: string, options: FetchOptions | undefined, retryCount: number): Promise<Response> {
+async function _request(
+  locals: App.Locals,
+  path: string,
+  options: FetchOptions | undefined,
+  retryCount: number,
+): Promise<Response> {
   let token: string;
   try {
-    token = await locals.logtoClient.getAccessToken(privateEnv.logtoApiResource);
+    token = await locals.logtoClient.getAccessToken(
+      privateEnv.logtoApiResource,
+    );
   } catch (cause) {
-    throw new ApiError(401, "UNAUTHORIZED", cause instanceof Error ? cause.message : "Not authenticated");
+    throw new ApiError(
+      401,
+      "UNAUTHORIZED",
+      cause instanceof Error ? cause.message : "Not authenticated",
+    );
   }
-
-  console.log("[JWT]", token);
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -94,7 +118,11 @@ async function _request(locals: App.Locals, path: string, options: FetchOptions 
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, "API_ERROR", `Request failed with status ${response.status}`);
+    throw new ApiError(
+      response.status,
+      "API_ERROR",
+      `Request failed with status ${response.status}`,
+    );
   }
 
   return response;
