@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import Layout from './+layout.svelte';
 
-// Mock page.data for Sidebar (needs page.url) and DashboardHeader (needs page.data.user)
+// Mock page.data for DashboardHeader (needs page.url and page.data.user)
 const mockPage = vi.hoisted(() => ({
 	url: new URL('http://localhost/dashboard'),
 	data: {}
@@ -14,10 +14,10 @@ vi.mock('$app/state', () => ({
 }));
 
 describe('Dashboard +layout.svelte', () => {
-	it('renders both Sidebar and DashboardHeader', async () => {
+	it('renders DashboardHeader and main content area', async () => {
 		render(Layout);
 
-		// Sidebar renders the Consensus logo
+		// DashboardHeader renders the Consensus brand wordmark
 		await expect.element(page.getByText('Consensus')).toBeInTheDocument();
 
 		// DashboardHeader renders the sign-in button (no user in mock data)

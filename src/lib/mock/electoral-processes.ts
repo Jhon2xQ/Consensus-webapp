@@ -3,7 +3,7 @@ import type { ElectoralProcess } from '$lib/types/electoral-process';
 // Mock data anchored to a fixed "now" of 2026-06-01 so the estatus
 // distribution covers all six states regardless of when the test runs.
 // Each process is one state — used by the dashboard distribution and
-// status bar / ProcessList / ProcessTable / procesos page badge tests.
+// status bar / ProcessList / procesos page badge tests.
 export const electoralProcesses: ElectoralProcess[] = [
 	{
 		id: '1',
