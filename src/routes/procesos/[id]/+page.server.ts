@@ -144,16 +144,14 @@ export const actions = {
 	'mark-as-voted': async ({ params, locals }) => {
 		const processId = params.id;
 
-		// No /state guard here: the relayer already validated the proof while
-		// the process was in VOTING. If it accepted the proof, the vote is
-		// legitimate regardless of the current phase, and the race between
-		// relayer confirmation and this PUT would otherwise reject valid votes
-		// the moment the process advances to COUNTING.
-
 		try {
 			await markAsVoted(locals, processId);
 		} catch (err) {
 			if (err instanceof ApiError) {
+				// 409 means the user already voted — it's not a real error.
+				if (err.status === 409) {
+					return { success: true };
+				}
 				return fail(err.status, { error: err.message });
 			}
 			throw err;
