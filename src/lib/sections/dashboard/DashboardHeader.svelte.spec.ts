@@ -11,11 +11,6 @@ const mockPage = vi.hoisted(() => ({
 vi.mock('$app/state', () => ({ page: mockPage }));
 
 describe('DashboardHeader.svelte', () => {
-	it('renders brand wordmark "Consensus"', async () => {
-		render(DashboardHeader);
-		await expect.element(page.getByText('Consensus')).toBeInTheDocument();
-	});
-
 	it('renders all 5 nav links on desktop', async () => {
 		render(DashboardHeader);
 		await expect.element(page.getByRole('link', { name: /Dashboard/ })).toBeInTheDocument();

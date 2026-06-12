@@ -3,7 +3,8 @@
 	import {
 		LayoutDashboard,
 		FileText,
-		Users,
+		UsersRound,
+		UserCheck,
 		ScrollText,
 		Menu,
 		LogOut,
@@ -19,8 +20,8 @@
 	const navItems = [
 		{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
 		{ label: 'Procesos', href: '/dashboard/procesos', icon: FileText },
-		{ label: 'Equipos', href: '/dashboard/equipos', icon: Users },
-		{ label: 'Votantes', href: '/dashboard/votantes', icon: Users },
+		{ label: 'Equipos', href: '/dashboard/equipos', icon: UsersRound },
+		{ label: 'Votantes', href: '/dashboard/votantes', icon: UserCheck },
 		{ label: 'Sufragios', href: '/dashboard/sufragios', icon: ScrollText }
 	];
 
@@ -38,11 +39,6 @@
 
 <header class="sticky top-0 w-full bg-brand-white/90 backdrop-blur-md border-b border-brand-gray-100">
 	<div class="mx-auto h-20 flex items-center justify-between px-4 lg:px-6">
-		<!-- Brand -->
-		<a href="/" class="hidden md:block text-lg font-bold text-brand-black tracking-tight">
-			Consensus
-		</a>
-
 		<!-- Desktop nav -->
 		<nav aria-label="Navegación del dashboard" class="hidden md:flex items-center gap-1">
 			{#each navItems as item (item.href)}

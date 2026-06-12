@@ -17,9 +17,6 @@ describe('Dashboard +layout.svelte', () => {
 	it('renders DashboardHeader and main content area', async () => {
 		render(Layout);
 
-		// DashboardHeader renders the Consensus brand wordmark
-		await expect.element(page.getByText('Consensus')).toBeInTheDocument();
-
 		// DashboardHeader renders the sign-in button (no user in mock data)
 		await expect.element(page.getByText('Iniciar Sesión')).toBeInTheDocument();
 	});
