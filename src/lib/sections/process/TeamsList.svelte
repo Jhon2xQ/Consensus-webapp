@@ -37,12 +37,12 @@
 		<p class="text-sm font-medium">Sin equipos</p>
 	</div>
 {:else}
-	<div class="flex flex-col gap-3">
+	<div class="flex flex-row flex-wrap gap-3">
 		{#each teams as team (team.id)}
 			<button
 				type="button"
 				class={cn(
-					'flex items-center gap-3 p-3 rounded-lg border transition-colors text-left w-full',
+					'flex items-center gap-3 p-4 rounded-lg border transition-colors text-left',
 					selectedTeam?.id === team.id
 						? 'border-brand-red bg-brand-red/5'
 						: 'border-brand-gray-200/60 hover:border-brand-gray-300',
@@ -52,11 +52,11 @@
 				disabled={!isInteractive}
 			>
 				<div
-					class="size-9 rounded-full bg-brand-red/10 text-brand-red flex items-center justify-center text-xs font-bold shrink-0"
+					class="size-12 rounded-full bg-brand-red/10 text-brand-red flex items-center justify-center text-base font-bold shrink-0"
 				>
 					{getInitials(team.name)}
 				</div>
-				<span class="text-sm font-medium text-brand-black flex-1">{team.name}</span>
+				<span class="text-sm md:text-base font-medium text-brand-black">{team.name}</span>
 				{#if selectedTeam?.id === team.id}
 					<CheckCircle class="size-5 text-brand-red shrink-0" />
 				{/if}

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ProcessHeader from './ProcessHeader.svelte';
-	import ProcessStats from './ProcessStats.svelte';
 	import ReadOnlyProcessView from './ReadOnlyProcessView.svelte';
 	import CommitmentView from './CommitmentView.svelte';
 	import VotingView from './VotingView.svelte';
@@ -51,19 +50,12 @@
 			description={process.description}
 		/>
 
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-			<div class="lg:col-span-2 flex flex-col gap-6">
-				<ReadOnlyProcessView
-					{process}
-					{teams}
-					{enrollmentSummary}
-					{enrollmentError}
-				/>
-			</div>
-			<div class="lg:col-span-1">
-				<ProcessStats summary={enrollmentSummary} error={enrollmentError} />
-			</div>
-		</div>
+		<ReadOnlyProcessView
+			{process}
+			{teams}
+			{enrollmentSummary}
+			{enrollmentError}
+		/>
 
 		{#if isCommitmentPhase}
 			<CommitmentView {process} {userSub} {userEnrollment} />

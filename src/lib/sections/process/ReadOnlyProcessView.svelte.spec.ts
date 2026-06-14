@@ -109,11 +109,11 @@ describe('ReadOnlyProcessView', () => {
 			await expect.element(votacion.first()).toBeInTheDocument();
 		});
 
-		it('renders the Inicio / Fin labels for both phases', async () => {
+		it('does not render separate Inicio / Fin sub-labels', async () => {
 			render(ReadOnlyProcessView, defaultProps());
-			// 4 labels total: Inicio/Fin for Compromiso + Inicio/Fin for Votación
-			await expect.element(page.getByText('Inicio').first()).toBeInTheDocument();
-			await expect.element(page.getByText('Fin').first()).toBeInTheDocument();
+			// The compact timeline shows the date range per phase, not Inicio/Fin labels.
+			await expect.element(page.getByText('Inicio', { exact: true })).not.toBeInTheDocument();
+			await expect.element(page.getByText('Fin', { exact: true })).not.toBeInTheDocument();
 		});
 
 		it('renders formatted dates from the process prop', async () => {

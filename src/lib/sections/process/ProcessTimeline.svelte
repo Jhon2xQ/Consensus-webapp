@@ -18,48 +18,32 @@
 	}
 </script>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div
+	class="flex flex-col md:flex-row md:divide-x md:divide-brand-gray-200 rounded-lg border border-brand-gray-200/60 bg-brand-gray-50/30 p-4"
+>
 	<!-- Compromiso -->
-	<div
-		class="rounded-lg border border-brand-gray-200/60 bg-brand-gray-50/30 p-4 flex flex-col gap-2"
-	>
-		<div
-			class="flex items-center gap-1.5 text-[11px] font-semibold text-brand-gray-400 uppercase tracking-wider"
-		>
-			<Calendar class="size-3.5" />
-			Compromiso
-		</div>
-		<div class="space-y-1.5">
-			<div>
-				<span class="text-[11px] text-brand-gray-400 uppercase tracking-wider">Inicio</span>
-				<p class="text-sm text-brand-black font-medium">{formatDateTime(commitmentStart)}</p>
-			</div>
-			<div>
-				<span class="text-[11px] text-brand-gray-400 uppercase tracking-wider">Fin</span>
-				<p class="text-sm text-brand-black font-medium">{formatDateTime(commitmentEnd)}</p>
-			</div>
+	<div class="flex-1 flex items-center gap-3 p-3">
+		<Calendar class="size-4 text-brand-red shrink-0" />
+		<div class="min-w-0">
+			<span class="text-xs font-semibold text-brand-gray-400 uppercase tracking-wider">
+				Compromiso
+			</span>
+			<p class="text-sm text-brand-black font-medium truncate">
+				{formatDateTime(commitmentStart)} — {formatDateTime(commitmentEnd)}
+			</p>
 		</div>
 	</div>
 
 	<!-- Votación -->
-	<div
-		class="rounded-lg border border-brand-gray-200/60 bg-brand-gray-50/30 p-4 flex flex-col gap-2"
-	>
-		<div
-			class="flex items-center gap-1.5 text-[11px] font-semibold text-brand-gray-400 uppercase tracking-wider"
-		>
-			<Vote class="size-3.5" />
-			Votación
-		</div>
-		<div class="space-y-1.5">
-			<div>
-				<span class="text-[11px] text-brand-gray-400 uppercase tracking-wider">Inicio</span>
-				<p class="text-sm text-brand-black font-medium">{formatDateTime(votingStart)}</p>
-			</div>
-			<div>
-				<span class="text-[11px] text-brand-gray-400 uppercase tracking-wider">Fin</span>
-				<p class="text-sm text-brand-black font-medium">{formatDateTime(votingEnd)}</p>
-			</div>
+	<div class="flex-1 flex items-center gap-3 p-3">
+		<Vote class="size-4 text-brand-red shrink-0" />
+		<div class="min-w-0">
+			<span class="text-xs font-semibold text-brand-gray-400 uppercase tracking-wider">
+				Votación
+			</span>
+			<p class="text-sm text-brand-black font-medium truncate">
+				{formatDateTime(votingStart)} — {formatDateTime(votingEnd)}
+			</p>
 		</div>
 	</div>
 </div>

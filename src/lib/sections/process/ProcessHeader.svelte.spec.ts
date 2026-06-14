@@ -54,6 +54,12 @@ describe('ProcessHeader', () => {
 		await expect.element(page.getByText('Municipal', { exact: true })).toBeInTheDocument();
 	});
 
+	it('exposes the full scope as a tooltip on the scope element', async () => {
+		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
+		const scopeElement = page.getByText('Municipal', { exact: true });
+		await expect.element(scopeElement).toHaveAttribute('title', 'Municipal');
+	});
+
 	it('renders a copy-to-clipboard button when scope is provided', async () => {
 		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
 		await expect.element(page.getByRole('button', { name: 'Copiar alcance' })).toBeInTheDocument();

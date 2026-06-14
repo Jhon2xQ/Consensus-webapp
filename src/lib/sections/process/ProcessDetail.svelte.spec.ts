@@ -192,13 +192,11 @@ describe('ProcessDetail', () => {
 	});
 
 	describe('prop pass-through to children', () => {
-		it('passes enrollmentSummary to ProcessStats', async () => {
+		it('passes enrollmentSummary to ProcessStats inside ReadOnlyProcessView', async () => {
 			render(ProcessDetail, baseProps);
-			// Use .first() because both the inline ProcessStats and the one inside
-			// ReadOnlyProcessView render the same numbers.
-			await expect.element(page.getByText('100').first()).toBeInTheDocument();
-			await expect.element(page.getByText('80').first()).toBeInTheDocument();
-			await expect.element(page.getByText('50').first()).toBeInTheDocument();
+			await expect.element(page.getByText('100')).toBeInTheDocument();
+			await expect.element(page.getByText('80')).toBeInTheDocument();
+			await expect.element(page.getByText('50')).toBeInTheDocument();
 		});
 
 		it('passes empty teams to ReadOnlyProcessView without crashing', async () => {
@@ -209,8 +207,7 @@ describe('ProcessDetail', () => {
 
 		it('shows "No disponible" in ProcessStats when enrollmentError is true', async () => {
 			render(ProcessDetail, { ...baseProps, enrollmentError: true });
-			// .first() because both ProcessStats instances render "No disponible"
-			await expect.element(page.getByText('No disponible').first()).toBeInTheDocument();
+			await expect.element(page.getByText('No disponible')).toBeInTheDocument();
 		});
 	});
 });

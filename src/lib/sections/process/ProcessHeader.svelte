@@ -41,55 +41,54 @@
 	}
 </script>
 
-<section class="pt-24 pb-12">
-	<div class="max-w-7xl mx-auto px-6 lg:px-8">
-		<a
-			href="/procesos"
-			class="inline-flex items-center gap-1.5 text-sm text-brand-gray-400 hover:text-brand-red transition-colors mb-8"
+<header>
+	<a
+		href="/procesos"
+		class="inline-flex items-center gap-1.5 text-sm text-brand-gray-400 hover:text-brand-red transition-colors mb-8"
+	>
+		<ArrowLeft class="size-4" />
+		Volver a procesos
+	</a>
+
+	<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+		<h1 class="text-4xl md:text-5xl font-bold tracking-tighter text-brand-black">
+			{name}
+		</h1>
+		<Badge
+			variant="outline"
+			class={cn('text-xs font-semibold px-3 py-1 w-fit', STATUS_COLORS[status])}
 		>
-			<ArrowLeft class="size-4" />
-			Volver a procesos
-		</a>
-
-		<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-			<h1 class="text-4xl md:text-5xl font-bold tracking-tighter text-brand-black">
-				{name}
-			</h1>
-			<Badge
-				variant="outline"
-				class={cn('text-xs font-semibold px-3 py-1 w-fit', STATUS_COLORS[status])}
-			>
-				{STATUS_LABELS[status]}
-			</Badge>
-		</div>
-
-		{#if description != null}
-			<p class="text-sm text-brand-gray-800 leading-relaxed">
-				{description}
-			</p>
-		{/if}
-
-		{#if scope !== null}
-			<div class="flex items-center gap-2 text-sm">
-				<span class="font-medium text-brand-black">Alcance:</span>
-				<span
-					class="inline-flex items-center gap-1.5 rounded-md border border-brand-gray-200 bg-brand-gray-50 px-2.5 py-0.5 text-xs font-medium text-brand-gray-700"
-				>
-					{scope}
-					<button
-						type="button"
-						onclick={handleCopyScope}
-						class="inline-flex items-center justify-center rounded p-0.5 text-brand-gray-400 hover:text-brand-red transition-colors"
-						aria-label="Copiar alcance"
-					>
-						{#if scopeCopied}
-							<CheckCircle class="size-3.5 text-green-500" />
-						{:else}
-							<Copy class="size-3.5" />
-						{/if}
-					</button>
-				</span>
-			</div>
-		{/if}
+			{STATUS_LABELS[status]}
+		</Badge>
 	</div>
-</section>
+
+	{#if description != null}
+		<p class="text-base md:text-lg leading-relaxed text-brand-gray-800 mb-6">
+			{description}
+		</p>
+	{/if}
+
+	{#if scope !== null}
+		<div class="flex items-center gap-2 text-sm">
+			<span class="font-medium text-brand-black shrink-0">Alcance:</span>
+			<span
+				class="truncate min-w-0 max-w-[200px] md:max-w-[400px] lg:max-w-[600px] text-brand-gray-400"
+				title={scope}
+			>
+				{scope}
+			</span>
+			<button
+				type="button"
+				onclick={handleCopyScope}
+				class="inline-flex items-center justify-center rounded p-1 text-brand-gray-400 hover:text-brand-red transition-colors shrink-0"
+				aria-label="Copiar alcance"
+			>
+				{#if scopeCopied}
+					<CheckCircle class="size-3.5 text-green-500" />
+				{:else}
+					<Copy class="size-3.5" />
+				{/if}
+			</button>
+		</div>
+	{/if}
+</header>
