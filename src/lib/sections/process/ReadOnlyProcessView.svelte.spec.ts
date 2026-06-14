@@ -97,7 +97,7 @@ describe('ReadOnlyProcessView', () => {
 	});
 
 	describe('timeline', () => {
-		it('renders the Compromiso and Votación headers', async () => {
+		it('renders the Compromiso, Votación and Resultados headers', async () => {
 			render(ReadOnlyProcessView, defaultProps());
 			// Each header is a small uppercase label — "Compromiso" and "Votación"
 			// appear in the page also inside the team section header, so we
@@ -107,13 +107,14 @@ describe('ReadOnlyProcessView', () => {
 			await expect.element(compromiso.first()).toBeInTheDocument();
 			const votacion = page.getByText('Votación');
 			await expect.element(votacion.first()).toBeInTheDocument();
+			await expect.element(page.getByText('Resultados', { exact: true })).toBeInTheDocument();
 		});
 
-		it('does not render separate Inicio / Fin sub-labels', async () => {
+		it('renders Inicio, Fin and Resultados sub-labels from the timeline', async () => {
 			render(ReadOnlyProcessView, defaultProps());
-			// The compact timeline shows the date range per phase, not Inicio/Fin labels.
-			await expect.element(page.getByText('Inicio', { exact: true })).not.toBeInTheDocument();
-			await expect.element(page.getByText('Fin', { exact: true })).not.toBeInTheDocument();
+			await expect.element(page.getByText(/Inicio:/).first()).toBeInTheDocument();
+			await expect.element(page.getByText(/Fin:/).first()).toBeInTheDocument();
+			await expect.element(page.getByText('Resultados', { exact: true })).toBeInTheDocument();
 		});
 
 		it('renders formatted dates from the process prop', async () => {
@@ -121,7 +122,7 @@ describe('ReadOnlyProcessView', () => {
 			// The Intl.DateTimeFormat output for 'es-AR' with the given ISO strings
 			// includes the year, day, and a time portion. The exact formatting
 			// depends on the runtime, so we assert that at least the year appears
-			// in the rendered text for both commitment and voting start dates.
+			// in the rendered text for commitment, voting and results dates.
 			await expect.element(page.getByText(/2026/).first()).toBeInTheDocument();
 		});
 	});

@@ -44,7 +44,7 @@ const baseProcess: ElectoralProcess = {
 	votingStart: '2026-01-16T00:00:00Z',
 	votingEnd: '2026-01-30T00:00:00Z',
 	groupId: 'group-1',
-	results: '',
+	results: '2026-02-05T00:00:00Z',
 	createdBy: 'admin-1'
 };
 

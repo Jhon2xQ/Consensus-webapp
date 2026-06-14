@@ -27,6 +27,7 @@
 		commitmentEnd={process.commitmentEnd}
 		votingStart={process.votingStart}
 		votingEnd={process.votingEnd}
+		results={process.results}
 	/>
 
 	<ProcessStats summary={enrollmentSummary} error={enrollmentError} />
