@@ -12,12 +12,17 @@
 
 	// Passkey registration state
 	let registering = $state(false);
+	const passkeysSupported = $derived(supportsPasskeys());
 
-	// Firefox detection
+	// Firefox detection — module-level constant (per D-9 in design.md).
+	// The warning surfaces whenever the user is on Firefox, regardless of
+	// WebAuthn support, because the issue is about cross-device QR (Firefox
+	// limitation), not WebAuthn availability.
 	const isFirefox = typeof navigator !== 'undefined' && navigator.userAgent.includes('Firefox');
 
 	async function handleRegisterPasskey() {
 		if (!user?.sub || !user?.name) return;
+		if (!passkeysSupported) return;
 		registering = true;
 		try {
 			await registerPasskey(user.sub, user.name);
@@ -48,7 +53,9 @@
 	});
 </script>
 
-<header class="fixed top-0 w-full bg-brand-white/90 backdrop-blur-md z-50 border-b border-brand-gray-100">
+<header
+	class="sticky top-0 w-full bg-brand-white/90 backdrop-blur-md z-50 border-b border-brand-gray-100"
+>
 	<div class="container mx-auto px-6 lg:px-20 h-20 flex items-center justify-between">
 		<a href="/" class="flex items-center gap-2 group">
 			<div
@@ -109,39 +116,35 @@
 							class="absolute right-0 mt-2 w-56 bg-brand-white border border-brand-gray-200 rounded-lg shadow-lg z-50"
 							role="menu"
 						>
+							<!-- Email header (FR-H-1) -->
 							<div class="px-4 py-3 border-b border-brand-gray-100">
-								<p class="text-xs text-brand-gray-500 font-medium">Correo electrónico</p>
-								<p class="text-sm text-brand-gray-800 truncate mt-0.5">
+								<p class="text-sm text-brand-gray-800 truncate">
 									{user.email ?? 'No disponible'}
 								</p>
 							</div>
 
-							<!-- Passkey section -->
-							<div class="px-4 py-3 border-b border-brand-gray-100">
-								<p class="text-xs text-brand-gray-500 font-medium mb-2">Dispositivo</p>
+							<!-- Action 1: Registrar Credencial (FR-H-2) -->
+							<div class="p-2 border-b border-brand-gray-100">
+								<button
+									type="button"
+									role="menuitem"
+									onclick={handleRegisterPasskey}
+									disabled={!passkeysSupported || registering}
+									class="text-sm text-brand-black flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-brand-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									<Shield class="size-4" />
+									{registering ? 'Registrando...' : 'Registrar Credencial'}
+								</button>
 
-								{#if !supportsPasskeys()}
-									<p class="text-xs text-brand-gray-400 flex items-center gap-1.5">
-										<Shield class="size-3.5" />
-										Navegador no compatible
+								<!-- Firefox passkey warning (FR-H-3) — UA-only condition -->
+								{#if isFirefox}
+									<p class="text-[10px] text-brand-gray-400 mt-1.5 px-2">
+										Firefox no soporta QR cross-device. Usá Chrome o Safari.
 									</p>
-									{#if isFirefox}
-										<p class="text-[10px] text-brand-gray-400 mt-1">
-											Firefox no soporta QR cross-device. Usá Chrome o Safari.
-										</p>
-									{/if}
-								{:else}
-									<button
-										onclick={handleRegisterPasskey}
-										disabled={registering}
-										class="text-xs text-brand-black flex items-center gap-1.5 hover:text-brand-red transition-colors disabled:opacity-50"
-									>
-										<Shield class="size-3.5" />
-										{registering ? 'Registrando...' : 'Registrar credencial'}
-									</button>
 								{/if}
 							</div>
 
+							<!-- Action 2: Cerrar Sesión (FR-H-2) -->
 							<div class="p-2">
 								<form method="POST" action="/?/signOut" aria-label="Cerrar sesión">
 									<Button

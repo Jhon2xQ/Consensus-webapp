@@ -1,5 +1,5 @@
 import { page } from 'vitest/browser';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import Header from './Header.svelte';
 
@@ -21,9 +21,51 @@ vi.mock('$lib/services/passkey.service', () => ({
 }));
 
 describe('Header.svelte', () => {
-	it('renders the brand name', async () => {
+	// Restore navigator.userAgent after each test (Firefox mocking)
+	let originalUserAgent: PropertyDescriptor | undefined;
+	beforeEach(() => {
+		originalUserAgent = Object.getOwnPropertyDescriptor(globalThis.navigator, 'userAgent');
+	});
+	afterEach(() => {
+		if (originalUserAgent) {
+			Object.defineProperty(globalThis.navigator, 'userAgent', originalUserAgent);
+		}
+		mockSupportsPasskeys.mockReturnValue(true);
+		mockRegisterPasskey.mockReset();
+	});
+
+	function stubUserAgent(value: string) {
+		Object.defineProperty(globalThis.navigator, 'userAgent', {
+			value,
+			configurable: true,
+			writable: true
+		});
+	}
+
+	// =========================================================================
+	// Brand & navigation (FR-H-4, FR-H-6)
+	// =========================================================================
+
+	it('renders the brand name as a link to home', async () => {
 		render(Header);
-		await expect.element(page.getByText('Consensus', { exact: true })).toBeInTheDocument();
+		const homeLink = page.getByRole('link', { name: 'Consensus' });
+		await expect.element(homeLink).toBeInTheDocument();
+		await expect.element(homeLink).toHaveAttribute('href', '/');
+	});
+
+	it('renders a 32×32 red brand mark with a white C', async () => {
+		render(Header);
+		const brand = page.getByRole('link', { name: 'Consensus' });
+		await expect.element(brand).toBeInTheDocument();
+		// The brand mark is the <div> directly inside the brand link
+		// (it contains only the letter "C"). It must be 32×32 with the brand-red bg.
+		const mark = page.getByText('C', { exact: true });
+		const el = mark.element();
+		expect(el).toBeTruthy();
+		expect(el.tagName.toLowerCase()).toBe('div');
+		expect(el.className).toMatch(/\bw-8\b/);
+		expect(el.className).toMatch(/\bh-8\b/);
+		expect(el.className).toMatch(/\bbg-brand-red\b/);
 	});
 
 	it('renders the Procesos navigation link', async () => {
@@ -40,26 +82,57 @@ describe('Header.svelte', () => {
 			.toBeInTheDocument();
 	});
 
-	it('has a link to home', async () => {
+	it('is sticky at the top with z-50 and a translucent background', async () => {
 		render(Header);
-		const homeLink = page.getByRole('link', { name: 'Consensus' });
-		await expect.element(homeLink).toHaveAttribute('href', '/');
+		// There is exactly one <header> at the top of the layout — use getByText
+		// on the brand name to find its enclosing landmark via traversal is not
+		// possible, so we look for the first <header> in the document body.
+		const headerEl = page.getByText('Consensus', { exact: true })
+			.element()
+			.closest('header');
+		expect(headerEl).toBeTruthy();
+		const cls = (headerEl as HTMLElement).className;
+		expect(cls).toMatch(/\bsticky\b/);
+		expect(cls).toMatch(/\btop-0\b/);
+		expect(cls).toMatch(/\bz-50\b/);
+		expect(cls).toMatch(/\bbackdrop-blur/);
 	});
+
+	// =========================================================================
+	// Unauthenticated state (S-2)
+	// =========================================================================
 
 	describe('unauthenticated state', () => {
 		beforeEach(() => {
 			mockPage.data.user = null;
 		});
 
-		it('renders the login button inside a signIn form', async () => {
+		it('renders the Iniciar Sesión button inside a signIn form', async () => {
 			render(Header);
 			const form = page.getByRole('form', { name: 'Iniciar sesión' });
 			await expect.element(form).toBeInTheDocument();
 			await expect.element(form).toHaveAttribute('method', 'POST');
 			await expect.element(form).toHaveAttribute('action', '/?/signIn');
-			await expect.element(page.getByRole('button', { name: 'Iniciar Sesión' })).toBeInTheDocument();
+			await expect
+				.element(page.getByRole('button', { name: 'Iniciar Sesión' }))
+				.toBeInTheDocument();
+		});
+
+		it('does not render a Dashboard link when no user is signed in', async () => {
+			render(Header);
+			await expect.element(page.getByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
+		});
+
+		it('does not render an avatar or dropdown trigger when no user is signed in', async () => {
+			render(Header);
+			// No img with alt containing "Avatar" and no user menu button.
+			await expect.element(page.getByRole('img', { name: /Avatar de/ })).not.toBeInTheDocument();
 		});
 	});
+
+	// =========================================================================
+	// Authenticated state — header + dropdown (FR-H-1, FR-H-2, S-3)
+	// =========================================================================
 
 	describe('authenticated state', () => {
 		beforeEach(() => {
@@ -67,27 +140,14 @@ describe('Header.svelte', () => {
 				sub: 'test-user-123',
 				name: 'María García',
 				username: 'maria_g',
+				email: '[email protected]',
 				picture: 'https://example.com/avatar.jpg',
 			};
 		});
 
-		it('renders the user name', async () => {
+		it('renders the user name in the trigger', async () => {
 			render(Header);
 			await expect.element(page.getByText('María García')).toBeInTheDocument();
-		});
-
-		it('renders the logout button inside a signOut form', async () => {
-			render(Header);
-			// Open the user dropdown first
-			const trigger = page.getByRole('button', { name: 'María García' });
-			await trigger.click();
-			const form = page.getByRole('form', { name: 'Cerrar sesión' });
-			await expect.element(form).toBeInTheDocument();
-			await expect.element(form).toHaveAttribute('method', 'POST');
-			await expect.element(form).toHaveAttribute('action', '/?/signOut');
-			await expect
-				.element(page.getByRole('menuitem', { name: 'Cerrar Sesión' }))
-				.toBeInTheDocument();
 		});
 
 		it('renders the user avatar when picture is available', async () => {
@@ -116,38 +176,126 @@ describe('Header.svelte', () => {
 			await expect.element(page.getByRole('img')).not.toBeInTheDocument();
 		});
 
-		describe('passkey section', () => {
-			beforeEach(() => {
-				mockSupportsPasskeys.mockReturnValue(true);
-			});
-
-				it('shows "Dispositivo" label in dropdown', async () => {
-				render(Header);
+		describe('dropdown', () => {
+			async function openDropdown() {
 				const trigger = page.getByRole('button', { name: 'María García' });
 				await trigger.click();
-				await expect.element(page.getByText('Dispositivo', { exact: true })).toBeInTheDocument();
+			}
+
+			it('shows the real user email in the dropdown header', async () => {
+				render(Header);
+				await openDropdown();
+				await expect.element(page.getByText('[email protected]')).toBeInTheDocument();
 			});
 
-			it('shows "Registrar credencial" button when WebAuthn is supported', async () => {
+			it('renders EXACTLY two action buttons: Registrar Credencial and Cerrar Sesión', async () => {
 				render(Header);
-				const trigger = page.getByRole('button', { name: 'María García' });
-				await trigger.click();
-				await expect.element(page.getByText('Registrar credencial')).toBeInTheDocument();
+				await openDropdown();
+				// Both action buttons live inside the menu, so their accessible role
+				// is "menuitem" (explicitly set via role="menuitem" for the Registrar
+				// button and inherited from the shadcn Button inside the form for
+				// Cerrar Sesión). We assert the menuitem role to be unambiguous.
+				await expect
+					.element(page.getByRole('menuitem', { name: 'Registrar Credencial' }))
+					.toBeInTheDocument();
+				await expect
+					.element(page.getByRole('menuitem', { name: 'Cerrar Sesión' }))
+					.toBeInTheDocument();
 			});
 
-			it('shows unsupported browser message when WebAuthn is not available', async () => {
-				mockSupportsPasskeys.mockReturnValue(false);
+			it('does NOT render any "Registrada" status text inside the dropdown', async () => {
 				render(Header);
-				const trigger = page.getByRole('button', { name: 'María García' });
-				await trigger.click();
-				await expect.element(page.getByText('Navegador no compatible')).toBeInTheDocument();
+				await openDropdown();
+				// FR-H-2: the old "Registrada" status text MUST be removed.
+				await expect
+					.element(page.getByText(/Registrada/))
+					.not.toBeInTheDocument();
 			});
 
-			it('does not show passkey section when user is not logged in', async () => {
-				mockPage.data.user = null;
+			it('does NOT render the legacy "Dispositivo" or "Navegador no compatible" labels', async () => {
 				render(Header);
+				await openDropdown();
 				await expect.element(page.getByText('Dispositivo')).not.toBeInTheDocument();
+				await expect
+					.element(page.getByText('Navegador no compatible'))
+					.not.toBeInTheDocument();
 			});
+
+			it('renders the Cerrar Sesión form pointing at /?/signOut with method POST', async () => {
+				render(Header);
+				await openDropdown();
+				const form = page.getByRole('form', { name: 'Cerrar sesión' });
+				await expect.element(form).toBeInTheDocument();
+				await expect.element(form).toHaveAttribute('method', 'POST');
+				await expect.element(form).toHaveAttribute('action', '/?/signOut');
+			});
+
+			it('invokes registerPasskey(user.sub, user.name) when Registrar Credencial is clicked', async () => {
+				mockSupportsPasskeys.mockReturnValue(true);
+				render(Header);
+				await openDropdown();
+				await page.getByRole('menuitem', { name: 'Registrar Credencial' }).click();
+				expect(mockRegisterPasskey).toHaveBeenCalledWith('test-user-123', 'María García');
+			});
+
+			// =====================================================================
+			// Firefox passkey warning (FR-H-3) — conditional on UA only
+			// =====================================================================
+
+			describe('Firefox passkey warning', () => {
+				const FIREFOX_WARNING =
+					'Firefox no soporta QR cross-device. Usá Chrome o Safari.';
+
+				it('renders the warning when navigator.userAgent includes "Firefox"', async () => {
+					stubUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0');
+					render(Header);
+					await openDropdown();
+					await expect.element(page.getByText(FIREFOX_WARNING)).toBeInTheDocument();
+				});
+
+				it('does NOT render the warning when the browser is Chrome', async () => {
+					stubUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36');
+					render(Header);
+					await openDropdown();
+					await expect.element(page.getByText(FIREFOX_WARNING)).not.toBeInTheDocument();
+				});
+
+				it('does NOT render the warning on Safari', async () => {
+					stubUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15');
+					render(Header);
+					await openDropdown();
+					await expect.element(page.getByText(FIREFOX_WARNING)).not.toBeInTheDocument();
+				});
+			});
+		});
+	});
+
+	// =========================================================================
+	// Dashboard link — only for consensus-creator role (FR-H-5)
+	// =========================================================================
+
+	describe('Dashboard link', () => {
+		it('does NOT render the Dashboard link for an authenticated user without the role', async () => {
+			mockPage.data.user = {
+				sub: 'plain-user',
+				name: 'Plain User',
+				email: '[email protected]',
+			};
+			render(Header);
+			await expect.element(page.getByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
+		});
+
+		it('renders the Dashboard link for a user with the consensus-creator role', async () => {
+			mockPage.data.user = {
+				sub: 'creator-1',
+				name: 'Creator User',
+				email: '[email protected]',
+				roles: ['consensus-creator'],
+			};
+			render(Header);
+			const link = page.getByRole('link', { name: 'Dashboard' });
+			await expect.element(link).toBeInTheDocument();
+			await expect.element(link).toHaveAttribute('href', '/dashboard');
 		});
 	});
 });
