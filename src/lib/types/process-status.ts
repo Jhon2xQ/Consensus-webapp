@@ -15,14 +15,15 @@ export const STATUS_LABELS: Record<ElectoralProcessStatus, string> = {
 
 /**
  * Tailwind class strings for the status badge — one distinct variant per state.
+ * Colors match the HTML CSS variables (amber for OPEN, blue for COMMITMENT, etc).
  */
 export const STATUS_COLORS: Record<ElectoralProcessStatus, string> = {
-	OPEN: 'bg-amber-50 text-amber-700 border-amber-200',
-	COMMITMENT: 'bg-blue-50 text-blue-700 border-blue-200',
-	SEALED: 'bg-purple-50 text-purple-700 border-purple-200',
-	VOTING: 'bg-green-50 text-green-700 border-green-200',
-	COUNTING: 'bg-orange-50 text-orange-700 border-orange-200',
-	CLOSED: 'bg-red-50 text-red-700 border-red-200'
+	OPEN: 'bg-amber-50 text-amber-900 border-amber-300',
+	COMMITMENT: 'bg-blue-50 text-blue-800 border-blue-300',
+	SEALED: 'bg-violet-50 text-violet-800 border-violet-300',
+	VOTING: 'bg-green-50 text-green-800 border-green-300',
+	COUNTING: 'bg-orange-50 text-orange-800 border-orange-300',
+	CLOSED: 'bg-red-50 text-red-800 border-red-300'
 };
 
 /**
@@ -36,6 +37,15 @@ export const STATUS_ORDER: ElectoralProcessStatus[] = [
 	'COUNTING',
 	'CLOSED'
 ];
+
+/**
+ * A "highlighted" process is one where the user can still act on it
+ * (open registration, cast a vote). The card and button get red treatment.
+ * SEALED, COUNTING, and CLOSED render as neutral.
+ */
+export function isHighlightedProcess(status: ElectoralProcessStatus): boolean {
+	return status === 'OPEN' || status === 'COMMITMENT' || status === 'VOTING';
+}
 
 /**
  * An "active" process is any state that still allows interaction — i.e. anything

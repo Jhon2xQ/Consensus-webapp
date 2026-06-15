@@ -3,7 +3,8 @@ import {
 	STATUS_LABELS,
 	STATUS_COLORS,
 	STATUS_ORDER,
-	isActiveProcess
+	isActiveProcess,
+	isHighlightedProcess
 } from './process-status';
 import { PROCESS_STATUSES } from './electoral-process';
 import type { ElectoralProcessStatus } from './electoral-process';
@@ -97,6 +98,32 @@ describe('process-status central maps', () => {
 
 		it('returns true for COUNTING', () => {
 			expect(isActiveProcess('COUNTING')).toBe(true);
+		});
+	});
+
+	describe('isHighlightedProcess', () => {
+		it('returns true for OPEN', () => {
+			expect(isHighlightedProcess('OPEN')).toBe(true);
+		});
+
+		it('returns true for COMMITMENT', () => {
+			expect(isHighlightedProcess('COMMITMENT')).toBe(true);
+		});
+
+		it('returns true for VOTING', () => {
+			expect(isHighlightedProcess('VOTING')).toBe(true);
+		});
+
+		it('returns false for SEALED', () => {
+			expect(isHighlightedProcess('SEALED')).toBe(false);
+		});
+
+		it('returns false for COUNTING', () => {
+			expect(isHighlightedProcess('COUNTING')).toBe(false);
+		});
+
+		it('returns false for CLOSED', () => {
+			expect(isHighlightedProcess('CLOSED')).toBe(false);
 		});
 	});
 });
