@@ -14,7 +14,7 @@ vi.mock('$lib/server/api', async (importOriginal) => {
 	};
 });
 
-import { updateCommitment } from './enrollment.service';
+import { updateCommitment, markAsVoted } from './enrollment.service';
 
 function mockEnrollment(overrides: Partial<Enrollment> = {}): Enrollment {
 	return {
@@ -98,5 +98,45 @@ describe('updateCommitment', () => {
 
 		const callArgs = mockFetchBackendJson.mock.calls[0];
 		expect(callArgs[2]).toEqual({ method: 'PUT', body: { commitment: 'semaphore-123' } });
+	});
+});
+
+describe('markAsVoted', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('calls fetchBackendJson with PUT and correct path', async () => {
+		const enrollment = mockEnrollment({ hasVoted: true });
+		mockFetchBackendJson.mockResolvedValue(mockApiResponse(enrollment));
+
+		const locals = {} as App.Locals;
+		await markAsVoted(locals, 'proc-1');
+
+		expect(mockFetchBackendJson).toHaveBeenCalledTimes(1);
+		expect(mockFetchBackendJson).toHaveBeenCalledWith(
+			locals,
+			'/api/private/processes/proc-1/enrollments',
+			{ method: 'PUT', body: { hasVoted: true } }
+		);
+	});
+
+	it('returns the enrollment from response.data', async () => {
+		const enrollment = mockEnrollment({ hasVoted: true });
+		mockFetchBackendJson.mockResolvedValue(mockApiResponse(enrollment));
+
+		const locals = {} as App.Locals;
+		const result = await markAsVoted(locals, 'proc-1');
+
+		expect(result).toEqual(enrollment);
+	});
+
+	it('propagates ApiError when fetchBackendJson rejects', async () => {
+		const apiError = new ApiError(404, 'API_ERROR', 'Enrollment not found');
+		mockFetchBackendJson.mockRejectedValue(apiError);
+
+		const locals = {} as App.Locals;
+
+		await expect(markAsVoted(locals, 'proc-1')).rejects.toThrow(apiError);
 	});
 });

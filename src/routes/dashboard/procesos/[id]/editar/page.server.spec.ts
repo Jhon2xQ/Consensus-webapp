@@ -124,7 +124,7 @@ describe('load function', () => {
 // guardar action (update process)
 // ============================================================
 describe('guardar action', () => {
-	it('derives body.scope from name instead of reading scope from FormData', async () => {
+	it('does NOT include scope in the update body (removed)', async () => {
 		mockUpdateProcess.mockResolvedValue({});
 
 		const formData = createFormData({
@@ -152,7 +152,7 @@ describe('guardar action', () => {
 
 		expect(mockUpdateProcess).toHaveBeenCalled();
 		const updateBody = mockUpdateProcess.mock.calls[0][2];
-		expect(updateBody.scope).toBe('Elecciones 2026');
+		expect(updateBody).not.toHaveProperty('scope');
 		expect(updateBody.name).toBe('Elecciones 2026');
 	});
 
@@ -183,7 +183,6 @@ describe('guardar action', () => {
 
 		expect(mockUpdateProcess).toHaveBeenCalledWith(mockLocals, 'proc-456', expect.objectContaining({
 			name: 'Elecciones Actualizadas',
-			scope: 'Elecciones Actualizadas',
 			description: 'Nueva descripción'
 		}));
 

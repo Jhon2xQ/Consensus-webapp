@@ -107,7 +107,6 @@ export const actions = {
 
 		const body: Partial<CreateProcessBody> = {
 			name: name.trim(),
-			scope: name.trim(),
 			description: description?.trim() || undefined,
 			commitmentStart: isoCommitmentStart,
 			commitmentEnd: isoCommitmentEnd,

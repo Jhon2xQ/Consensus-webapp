@@ -8,7 +8,6 @@ export type ProcessQueryParams = {
 
 export type CreateProcessBody = {
 	name: string;
-	scope: string;
 	description?: string;
 	commitmentStart: string;
 	commitmentEnd: string;

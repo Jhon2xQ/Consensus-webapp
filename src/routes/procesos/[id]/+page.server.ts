@@ -6,7 +6,8 @@ import {
 } from '$lib/server/public-process.service';
 import { getPublicTeamsForProcess } from '$lib/server/team.service';
 import { getPublicEnrollmentSummary } from '$lib/server/public-enrollment.service';
-import { getUserEnrollment, updateCommitment } from '$lib/server/enrollment.service';
+import { getUserEnrollment, updateCommitment, markAsVoted } from '$lib/server/enrollment.service';
+import { getProcessCommitments } from '$lib/server/commitments.service';
 import { ApiError } from '$lib/server/api';
 import type { PageServerLoad, Actions } from './$types';
 import type { Team } from '$lib/types/team';
@@ -74,6 +75,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
+	// Merkle tree commitments — only needed for authenticated voters.
+	// Anonymous visitors don't vote, so we skip the call (would 401 anyway).
+	let commitments: string[] = [];
+	let commitmentsError = false;
+
+	if (userSub) {
+		try {
+			commitments = await getProcessCommitments(locals, id);
+		} catch {
+			commitments = [];
+			commitmentsError = true;
+		}
+	}
+
 	return {
 		process: process.value,
 		liveState,
@@ -82,7 +97,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		teamsError,
 		enrollmentError,
 		userSub,
-		userEnrollment
+		userEnrollment,
+		commitments,
+		commitmentsError
 	};
 };
 
@@ -123,5 +140,23 @@ export const actions = {
 		}
 
 		throw redirect(303, '/procesos/' + processId);
+	},
+	'mark-as-voted': async ({ params, locals }) => {
+		const processId = params.id;
+
+		try {
+			await markAsVoted(locals, processId);
+		} catch (err) {
+			if (err instanceof ApiError) {
+				// 409 means the user already voted — it's not a real error.
+				if (err.status === 409) {
+					return { success: true };
+				}
+				return fail(err.status, { error: err.message });
+			}
+			throw err;
+		}
+
+		return { success: true };
 	}
 } satisfies Actions;

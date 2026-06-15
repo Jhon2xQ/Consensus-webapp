@@ -43,6 +43,8 @@
   },
   "dependencies": {
     "@fontsource-variable/space-grotesk": "^5.2.10",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/poppins": "^5.2.7",
     "@internationalized/date": "^3.12.1",
     "@logto/sveltekit": "^0.3.23",
     "@semaphore-protocol/core": "^4.14.2",

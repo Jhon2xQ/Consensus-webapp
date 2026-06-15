@@ -82,3 +82,19 @@ export async function updateCommitment(
 	);
 	return response.data;
 }
+
+/**
+ * Mark a user's enrollment as voted.
+ * Calls PUT /api/private/processes/{processId}/enrollments
+ */
+export async function markAsVoted(
+	locals: App.Locals,
+	processId: string
+): Promise<Enrollment> {
+	const response = await fetchBackendJson<ApiResponse<Enrollment>>(
+		locals,
+		`/api/private/processes/${processId}/enrollments`,
+		{ method: 'PUT', body: { hasVoted: true } }
+	);
+	return response.data;
+}

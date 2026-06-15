@@ -95,7 +95,6 @@ export const actions = {
 
 		const body: CreateProcessBody = {
 			name: name.trim(),
-			scope: name.trim(),
 			description: description?.trim() || undefined,
 			commitmentStart: isoCommitmentStart,
 			commitmentEnd: isoCommitmentEnd,

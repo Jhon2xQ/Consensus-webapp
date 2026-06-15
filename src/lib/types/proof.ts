@@ -5,8 +5,7 @@ export type VotingProofInput = {
 	groupId: string;
 	processId: string;
 	teamName: string;
-	fetchCommitmentsUrl: string;
-	voterSub: string;
+	commitments: string[];
 };
 
 export type VotingFullProof = {
@@ -47,6 +46,6 @@ export type ProofSubmissionResult = {
 };
 
 export type ProofError = {
-	kind: 'snark-download' | 'merkle-failed' | 'relayer-4xx' | 'relayer-5xx' | 'validation';
+	kind: 'snark-download' | 'merkle-failed' | 'identity-not-in-group' | 'relayer-4xx' | 'relayer-5xx' | 'validation';
 	message?: string;
 };

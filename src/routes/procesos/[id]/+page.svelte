@@ -14,6 +14,8 @@
 		enrollmentError: boolean;
 		userSub: string | null;
 		userEnrollment: Enrollment | null;
+		commitments: string[];
+		commitmentsError: boolean;
 	};
 
 	let { data, form }: { data: PageData; form?: { error?: string } | null } = $props();
@@ -33,5 +35,7 @@
 		enrollmentError={data.enrollmentError}
 		userSub={data.userSub}
 		userEnrollment={data.userEnrollment}
+		commitments={data.commitments}
+		commitmentsError={data.commitmentsError}
 	/>
 </main>
