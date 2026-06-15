@@ -1,105 +1,68 @@
 ---
 name: Decentralized Voting System
 colors:
-  surface: '#f7fafc'
-  surface-dim: '#d7dadc'
-  surface-bright: '#f7fafc'
-  surface-container-lowest: '#ffffff'
-  surface-container-low: '#f1f4f6'
-  surface-container: '#ebeef0'
-  surface-container-high: '#e5e9eb'
-  surface-container-highest: '#e0e3e5'
-  on-surface: '#181c1e'
-  on-surface-variant: '#5d3f3c'
-  inverse-surface: '#2d3133'
-  inverse-on-surface: '#eef1f3'
-  outline: '#926f6b'
-  outline-variant: '#e7bdb8'
-  surface-tint: '#c00013'
   primary: '#bb0012'
-  on-primary: '#ffffff'
-  primary-container: '#e32225'
-  on-primary-container: '#fffbff'
-  inverse-primary: '#ffb4ab'
-  secondary: '#5e5e5e'
-  on-secondary: '#ffffff'
-  secondary-container: '#e2e2e2'
-  on-secondary-container: '#646464'
-  tertiary: '#5a5c5c'
-  on-tertiary: '#ffffff'
-  tertiary-container: '#737575'
-  on-tertiary-container: '#fcfcfc'
-  error: '#ba1a1a'
-  on-error: '#ffffff'
-  error-container: '#ffdad6'
-  on-error-container: '#93000a'
-  primary-fixed: '#ffdad6'
-  primary-fixed-dim: '#ffb4ab'
-  on-primary-fixed: '#410002'
-  on-primary-fixed-variant: '#93000c'
-  secondary-fixed: '#e2e2e2'
-  secondary-fixed-dim: '#c6c6c6'
-  on-secondary-fixed: '#1b1b1b'
-  on-secondary-fixed-variant: '#474747'
-  tertiary-fixed: '#e2e2e2'
-  tertiary-fixed-dim: '#c6c6c7'
-  on-tertiary-fixed: '#1a1c1c'
-  on-tertiary-fixed-variant: '#454747'
-  background: '#f7fafc'
-  on-background: '#181c1e'
-  surface-variant: '#e0e3e5'
+  primary-hover: '#a0000f'
+  black: '#000000'
+  white: '#ffffff'
+  gray-50: '#fafafa'
+  gray-100: '#f5f5f5'
+  gray-200: '#e5e5e5'
+  gray-300: '#d4d4d4'
+  gray-400: '#a3a3a3'
+  gray-500: '#737373'
+  gray-600: '#525252'
+  gray-700: '#404040'
+  gray-800: '#262626'
+  gray-900: '#171717'
+  surface: '#f7f7f7'
+  fg: '#111111'
+  fg-2: '#3a3a3a'
+  muted: '#707070'
+  border: '#d9d9d9'
+  border-soft: '#eeeeee'
 typography:
   display-family: 'Poppins, system-ui, sans-serif'
   body-family: 'Inter Variable, system-ui, sans-serif'
   mono-family: 'JetBrains Mono, ui-monospace, monospace'
   h1:
     fontFamily: Poppins
-    fontSize: 76px
     fontWeight: '800'
     lineHeight: '1.02'
     letterSpacing: -0.03em
+    responsive: 'clamp(42px, 6vw, 74px)'
   h2:
     fontFamily: Poppins
-    fontSize: 54px
     fontWeight: '700'
     lineHeight: '1.1'
     letterSpacing: -0.025em
+    responsive: 'clamp(30px, 4vw, 46px)'
   h3:
     fontFamily: Poppins
-    fontSize: 24px
+    fontSize: 20px
     fontWeight: '700'
-    lineHeight: '1.2'
     letterSpacing: -0.015em
   body-lg:
     fontFamily: Inter Variable
     fontSize: 18px
-    fontWeight: '400'
-    lineHeight: '1.6'
+    lineHeight: '1.55'
   body-md:
     fontFamily: Inter Variable
-    fontSize: 16px
-    fontWeight: '400'
-    lineHeight: '1.5'
+    fontSize: 14px
+    lineHeight: '1.6'
   label-caps:
     fontFamily: JetBrains Mono
-    fontSize: 12px
+    fontSize: 11px
     fontWeight: '500'
     lineHeight: '1'
     letterSpacing: 0.1em
-  mono-data:
+    textTransform: uppercase
+  mono-tag:
     fontFamily: JetBrains Mono
-    fontSize: 14px
+    fontSize: 10px
     fontWeight: '500'
-    lineHeight: '1.4'
-  hero-clamp:
-    h1: 'clamp(42px, 6vw, 74px)'
-    lead: 'clamp(16px, 2vw, 19px)'
-  section-title-clamp: 'clamp(30px, 4vw, 46px)'
+    letterSpacing: 0.05em
 rounded:
-  sm: 0.25rem
-  md: 0.5rem
-  lg: 0.75rem
-  pill: 9999px
   consensus-sm: 4px
   consensus-md: 8px
   consensus-lg: 12px
@@ -113,23 +76,15 @@ spacing:
     5: 20px
     6: 24px
     8: 32px
+    10: 40px
     12: 48px
     16: 64px
     20: 80px
     24: 96px
-  section-y-phone: 48px
-  section-y-tablet: 68px
-  section-y-desktop: 96px
   container-max: 1280px
   container-gutter-phone: 16px
   container-gutter-tablet: 24px
   container-gutter-desktop: 36px
-  xs: 0.25rem
-  sm: 0.5rem
-  md: 1rem
-  lg: 1.5rem
-  xl: 2.5rem
-  gutter: 1.5rem
 motion:
   fast: 150ms
   base: 240ms
@@ -140,26 +95,37 @@ motion:
 
 The design system is engineered to evoke absolute trust, cryptographic security, and democratic clarity. Targeting a sophisticated audience of institutional stakeholders and tech-savvy citizens, the aesthetic balances the sterile reliability of a financial institution with the progressive edge of Web3 technology.
 
-The primary style is **Modern Corporate Glassmorphism**. It utilizes high-contrast transitions between deep black technical zones and expansive white airy surfaces. Modular "blocks" of information, inspired by blockchain structures, organize complex data into digestible units. Glassmorphism is applied to interactive layers to signify transparency—a literal visual metaphor for the "open ledger" nature of the voting process. Subtle red gradients act as the "energy" of the system, guiding the eye toward critical actions and verified states.
+The primary style is **Modern Corporate Glassmorphism**. It utilizes high-contrast transitions between deep black technical zones and expansive white airy surfaces. Modular "blocks" of information, inspired by blockchain structures, organize complex data into digestible units. Subtle red gradients act as the "energy" of the system, guiding the eye toward critical actions and verified states.
 
 ## Colors
 
-The palette is strictly controlled to maintain a high-tech, authoritative atmosphere.
+The palette is strictly controlled. All colors are exposed as CSS custom properties under the `consensus-` namespace in `src/routes/layout.css` and mapped to Tailwind utilities via `@theme inline`.
 
-- **White (~50%)**: Used for the primary "Canvas." It represents the neutrality and transparency of the voting platform.
-- **Black (~25%)**: Used for "Deep Space" sections (navigation bars, footers, or technical data overlays) and high-contrast headlines. It provides the grounding force of security.
-- **Red (~25%)**: The "Pulse" of the system. This is a vibrant, high-energy red (`#bb0012`) used for primary CTA buttons, active voting states, and critical security alerts. Hover state deepens to `#a0000f`.
-- **Subtle Depth**: Soft grays (`#F5F5F5` → `#171717`) and extremely faint blue-tints (`#F7FAFC`) are utilized for borders, disabled states, and background layering to prevent visual fatigue on pure white surfaces.
+| Token | Value | Tailwind class | Use |
+|-------|-------|----------------|-----|
+| `--consensus-color-red` | `#bb0012` | `bg-consensus-red`, `text-consensus-red` | Primary CTA, active states, accents |
+| `--consensus-color-red-hover` | `#a0000f` | `hover:bg-consensus-red-hover` | Button hover |
+| `--consensus-color-black` | `#000000` | `bg-consensus-black`, `text-consensus-black` | Dark sections, high-contrast text |
+| `--consensus-color-white` | `#ffffff` | `bg-consensus-white`, `text-consensus-white` | Canvas, light sections |
+| `--consensus-color-gray-100` | `#f5f5f5` | `bg-consensus-gray-100` | Card backgrounds, subtle fills |
+| `--consensus-color-gray-300` | `#d4d4d4` | `text-consensus-gray-300` | Borders on hover |
+| `--consensus-color-gray-400` | `#a3a3a3` | `text-consensus-gray-400` | Muted logos, inactive elements |
+| `--consensus-color-gray-600` | `#525252` | `text-consensus-gray-600` | Logo hover |
+| `--consensus-color-fg` | `#111111` | `text-consensus-fg` | Primary text |
+| `--consensus-color-fg-2` | `#3a3a3a` | `text-consensus-fg-2` | Secondary text |
+| `--consensus-color-muted` | `#707070` | `text-consensus-muted` | Labels, descriptions |
+| `--consensus-color-border` | `#d9d9d9` | `border-consensus-border` | Card borders, dividers |
+| `--consensus-color-border-soft` | `#eeeeee` | `border-consensus-border-soft` | Subtle dividers |
 
-All landing colors are also exposed as CSS custom properties under the `consensus-` namespace in `src/routes/layout.css` (e.g. `--consensus-color-red`, `--consensus-color-gray-100`, `--consensus-color-border-soft`). shadcn-svelte primitives keep their original `--background`, `--primary`, etc. so the design system and the component library coexist without collision.
+**Note**: shadcn-svelte primitives (`--background`, `--primary`, etc.) remain unchanged. The `consensus-` namespace coexists without collision.
 
 ## Typography
 
-Typography is a mix of technical precision and human-centric readability. **All three families are self-hosted via `@fontsource`** (zero CDN requests).
+**All three families are self-hosted via `@fontsource`** (zero CDN requests).
 
-- **Display & Headings**: **Poppins** (weights 600/700/800). Geometric, futuristic, mirrors engineering excellence. Used for h1, h2, h3 and key metrics. Loaded as per-weight static files from `@fontsource/poppins/600.css`, `700.css`, `800.css` because fontsource does not publish a variable build of Poppins.
-- **Body & Interface**: **Inter Variable** (weights 100–900 via variable axis). Maximum legibility across screen sizes and languages. Loaded as `@fontsource-variable/inter`.
-- **Data, Equations & Labels**: **JetBrains Mono** (weights 400/500). Communicates the blockchain context, used for ZK/BC tag pills, section eyebrows, the equation text `H(identity) ∈ merkle_tree(group_root)`, and any mono data. Loaded as `@fontsource/jetbrains-mono/400.css`, `500.css`.
+- **Display & Headings**: **Poppins** (weights 600/700/800). Geometric, futuristic. Used for h1, h2, h3, step numbers, and card titles.
+- **Body & Interface**: **Inter Variable** (weights 100–900). Maximum legibility. Applied to `<html>` via `@apply font-body`.
+- **Labels & Data**: **JetBrains Mono** (weights 400/500). Used for eyebrows, mono tags, date labels, and technical data.
 
 ### Font token mapping (Tailwind v4 `@theme inline`)
 
@@ -169,73 +135,167 @@ Typography is a mix of technical precision and human-centric readability. **All 
 | `--font-body` | `'Inter Variable', system-ui, sans-serif` | `font-body` |
 | `--font-mono` | `'JetBrains Mono', ui-monospace, monospace` | `font-mono` |
 
-`<html>` applies `@apply font-body` (replaces the old `font-sans` Space Grotesk alias). Component overrides use `font-display` for headings and `font-mono` for technical labels.
+### Actual usage patterns (from index)
 
-### Hero responsive scale
+**Eyebrow / mono label** (section eyebrows, date labels):
+```
+font-mono text-[11px] font-medium tracking-[0.1em] uppercase text-consensus-muted
+```
 
-The Hero `h1` uses `clamp(42px, 6vw, 74px)` so it stays legible at 1024–1920px without breaking layouts. The lead paragraph uses `clamp(16px, 2vw, 19px)`. Section titles (h2) use `clamp(30px, 4vw, 46px)`.
+**h1** (Hero):
+```
+font-display font-extrabold leading-[1.02] tracking-[-0.03em] text-[clamp(42px,6vw,74px)]
+```
 
-### Strict vertical rhythm
+**h2** (section titles):
+```
+font-display font-bold leading-[1.1] tracking-[-0.025em] text-[clamp(30px,4vw,46px)]
+```
 
-4px baseline grid is maintained by aligning every block to the `--consensus-space-*` scale (1 = 4px, 2 = 8px, 3 = 12px, …, 24 = 96px).
+**h3** (card titles):
+```
+font-display text-xl font-bold tracking-[-0.015em]
+```
+
+**Lead paragraph** (Hero):
+```
+text-[clamp(16px,2vw,19px)] text-consensus-fg-2 leading-[1.6]
+```
+
+**Body text** (descriptions):
+```
+text-sm text-consensus-muted leading-[1.6]
+```
+
+**Mono tag** (ZK/BC pills):
+```
+font-mono text-[10px] font-medium px-[6px] py-[2px] rounded-[3px] bg-current
+```
 
 ## Layout & Spacing
 
-The layout follows a **Fluid Modular Grid** system. Inspired by the reference HTML, content is organized into logical "Dashboard Cards" that can stack or expand based on screen real estate.
+### Container
 
-- **Grid**: A 12-column grid. The landing container is `max-w-7xl` (**1280px**, NOT the HTML's 1180px — see product decision) with responsive gutters: 16px (phone) → 24px (tablet ≥ 768px) → 36px (desktop ≥ 1024px). Tailwind: `max-w-7xl mx-auto px-6 lg:px-8`.
-- **Section vertical rhythm**: `--consensus-section-y-phone: 48px` / `--consensus-section-y-tablet: 68px` / `--consensus-section-y-desktop: 96px`.
-- **Modules**: Information is grouped into cards with generous internal padding (`--consensus-space-8` = 32px) to allow the content to breathe.
-- **Visual Rhythm**: High-level summaries (Total Votes, Time Remaining) occupy full-width hero sections, while granular details (Voter lists, Protocol specs) utilize 4-column or 6-column modules.
+All sections use the same container pattern:
+```
+max-w-7xl mx-auto px-6 lg:px-8
+```
+- `max-w-7xl` = 1280px (product decision, NOT the HTML's 1180px)
+- `px-6` = 24px on mobile
+- `lg:px-8` = 32px on desktop (≥1024px)
+
+### Spacing tokens
+
+All spacing uses the `consensus-*` scale (4px baseline grid). Tailwind classes: `gap-consensus-*`, `p-consensus-*`, `mb-consensus-*`, `py-consensus-*`, etc.
+
+| Token | Value | Tailwind |
+|-------|-------|----------|
+| `consensus-1` | 4px | `gap-consensus-1` |
+| `consensus-2` | 8px | `gap-consensus-2` |
+| `consensus-3` | 12px | `gap-consensus-3` |
+| `consensus-4` | 16px | `gap-consensus-4` |
+| `consensus-5` | 20px | `gap-consensus-5` |
+| `consensus-6` | 24px | `gap-consensus-6` |
+| `consensus-8` | 32px | `gap-consensus-8` |
+| `consensus-10` | 40px | `gap-consensus-10` |
+| `consensus-12` | 48px | `gap-consensus-12` |
+| `consensus-16` | 64px | `gap-consensus-16` |
+| `consensus-20` | 80px | `gap-consensus-20` |
+| `consensus-24` | 96px | `py-consensus-24` |
+
+### Section vertical rhythm
+
+- Phone: 48px (`py-consensus-12`)
+- Tablet: 68px
+- Desktop: 96px (`py-consensus-24`)
+
+### Grid patterns
+
+- **Hero**: `grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-consensus-16 lg:gap-consensus-20`
+- **HowItWorks cards**: `grid gap-consensus-6 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]`
+- **Technology**: `grid grid-cols-1 md:grid-cols-2 gap-consensus-16 md:gap-consensus-20`
 
 ## Elevation & Depth
 
-Depth is achieved through **Layered Transparency** rather than traditional heavy shadows.
-
-- **Surface 0 (Base)**: Pure white or very light gray.
-- **Surface 1 (Cards)**: White with a subtle 1px border (`--consensus-color-border` = `#d9d9d9`) and a soft, expansive neutral shadow on hover (`0 8px 32px rgba(0,0,0,0.06)`).
-- **Surface 2 (Glass Overlays)**: `backdrop-blur` 12–20px applied to semi-transparent white (rgba 255,255,255,0.7) or black (rgba 0,0,0,0.8) panels. Wrapped in `@supports (backdrop-filter)` with a solid `bg-white/90` fallback for `prefers-reduced-transparency`.
-- **Floating Actions**: High-contrast red elements use a soft red-tinted glow (drop-shadow) to appear as if they are emitting light, signifying their interactive importance.
+- **Surface 0 (Base)**: Pure white (`consensus-white`).
+- **Surface 1 (Cards)**: White with 1px `consensus-border` border. On hover: border lightens + shadow `0 8px 32px rgba(0,0,0,0.06)`.
+- **Dark sections**: `bg-consensus-black` with white text and subtle opacity variations for hierarchy.
 
 ## Shapes
 
-The shape language is **Soft-Tech**.
-
-Using `--consensus-radius-sm` (4px) through `--consensus-radius-lg` (12px) — or `--consensus-radius-pill` (9999px) for fully rounded pills — the design system avoids the "childish" look of fully rounded pills while remaining more approachable than sharp, brutalist 90-degree angles.
-
-- **Primary Buttons**: Slightly higher roundedness (`--consensus-radius-md` = 8px) to distinguish them from structural layout containers.
-- **Data Chips & Tags**: Squircle / standard 4px radius.
-- **Icons**: Linear, 2px stroke width, with slightly rounded terminals to match the font geometry of Poppins.
-
-## Motion
-
-Two canonical durations drive every transition in the landing:
+Using `--consensus-radius-*` scale:
 
 | Token | Value | Use |
 |-------|-------|-----|
-| `--consensus-motion-fast` | `150ms` | Hover, focus, color change |
-| `--consensus-motion-base` | `240ms` | Border, shadow, transform |
+| `consensus-sm` | 4px | Mono tags, small chips |
+| `consensus-md` | 8px | Buttons, icon containers, badges |
+| `consensus-lg` | 12px | Cards, image containers |
+| `consensus-pill` | 9999px | Fully rounded pills |
 
-Both run on `--consensus-ease-standard: cubic-bezier(0.2, 0, 0, 1)`. Wrapped in `@media (prefers-reduced-motion: no-preference)` so users with reduced-motion preferences get instant transitions.
+## Motion
 
-## Components
+| Token | Value | Tailwind | Use |
+|-------|-------|----------|-----|
+| `consensus-motion-fast` | 150ms | `duration-[150ms]` | Hover, focus, color change |
+| `consensus-motion-base` | 240ms | `duration-[240ms]` | Border, shadow, transform |
+| `consensus-ease-standard` | `cubic-bezier(0.2, 0, 0, 1)` | `ease-[cubic-bezier(0.2,0,0,1)]` | All transitions |
 
-- **Buttons**:
-  - *Primary*: Solid Red (`--consensus-color-red`) with white text. Hover deepens to `--consensus-color-red-hover` (`#a0000f`).
-  - *Secondary*: White background, 1px `--consensus-color-border` border, black text.
-  - *Dashboard pill*: `--consensus-color-red` text on white background with `rgba(187,0,18,0.35)` border; fills red on hover.
-  - *Ghost*: Transparent background, red text, for low-priority actions.
-- **Cards**: Minimalist containers with a subtle 1px border. Header areas of cards may use a faint gray background to separate title from content.
-- **Input Fields**: Large, clean fields with 1px gray borders that transition to 2px Red on focus. Labels are always "Label-Caps" style (JetBrains Mono, 12px, 0.1em tracking) sitting above the field.
-- **Progress Indicators**: Linear bars using a red-to-white gradient to show voting progress or blockchain confirmation status.
-- **Voting Chips**: Small status indicators (e.g., "Verified," "On-Chain," "Pending") using a light-red background with dark red text for high legibility.
-- **Modals**: Utilize the "Glassmorphism" effect with a heavy backdrop blur to keep the user focused on the secure action at hand.
+All transitions use: `transition-colors duration-[150ms]` (fast) or `transition-[border-color,box-shadow] duration-[240ms] ease-[cubic-bezier(0.2,0,0,1)]` (base).
 
-## Landing-only sections
+## Components (actual patterns from index)
 
-The landing page composition (Hero → HowItWorks → Technology → TrustedBy → Footer) reuses the brand palette, typography, and radius scale defined above. Section-level overrides:
+### Buttons
 
-- **Hero**: 2-column grid (1.15fr 1fr) at `lg+`, 1-column below. 64px gap (mobile) → 80px (desktop). Inline SVG wireframe replaces any external image.
-- **HowItWorks**: 4-card grid `repeat(auto-fit, minmax(240px, 1fr))`. Each card: number badge (01–04) in `text-brand-red`, 44×44 icon container with `bg-brand-red/6`, h3 title, description.
-- **Technology**: Dark section (`bg-brand-black text-white`). Two badges (ZK red-tinted, BC neutral) with JetBrains Mono tags. Inline SVG wireframe with the equation `H(identity) ∈ merkle_tree(group_root)`.
-- **TrustedBy**: Mono label "Respaldado por Líderes de la Industria", 4 logo spans, `text-gray-400 → text-gray-600` hover transition (240ms).
+**Primary** (Hero "Iniciar Propuesta"):
+```
+inline-flex items-center justify-center gap-consensus-2
+px-[18px] py-[10px] rounded-consensus-md
+font-body text-sm font-semibold tracking-[-0.01em]
+bg-consensus-red text-consensus-white
+hover:bg-consensus-red-hover
+transition-colors duration-[150ms]
+```
+
+**Secondary** (Hero "Leer Docs"):
+```
+inline-flex items-center justify-center gap-consensus-2
+px-[18px] py-[10px] rounded-consensus-md
+font-body text-sm font-semibold tracking-[-0.01em]
+bg-transparent text-consensus-fg border border-consensus-border
+hover:bg-consensus-gray-100 hover:border-consensus-gray-400
+transition-all duration-[150ms]
+```
+
+### Cards (HowItWorks)
+
+```
+p-consensus-8 border border-consensus-border rounded-consensus-lg bg-consensus-white
+transition-[border-color,box-shadow] duration-[240ms] ease-[cubic-bezier(0.2,0,0,1)]
+hover:border-consensus-gray-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)]
+```
+
+### Mono tag pills (Technology ZK/BC badges)
+
+Outer: `inline-flex items-center gap-consensus-3 px-consensus-5 py-consensus-4 border rounded-consensus-md font-display text-sm font-bold tracking-[0.02em]`
+
+Inner tag: `font-mono text-[10px] font-medium px-[6px] py-[2px] rounded-[3px] bg-current text-consensus-black tracking-[0.05em]`
+
+### Eyebrow labels (section eyebrows)
+
+```
+block font-mono text-[11px] font-medium tracking-[0.1em] uppercase text-consensus-muted
+```
+
+Often preceded by a decorative line:
+```
+<span aria-hidden="true" class="block w-6 h-px bg-consensus-red"></span>
+```
+
+## Landing sections (reference implementation)
+
+The landing page (Hero → HowItWorks → Technology → TrustedBy) is the **source of truth** for all design patterns.
+
+- **Hero**: 2-column grid at `lg+`, 1-column below. Inline SVG wireframe. Eyebrow with red line prefix.
+- **HowItWorks**: 4-card auto-fit grid. Step numbers in `font-display text-[11px] font-bold text-consensus-red`. 44×44 icon containers with `bg-consensus-red/[0.06]`.
+- **Technology**: Dark section. Two badge pills (ZK red-tinted, BC neutral). Inline SVG circuit wireframe.
+- **TrustedBy**: Gray background with subtle border. Mono label. Logo spans with `text-consensus-gray-400 → hover:text-consensus-gray-600` transition (240ms).
