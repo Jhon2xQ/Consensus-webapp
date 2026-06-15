@@ -73,7 +73,7 @@
 <!-- Header Section -->
 <section class="pt-24 pb-8">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
-    <h1 class="text-4xl md:text-5xl font-bold tracking-tighter mb-4">
+    <h1 class="text-4xl md:text-5xl font-display font-extrabold leading-[1.02] tracking-[-0.03em] mb-4">
       Procesos Electorales
     </h1>
     <p class="text-lg md:text-xl text-brand-gray-800">
@@ -104,27 +104,27 @@
           {@const highlighted = isHighlightedProcess(process.estatus)}
           <li
             class={cn(
-              "border rounded-xl p-6 flex flex-col gap-5 transition-shadow hover:shadow-md",
+              "border border-consensus-border rounded-consensus-lg p-consensus-6 flex flex-col gap-consensus-5 transition-[border-color,box-shadow] duration-[240ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-consensus-gray-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)]",
               highlighted
-                ? "border-brand-red ring-1 ring-brand-red"
-                : "border-brand-gray-200",
+                ? "border-consensus-red ring-1 ring-consensus-red"
+                : "border-consensus-border",
             )}
           >
             <!-- Top: Name + Description | Status Badge -->
             <div class="flex items-start justify-between gap-4">
               <div class="flex flex-col gap-1 min-w-0">
-                <h2 class="text-lg font-bold text-brand-red leading-tight">
+                <h2 class="font-display text-lg font-bold tracking-[-0.015em] text-brand-red leading-tight">
                   {process.name}
                 </h2>
                 {#if process.description !== null}
-                  <p class="text-sm text-brand-gray-800 mt-1 line-clamp-2">
+                  <p class="text-sm text-consensus-fg-2 mt-1 line-clamp-2">
                     {process.description}
                   </p>
                 {/if}
               </div>
               <span
                 class={cn(
-                  "shrink-0 text-xs font-semibold px-3 py-1 border rounded-md",
+                  "shrink-0 font-mono text-[11px] font-medium px-3 py-1 border rounded-consensus-sm tracking-[0.04em] uppercase",
                   getStatusStyle(process.estatus),
                 )}
               >
@@ -136,39 +136,39 @@
             <div class="flex flex-col gap-3">
               <!-- Compromiso -->
               <div class="flex items-baseline gap-3">
-                <span class="text-[11px] font-medium text-brand-gray-400 uppercase tracking-wider shrink-0 w-[90px]">COMPROMISO</span>
-                <span class="text-sm font-medium text-brand-black">{formatDate(process.commitmentStart)}</span>
-                <span class="text-xs text-brand-gray-400">{formatTime(process.commitmentStart)} – {formatDate(process.commitmentEnd)} {formatTime(process.commitmentEnd)}</span>
+                <span class="font-mono text-[11px] font-medium tracking-[0.1em] uppercase text-consensus-muted shrink-0 w-[90px]">COMPROMISO</span>
+                <span class="font-mono text-sm font-medium text-consensus-fg">{formatDate(process.commitmentStart)}</span>
+                <span class="font-mono text-xs text-consensus-muted">{formatTime(process.commitmentStart)} – {formatDate(process.commitmentEnd)} {formatTime(process.commitmentEnd)}</span>
               </div>
               <!-- Votación -->
               <div class="flex items-baseline gap-3">
-                <span class="text-[11px] font-medium text-brand-gray-400 uppercase tracking-wider shrink-0 w-[90px]">VOTACIÓN</span>
-                <span class="text-sm font-medium text-brand-black">{formatDate(process.votingStart)}</span>
-                <span class="text-xs text-brand-gray-400">{formatTime(process.votingStart)} – {formatDate(process.votingEnd)} {formatTime(process.votingEnd)}</span>
+                <span class="font-mono text-[11px] font-medium tracking-[0.1em] uppercase text-consensus-muted shrink-0 w-[90px]">VOTACIÓN</span>
+                <span class="font-mono text-sm font-medium text-consensus-fg">{formatDate(process.votingStart)}</span>
+                <span class="font-mono text-xs text-consensus-muted">{formatTime(process.votingStart)} – {formatDate(process.votingEnd)} {formatTime(process.votingEnd)}</span>
               </div>
               <!-- Resultados -->
               <div class="flex items-baseline gap-3">
-                <span class="text-[11px] font-medium text-brand-gray-400 uppercase tracking-wider shrink-0 w-[90px]">RESULTADOS</span>
-                <span class="text-sm font-medium text-brand-black">{formatDate(process.results)}</span>
-                <span class="text-xs text-brand-gray-400">{formatTime(process.results)}</span>
+                <span class="font-mono text-[11px] font-medium tracking-[0.1em] uppercase text-consensus-muted shrink-0 w-[90px]">RESULTADOS</span>
+                <span class="font-mono text-sm font-medium text-consensus-fg">{formatDate(process.results)}</span>
+                <span class="font-mono text-xs text-consensus-muted">{formatTime(process.results)}</span>
               </div>
             </div>
 
             <!-- Footer: Metadata | Action -->
             <div class="flex items-center justify-between">
-              <span class="text-sm text-brand-gray-400">
+              <span class="font-mono text-xs text-consensus-muted">
                 {formatMetadata(process.teamsCount)} equipos · {formatMetadata(process.participantsCount)} participantes
               </span>
               {#if highlighted}
                 <button
-                  class="bg-brand-red hover:bg-brand-red/90 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"
+                  class="bg-consensus-red hover:bg-consensus-red-hover text-consensus-white text-sm font-semibold px-4 py-2 rounded-consensus-md transition-colors duration-[150ms]"
                   onclick={() => goto(`/procesos/${process.id}`)}
                 >
                   Participar
                 </button>
               {:else}
                 <button
-                  class="bg-brand-gray-100 hover:bg-brand-gray-200 text-brand-gray-400 text-sm font-semibold px-4 py-2 rounded-md transition-colors"
+                  class="bg-consensus-gray-100 text-consensus-muted hover:bg-consensus-gray-200 text-sm font-semibold px-4 py-2 rounded-consensus-md transition-colors duration-[150ms]"
                   onclick={() => goto(`/procesos/${process.id}`)}
                 >
                   Verificar
@@ -182,7 +182,7 @@
       <!-- Pagination Controls — numbered buttons -->
       <nav class="flex items-center justify-center gap-2 pt-8 pb-12">
         <button
-          class="min-w-9 h-9 px-3 rounded-md text-sm font-medium text-brand-gray-800 border border-brand-gray-200 bg-white transition-colors hover:bg-brand-gray-100 disabled:opacity-35 disabled:pointer-events-none"
+          class="min-w-9 h-9 px-3 rounded-consensus-md text-sm font-medium text-consensus-fg border border-consensus-border bg-consensus-white transition-colors duration-[150ms] hover:bg-consensus-gray-100 disabled:opacity-35 disabled:pointer-events-none"
           disabled={!hasPrevPage}
           onclick={() => onpagechange(page - 1)}
         >
@@ -191,10 +191,10 @@
         {#each pageNumbers as n (n)}
           <button
             class={cn(
-              "min-w-9 h-9 px-3 rounded-md text-sm font-medium border transition-colors disabled:pointer-events-none",
+              "min-w-9 h-9 px-3 rounded-consensus-md text-sm font-medium border transition-colors duration-[150ms] disabled:pointer-events-none",
               n === page
-                ? "bg-black text-white border-black"
-                : "text-brand-gray-800 border-brand-gray-200 bg-white hover:bg-brand-gray-100",
+                ? "bg-consensus-black text-consensus-white border-consensus-black"
+                : "text-consensus-fg border-consensus-border bg-consensus-white hover:bg-consensus-gray-100",
             )}
             disabled={n === page}
             onclick={() => onpagechange(n)}
@@ -203,7 +203,7 @@
           </button>
         {/each}
         <button
-          class="min-w-9 h-9 px-3 rounded-md text-sm font-medium text-brand-gray-800 border border-brand-gray-200 bg-white transition-colors hover:bg-brand-gray-100 disabled:opacity-35 disabled:pointer-events-none"
+          class="min-w-9 h-9 px-3 rounded-consensus-md text-sm font-medium text-consensus-fg border border-consensus-border bg-consensus-white transition-colors duration-[150ms] hover:bg-consensus-gray-100 disabled:opacity-35 disabled:pointer-events-none"
           disabled={!hasNextPage}
           onclick={() => onpagechange(page + 1)}
         >
