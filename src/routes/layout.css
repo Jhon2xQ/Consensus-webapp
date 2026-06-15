@@ -1,13 +1,21 @@
 @import 'tailwindcss';
 @import "tw-animate-css";
 @import "shadcn-svelte/tailwind.css";
-@import "@fontsource-variable/space-grotesk";
+
+/* Self-hosted fonts: Poppins (display), Inter Variable (body), JetBrains Mono (mono). */
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
+@import "@fontsource/poppins/800.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
 
 @custom-variant dark (&:is(.dark *));
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
 :root {
+	/* shadcn-svelte tokens (UNCHANGED — required for primitives) */
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.145 0 0);
 	--card: oklch(1 0 0);
@@ -40,6 +48,67 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
+
+	/* Consensus landing tokens (NEW). Source: consensus-landing.html :root.
+	   All namespaced with `consensus-` to avoid colliding with shadcn vars. */
+
+	/* Colors (HTML: --accent, --black, --white, --gray-50..900) */
+	--consensus-color-red: #bb0012;
+	--consensus-color-red-hover: #a0000f;
+	--consensus-color-black: #000000;
+	--consensus-color-white: #ffffff;
+	--consensus-color-gray-50: #fafafa;
+	--consensus-color-gray-100: #f5f5f5;
+	--consensus-color-gray-200: #e5e5e5;
+	--consensus-color-gray-300: #d4d4d4;
+	--consensus-color-gray-400: #a3a3a3;
+	--consensus-color-gray-500: #737373;
+	--consensus-color-gray-600: #525252;
+	--consensus-color-gray-700: #404040;
+	--consensus-color-gray-800: #262626;
+	--consensus-color-gray-900: #171717;
+	--consensus-color-surface: #f7f7f7;
+	--consensus-color-fg: #111111;
+	--consensus-color-fg-2: #3a3a3a;
+	--consensus-color-muted: #707070;
+	--consensus-color-border: #d9d9d9;
+	--consensus-color-border-soft: #eeeeee;
+
+	/* Spacing scale (HTML: --space-1..24) */
+	--consensus-space-1: 4px;
+	--consensus-space-2: 8px;
+	--consensus-space-3: 12px;
+	--consensus-space-4: 16px;
+	--consensus-space-5: 20px;
+	--consensus-space-6: 24px;
+	--consensus-space-8: 32px;
+	--consensus-space-12: 48px;
+	--consensus-space-16: 64px;
+	--consensus-space-20: 80px;
+	--consensus-space-24: 96px;
+
+	/* Section vertical rhythm (HTML: --section-y-*) */
+	--consensus-section-y-phone: 48px;
+	--consensus-section-y-tablet: 68px;
+	--consensus-section-y-desktop: 96px;
+
+	/* Radius (HTML: --radius-sm/md/lg/pill) */
+	--consensus-radius-sm: 4px;
+	--consensus-radius-md: 8px;
+	--consensus-radius-lg: 12px;
+	--consensus-radius-pill: 9999px;
+
+	/* Motion (HTML: --motion-fast, --motion-base, --ease-standard) */
+	--consensus-motion-fast: 150ms;
+	--consensus-motion-base: 240ms;
+	--consensus-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+	/* Container (HTML: --container-max + responsive gutters)
+	   Product decision: max-w-7xl (1280px), NOT HTML's 1180px. */
+	--consensus-container-max: 1280px;
+	--consensus-container-gutter-phone: 16px;
+	--consensus-container-gutter-tablet: 24px;
+	--consensus-container-gutter-desktop: 36px;
 }
 
 .dark {
@@ -77,9 +146,16 @@
 }
 
 @theme inline {
-	--font-heading: 'Space Grotesk Variable', sans-serif;
-	--font-sans: 'Space Grotesk Variable', sans-serif;
+	/* Font tokens (replaces --font-heading / --font-sans Space Grotesk).
+	   'Poppins Variable' is NOT a real family — fontsource's non-variable
+	   Poppins registers as plain 'Poppins'. */
+	--font-display: 'Poppins', system-ui, sans-serif;
+	--font-body: 'Inter Variable', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+	/* Brand colors (existing) — exposed to Tailwind as `bg-brand-red` etc. */
 	--color-brand-red: #bb0012;
+	--color-brand-red-hover: #a0000f;
 	--color-brand-black: #000000;
 	--color-brand-white: #ffffff;
 	--color-brand-gray-50: #f9fafb;
@@ -88,6 +164,42 @@
 	--color-brand-gray-400: #9ca3af;
 	--color-brand-gray-800: #1f2937;
 	--color-brand-gray-900: #111827;
+
+	/* Consensus landing palette — opt-in Tailwind utility classes */
+	--color-consensus-red: var(--consensus-color-red);
+	--color-consensus-black: var(--consensus-color-black);
+	--color-consensus-white: var(--consensus-color-white);
+	--color-consensus-gray-50: var(--consensus-color-gray-50);
+	--color-consensus-gray-100: var(--consensus-color-gray-100);
+	--color-consensus-gray-200: var(--consensus-color-gray-200);
+	--color-consensus-gray-400: var(--consensus-color-gray-400);
+	--color-consensus-gray-600: var(--consensus-color-gray-600);
+	--color-consensus-gray-800: var(--consensus-color-gray-800);
+	--color-consensus-gray-900: var(--consensus-color-gray-900);
+	--color-consensus-muted: var(--consensus-color-muted);
+	--color-consensus-border: var(--consensus-color-border);
+	--color-consensus-border-soft: var(--consensus-color-border-soft);
+
+	/* Consensus spacing scale — opt-in Tailwind utility classes */
+	--spacing-consensus-1: var(--consensus-space-1);
+	--spacing-consensus-2: var(--consensus-space-2);
+	--spacing-consensus-3: var(--consensus-space-3);
+	--spacing-consensus-4: var(--consensus-space-4);
+	--spacing-consensus-5: var(--consensus-space-5);
+	--spacing-consensus-6: var(--consensus-space-6);
+	--spacing-consensus-8: var(--consensus-space-8);
+	--spacing-consensus-12: var(--consensus-space-12);
+	--spacing-consensus-16: var(--consensus-space-16);
+	--spacing-consensus-20: var(--consensus-space-20);
+	--spacing-consensus-24: var(--consensus-space-24);
+
+	/* Consensus radius — opt-in Tailwind utility classes */
+	--radius-consensus-sm: var(--consensus-radius-sm);
+	--radius-consensus-md: var(--consensus-radius-md);
+	--radius-consensus-lg: var(--consensus-radius-lg);
+	--radius-consensus-pill: var(--consensus-radius-pill);
+
+	/* shadcn bridge — keep mappings intact so existing components still work */
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -136,8 +248,10 @@
 		@apply bg-background text-foreground selection:bg-brand-red selection:text-white;
 	}
 	html {
-		@apply font-sans;
+		@apply font-body;
 		scrollbar-width: none;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 	}
 	html::-webkit-scrollbar {
 		display: none;
