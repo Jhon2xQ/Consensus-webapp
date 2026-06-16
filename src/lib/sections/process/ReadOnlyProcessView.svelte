@@ -28,6 +28,7 @@
 		votingStart={process.votingStart}
 		votingEnd={process.votingEnd}
 		results={process.results}
+		effectiveStatus={process.estatus}
 	/>
 
 	<ProcessStats summary={enrollmentSummary} error={enrollmentError} />

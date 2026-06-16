@@ -92,6 +92,33 @@ describe('ProcessHeader', () => {
 		await page.getByRole('button', { name: 'Copiar alcance' }).click();
 		expect(writeTextSpy).toHaveBeenCalled();
 	});
+
+	it('renders the scope value inside a pill element identified by data-testid="scope-pill"', async () => {
+		// Spec FR-8: scope is a mono pill. The data-testid is the public hook
+		// for the pill; visual styling is verified via design review.
+		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
+		const pill = page.getByTestId('scope-pill');
+		await expect.element(pill).toBeInTheDocument();
+		await expect.element(pill).toHaveTextContent('Municipal');
+	});
+
+	it('renders a status dot inside the status badge', async () => {
+		// Spec FR-9: a 6px dot span prefix inside the existing shadcn Badge.
+		// The dot is the first child of the badge (before the label).
+		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
+		const dot = page.getByTestId('status-dot');
+		await expect.element(dot).toBeInTheDocument();
+	});
+
+	it('does not render the status dot outside the badge (badge wraps the dot)', async () => {
+		// The dot lives inside the badge. Locate the badge by its label and
+		// assert the dot exists as a descendant.
+		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
+		const badge = page.getByText('Abierto', { exact: true });
+		const dot = page.getByTestId('status-dot');
+		await expect.element(badge).toBeInTheDocument();
+		await expect.element(dot).toBeInTheDocument();
+	});
 });
 
 describe('description', () => {

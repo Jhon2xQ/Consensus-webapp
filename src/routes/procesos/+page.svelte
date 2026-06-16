@@ -25,6 +25,7 @@
 	<ProcessList
 		processes={data.processes}
 		page={data.page}
+		totalPages={data.totalPages}
 		totalElements={data.totalElements}
 		error={data.error}
 		onpagechange={handlePageChange}

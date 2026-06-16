@@ -1,10 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { Badge } from "$lib/components/ui/badge/index.js";
-  import { Button } from "$lib/components/ui/button/index.js";
-  import { Card, CardContent } from "$lib/components/ui/card/index.js";
   import { cn } from "$lib/utils.js";
-  import { Calendar, Vote, Trophy, ArrowRight } from "@lucide/svelte";
   import type {
     ElectoralProcess,
     ElectoralProcessStatus,
@@ -12,36 +8,36 @@
   import {
     STATUS_LABELS,
     STATUS_COLORS,
-    isActiveProcess,
+    isHighlightedProcess,
   } from "$lib/types/process-status.js";
 
   type Props = {
     processes: ElectoralProcess[];
     page: number;
+    totalPages: number;
     totalElements: number;
     error: string | null;
     onpagechange: (page: number) => void;
   };
 
-  const PAGE_SIZE = 5;
-
   let {
     processes,
     page,
+    totalPages,
     totalElements,
     error = null,
     onpagechange = () => {},
   }: Props = $props();
 
-  let totalPages = $derived(
-    PAGE_SIZE > 0 ? Math.ceil(totalElements / PAGE_SIZE) : 0,
-  );
   let isEmpty = $derived(
     processes.length === 0 && totalElements === 0 && !error,
   );
   let hasError = $derived(error !== null);
   let hasNextPage = $derived(page < totalPages);
   let hasPrevPage = $derived(page > 1);
+  let pageNumbers = $derived(
+    Array.from({ length: totalPages }, (_, i) => i + 1),
+  );
 
   function getStatusLabel(estatus: ElectoralProcessStatus): string {
     return STATUS_LABELS[estatus] ?? estatus;
@@ -54,29 +50,35 @@
     );
   }
 
-  function formatDateTime(iso: string): string {
+  function formatDate(iso: string): string {
     return new Intl.DateTimeFormat("es-AR", {
       day: "2-digit",
       month: "short",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      timeZone: "America/Argentina/Buenos_Aires",
     }).format(new Date(iso));
   }
 
-  function handlePrevPage() {
-    if (hasPrevPage) onpagechange(page - 1);
+  function formatTime(iso: string): string {
+    return new Intl.DateTimeFormat("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "America/Argentina/Buenos_Aires",
+    }).format(new Date(iso));
   }
 
-  function handleNextPage() {
-    if (hasNextPage) onpagechange(page + 1);
+  function formatMetadata(count: number | null | undefined): string {
+    if (count == null) return "—";
+    return new Intl.NumberFormat("es-AR").format(count);
   }
 </script>
 
 <!-- Header Section -->
-<section class="pt-24 pb-12">
-  <div class="container mx-auto px-6 lg:px-20">
-    <h1 class="text-4xl md:text-5xl font-bold tracking-tighter mb-4">
+<section class="pt-24 pb-8">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <h1
+      class="text-4xl md:text-5xl font-display font-extrabold leading-[1.02] tracking-[-0.03em] mb-4"
+    >
       Procesos Electorales
     </h1>
     <p class="text-lg md:text-xl text-brand-gray-800">
@@ -87,7 +89,7 @@
 
 <!-- Content Section -->
 <section class="pb-24">
-  <div class="container mx-auto px-6 lg:px-20">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
     {#if hasError}
       <!-- Error State -->
       <div class="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
@@ -102,168 +104,148 @@
       </div>
     {:else}
       <!-- Process Cards -->
-      <div class="flex flex-col gap-4">
+      <ul class="flex flex-col gap-4">
         {#each processes as process (process.id)}
-          {@const isOpen = isActiveProcess(process.estatus)}
-          <Card
+          {@const highlighted = isHighlightedProcess(process.estatus)}
+          <li
             class={cn(
-              "overflow-hidden",
-              isOpen && "ring-2 ring-red-200 border-red-300",
+              "border border-consensus-border rounded-consensus-lg p-consensus-6 flex flex-col gap-consensus-5 transition-[border-color,box-shadow] duration-[240ms] ease-[cubic-bezier(0.2,0,0,1)] hover:border-consensus-gray-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)]",
+              highlighted
+                ? "border-consensus-red ring-1 ring-consensus-red"
+                : "border-consensus-border",
             )}
           >
-            <CardContent class="p-0">
-              <div
-                class="grid grid-cols-1 md:grid-cols-[1.25fr_1fr_1fr_1fr_1fr]"
-              >
-                <!-- Column 1: Name + Scope + Description -->
-                <div class="p-5 flex flex-col gap-1 items-start">
-                  <h2 class="text-lg font-bold text-brand-red leading-tight">
-                    {process.name}
-                  </h2>
-                  {#if process.description !== null}
-                    <p class="text-sm text-brand-gray-800 mt-1">
-                      {process.description}
-                    </p>
-                  {/if}
-                </div>
-
-                <!-- Column 2: Compromiso -->
-                <div
-                  class="p-4 m-2 rounded-lg border border-brand-gray-200/60 bg-brand-gray-50/30 flex flex-col gap-2 items-center text-center"
+            <!-- Top: Name + Description | Status Badge -->
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex flex-col gap-1 min-w-0">
+                <h2
+                  class="font-display text-lg font-bold tracking-[-0.015em] text-brand-red leading-tight"
                 >
-                  <div
-                    class="flex items-center gap-1.5 text-[11px] font-semibold text-brand-gray-400 uppercase tracking-wider"
-                  >
-                    <Calendar class="size-3.5" />
-                    Compromiso
-                  </div>
-                  <div class="space-y-2 w-full">
-                    <div>
-                      <span
-                        class="text-[11px] text-brand-gray-400 uppercase tracking-wider"
-                        >Inicio</span
-                      >
-                      <p class="text-sm text-brand-black font-medium">
-                        {formatDateTime(process.commitmentStart)}
-                      </p>
-                    </div>
-                    <div>
-                      <span
-                        class="text-[11px] text-brand-gray-400 uppercase tracking-wider"
-                        >Fin</span
-                      >
-                      <p class="text-sm text-brand-black font-medium">
-                        {formatDateTime(process.commitmentEnd)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Column 3: Votación -->
-                <div
-                  class="p-4 m-2 rounded-lg border border-brand-gray-200/60 bg-brand-gray-50/30 flex flex-col gap-2 items-center text-center"
-                >
-                  <div
-                    class="flex items-center gap-1.5 text-[11px] font-semibold text-brand-gray-400 uppercase tracking-wider"
-                  >
-                    <Vote class="size-3.5" />
-                    Votación
-                  </div>
-                  <div class="space-y-2 w-full">
-                    <div>
-                      <span
-                        class="text-[11px] text-brand-gray-400 uppercase tracking-wider"
-                        >Inicio</span
-                      >
-                      <p class="text-sm text-brand-black font-medium">
-                        {formatDateTime(process.votingStart)}
-                      </p>
-                    </div>
-                    <div>
-                      <span
-                        class="text-[11px] text-brand-gray-400 uppercase tracking-wider"
-                        >Fin</span
-                      >
-                      <p class="text-sm text-brand-black font-medium">
-                        {formatDateTime(process.votingEnd)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Column 4: Resultados -->
-                <div
-                  class="p-4 m-2 rounded-lg border border-brand-gray-200/60 bg-brand-gray-50/30 flex flex-col gap-2 items-center text-center"
-                >
-                  <div
-                    class="flex items-center gap-1.5 text-[11px] font-semibold text-brand-gray-400 uppercase tracking-wider"
-                  >
-                    <Trophy class="size-3.5" />
-                    Resultados
-                  </div>
-                  <div class="space-y-2 w-full">
-                    <div>
-                      <span
-                        class="text-[11px] text-brand-gray-400 uppercase tracking-wider"
-                        >Fecha</span
-                      >
-                      <p class="text-sm text-brand-black font-medium">
-                        {formatDateTime(process.results)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Column 5: Estado -->
-                <div
-                  class="p-5 flex flex-col items-center justify-center gap-4 h-full"
-                >
-                  <Badge
-                    variant="outline"
-                    class={cn(
-                      "text-xs font-semibold px-3 py-1",
-                      getStatusStyle(process.estatus),
-                    )}
-                  >
-                    {getStatusLabel(process.estatus)}
-                  </Badge>
-                  <Button
-                    variant="default"
-                    class="w-auto text-sm font-semibold gap-2 bg-brand-red hover:bg-brand-red/90 text-white"
-                    onclick={() => goto(`/procesos/${process.id}`)}
-                  >
-                    Participar
-                    <ArrowRight class="size-4" />
-                  </Button>
-                </div>
+                  {process.name}
+                </h2>
+                {#if process.description !== null}
+                  <p class="text-sm text-consensus-fg-2 mt-1 line-clamp-2">
+                    {process.description}
+                  </p>
+                {/if}
               </div>
-            </CardContent>
-          </Card>
-        {/each}
-      </div>
+              <span
+                class={cn(
+                  "shrink-0 font-mono text-[11px] font-medium px-3 py-1 border rounded-consensus-sm tracking-[0.04em] uppercase",
+                  getStatusStyle(process.estatus),
+                )}
+              >
+                {getStatusLabel(process.estatus)}
+              </span>
+            </div>
 
-      <!-- Pagination Controls -->
-      <div class="flex items-center justify-center mt-8 gap-3">
-        <Button
-          variant="outline"
-          size="sm"
+            <!-- Dates Section -->
+            <div class="flex flex-col gap-3">
+              <!-- Compromiso -->
+              <div class="flex items-baseline gap-3">
+                <span
+                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted shrink-0 w-[90px]"
+                  >COMPROMISO</span
+                >
+                <span class="font-mono text-sm font-medium text-consensus-fg"
+                  >{formatDate(process.commitmentStart)}</span
+                >
+                <span class="font-mono text-xs text-consensus-muted"
+                  >{formatTime(process.commitmentStart)} – {formatDate(
+                    process.commitmentEnd,
+                  )}
+                  {formatTime(process.commitmentEnd)}</span
+                >
+              </div>
+              <!-- Votación -->
+              <div class="flex items-baseline gap-3">
+                <span
+                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted shrink-0 w-[90px]"
+                  >VOTACIÓN</span
+                >
+                <span class="font-mono text-sm font-medium text-consensus-fg"
+                  >{formatDate(process.votingStart)}</span
+                >
+                <span class="font-mono text-xs text-consensus-muted"
+                  >{formatTime(process.votingStart)} – {formatDate(
+                    process.votingEnd,
+                  )}
+                  {formatTime(process.votingEnd)}</span
+                >
+              </div>
+              <!-- Resultados -->
+              <div class="flex items-baseline gap-3">
+                <span
+                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted shrink-0 w-[90px]"
+                  >RESULTADOS</span
+                >
+                <span class="font-mono text-sm font-medium text-consensus-fg"
+                  >{formatDate(process.results)}</span
+                >
+                <span class="font-mono text-xs text-consensus-muted"
+                  >{formatTime(process.results)}</span
+                >
+              </div>
+            </div>
+
+            <!-- Footer: Metadata | Action -->
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-xs text-consensus-muted">
+                {formatMetadata(process.teamsCount)} equipos · {formatMetadata(
+                  process.participantsCount,
+                )} participantes
+              </span>
+              {#if highlighted}
+                <button
+                  class="bg-consensus-red hover:bg-consensus-red-hover text-consensus-white text-sm font-semibold px-4 py-2 rounded-consensus-md transition-colors duration-150"
+                  onclick={() => goto(`/procesos/${process.id}`)}
+                >
+                  Participar
+                </button>
+              {:else}
+                <button
+                  class="bg-consensus-gray-100 text-consensus-muted hover:bg-consensus-gray-200 text-sm font-semibold px-4 py-2 rounded-consensus-md transition-colors duration-150"
+                  onclick={() => goto(`/procesos/${process.id}`)}
+                >
+                  Verificar
+                </button>
+              {/if}
+            </div>
+          </li>
+        {/each}
+      </ul>
+
+      <!-- Pagination Controls — numbered buttons -->
+      <nav class="flex items-center justify-center gap-2 pt-8 pb-12">
+        <button
+          class="min-w-9 h-9 px-3 rounded-consensus-md text-sm font-medium text-consensus-fg border border-consensus-border bg-consensus-white transition-colors duration-150 hover:bg-consensus-gray-100 disabled:opacity-35 disabled:pointer-events-none"
           disabled={!hasPrevPage}
-          onclick={handlePrevPage}
+          onclick={() => onpagechange(page - 1)}
         >
           ← Anterior
-        </Button>
-        <span class="text-sm text-brand-gray-400 px-3 tabular-nums">
-          {page} / {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
+        </button>
+        {#each pageNumbers as n (n)}
+          <button
+            class={cn(
+              "min-w-9 h-9 px-3 rounded-consensus-md text-sm font-medium border transition-colors duration-150 disabled:pointer-events-none",
+              n === page
+                ? "bg-consensus-black text-consensus-white border-consensus-black"
+                : "text-consensus-fg border-consensus-border bg-consensus-white hover:bg-consensus-gray-100",
+            )}
+            disabled={n === page}
+            onclick={() => onpagechange(n)}
+          >
+            {n}
+          </button>
+        {/each}
+        <button
+          class="min-w-9 h-9 px-3 rounded-consensus-md text-sm font-medium text-consensus-fg border border-consensus-border bg-consensus-white transition-colors duration-150 hover:bg-consensus-gray-100 disabled:opacity-35 disabled:pointer-events-none"
           disabled={!hasNextPage}
-          onclick={handleNextPage}
+          onclick={() => onpagechange(page + 1)}
         >
           Siguiente →
-        </Button>
-      </div>
+        </button>
+      </nav>
     {/if}
   </div>
 </section>

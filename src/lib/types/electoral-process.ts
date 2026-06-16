@@ -33,4 +33,6 @@ export type ElectoralProcess = {
 	votingEnd: string;
 	results: string;
 	createdBy: string;
+	teamsCount?: number | null;
+	participantsCount?: number | null;
 };

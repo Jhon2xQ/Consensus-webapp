@@ -14,7 +14,13 @@ export const load: PageServerLoad = async ({ url }) => {
 	try {
 		const result = await getPublicProcesses({ page: apiPage, size: PAGE_SIZE });
 		return {
-			processes: result.processes,
+			processes: result.processes.map((p) => ({
+				...p,
+				// TODO: Replace with real values when the API exposes them.
+				// Deterministic mock seeded by id so snapshots/tests are stable.
+				teamsCount: ((p.id.charCodeAt(0) ?? 0) % 5) + 1,
+				participantsCount: 200 + ((p.id.charCodeAt(1) ?? 0) * 137) % 1800
+			})),
 			page: result.page + 1,
 			totalPages: result.totalPages,
 			totalElements: result.totalElements,
