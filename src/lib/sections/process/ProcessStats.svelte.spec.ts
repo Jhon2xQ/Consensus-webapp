@@ -38,20 +38,37 @@ describe('ProcessStats', () => {
 		await expect.element(page.getByText('18', { exact: true })).toBeInTheDocument();
 	});
 
-	it('renders zeros when summary is null', async () => {
+	it('renders dashes (—) for all values when summary is null', async () => {
 		render(ProcessStats, defaultProps({ summary: null }));
-		// All three "0" values
-		const zeros = page.getByText('0', { exact: true });
-		await expect.element(zeros.first()).toBeInTheDocument();
+		// Spec FR-11: muted "—" for unavailable values. The HTML design
+		// uses an em-dash, NOT "0" — this is a behavior change from the
+		// old component.
+		const dashes = page.getByText('—', { exact: true });
+		await expect.element(dashes.first()).toBeInTheDocument();
+		// All three stat slots render a dash
+		const allDashes = page.getByText('—', { exact: true }).elements();
+		expect(allDashes.length).toBe(3);
 		// Labels still appear
 		await expect.element(page.getByText('Participantes', { exact: true })).toBeInTheDocument();
 		await expect.element(page.getByText('Compromisos', { exact: true })).toBeInTheDocument();
 		await expect.element(page.getByText('Votaron', { exact: true })).toBeInTheDocument();
 	});
 
-	it('renders zeros when summary has zero values', async () => {
+	it('marks each unavailable value as muted via data-state="muted"', async () => {
+		// The design contract is the muted visual treatment. We use a
+		// data-state attribute as the public hook so the test does not
+		// couple to specific Tailwind class names.
+		render(ProcessStats, defaultProps({ summary: null }));
+		const mutedValues = page.getByTestId('stat-value-muted');
+		expect(mutedValues.elements().length).toBe(3);
+	});
+
+	it('renders zeros when summary has zero values (zero is a valid count, not "—")', async () => {
 		render(ProcessStats, defaultProps({ summary: summaryZeros }));
 		await expect.element(page.getByText('0', { exact: true }).first()).toBeInTheDocument();
+		// All three "0" values
+		const zeros = page.getByText('0', { exact: true }).elements();
+		expect(zeros.length).toBe(3);
 	});
 
 	it('renders "No disponible" when error is true', async () => {
