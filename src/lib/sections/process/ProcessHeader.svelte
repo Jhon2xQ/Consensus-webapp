@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { cn } from '$lib/utils.js';
-	import { ArrowLeft, Copy, CheckCircle } from '@lucide/svelte';
+	import { Copy, CheckCircle } from '@lucide/svelte';
 	import type { ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import { STATUS_LABELS, STATUS_COLORS } from '$lib/types/process-status';
 
@@ -42,14 +42,6 @@
 </script>
 
 <header>
-	<a
-		href="/procesos"
-		class="inline-flex items-center gap-1.5 text-sm text-brand-red border border-brand-red rounded px-3 py-1.5 hover:text-brand-red-hover hover:border-brand-red-hover transition-colors mb-8"
-	>
-		<ArrowLeft class="size-4" />
-		Volver a procesos
-	</a>
-
 	<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
 		<h1 class="text-4xl md:text-5xl font-bold tracking-tighter text-brand-black">
 			{name}

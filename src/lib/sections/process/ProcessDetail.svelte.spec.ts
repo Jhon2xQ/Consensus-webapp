@@ -91,6 +91,31 @@ describe('ProcessDetail', () => {
 			await expect.element(backLink).toHaveAttribute('href', '/procesos');
 		});
 
+		it('renders the back link with the prominent red button-like styling', async () => {
+			render(ProcessDetail, baseProps);
+			const backLink = page.getByRole('link', { name: /Volver a procesos/ });
+			await expect.element(backLink).toBeInTheDocument();
+			const cls = backLink.element().className;
+			expect(cls).toMatch(/\btext-brand-red\b/);
+			expect(cls).toMatch(/\bborder\b/);
+			expect(cls).toMatch(/\bhover:text-brand-red-hover\b/);
+			expect(cls).toMatch(/\btransition-colors\b/);
+		});
+
+		it('renders the back link above the grid container (outside both columns)', async () => {
+			render(ProcessDetail, baseProps);
+			const backLink = page.getByRole('link', { name: /Volver a procesos/ });
+			const grid = page.getByTestId('process-detail-grid');
+			const backLinkEl = backLink.element();
+			const gridEl = grid.element();
+			// The back link is a sibling of the grid (not inside it).
+			expect(gridEl.contains(backLinkEl)).toBe(false);
+			// And it sits above the grid in DOM order.
+			const backLinkTop = (await backLinkEl.getBoundingClientRect()).top;
+			const gridTop = (await gridEl.getBoundingClientRect()).top;
+			expect(backLinkTop).toBeLessThan(gridTop);
+		});
+
 		it.each([
 			['OPEN', 'Abierto'],
 			['COMMITMENT', 'Compromiso'],

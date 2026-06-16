@@ -22,6 +22,8 @@ function defaultProps(overrides?: Record<string, unknown>) {
 }
 
 describe('ProcessTimeline', () => {
+	// ── Phase labels ──────────────────────────────────────────────────────
+
 	it('renders all three phase labels', async () => {
 		render(ProcessTimeline, defaultProps());
 		await expect.element(page.getByText('Compromiso', { exact: true })).toBeInTheDocument();
@@ -29,30 +31,155 @@ describe('ProcessTimeline', () => {
 		await expect.element(page.getByText('Resultados', { exact: true })).toBeInTheDocument();
 	});
 
-	it('renders a time range for the compromiso phase', async () => {
+	// ── Compromiso: start + end dates and times ──────────────────────────
+
+	it('renders the formatted start date for the Compromiso phase', async () => {
 		render(ProcessTimeline, defaultProps());
-		// HTML design: each phase shows a date + a time-range line, not the
-		// old "Inicio:" / "Fin:" split. The es-AR locale formats time in
-		// 12-hour with "a. m." / "p. m." — we just assert the dash separator
-		// is present (the time range, not two independent times).
-		const phase = page.getByTestId('phase-compromiso');
-		await expect.element(phase).toBeInTheDocument();
-		// The phase must contain a date AND a time-range line
-		await expect.element(phase).toHaveTextContent(/1 mar 2026/);
-		await expect.element(phase).toHaveTextContent(/\d{1,2}:\d{2}[^0-9]+\d{1,2}:\d{2}/);
+		const startDate = page.getByTestId('phase-compromiso-start-date');
+		await expect.element(startDate).toBeInTheDocument();
+		await expect.element(startDate).toHaveTextContent(/1 mar 2026/);
 	});
 
-	it('renders formatted dates for each phase', async () => {
+	it('renders the formatted end date for the Compromiso phase', async () => {
 		render(ProcessTimeline, defaultProps());
-		// The exact Intl.DateTimeFormat output is locale-dependent, so we
-		// assert that the year appears for commitment, voting and results.
-		await expect.element(page.getByText(/2026/).first()).toBeInTheDocument();
+		const endDate = page.getByTestId('phase-compromiso-end-date');
+		await expect.element(endDate).toBeInTheDocument();
+		await expect.element(endDate).toHaveTextContent(/30 abr 2026/);
 	});
 
-	it('renders the results date in the Resultados phase', async () => {
+	it('renders the formatted start time for the Compromiso phase', async () => {
 		render(ProcessTimeline, defaultProps());
-		await expect.element(page.getByText('Resultados', { exact: true })).toBeInTheDocument();
-		await expect.element(page.getByText(/2026/).first()).toBeInTheDocument();
+		const startTime = page.getByTestId('phase-compromiso-start-time');
+		await expect.element(startTime).toBeInTheDocument();
+		// Time format: HH:MM (es-AR 12-hour with locale suffix is acceptable).
+		await expect.element(startTime).toHaveTextContent(/\d{1,2}:\d{2}/);
+	});
+
+	it('renders the formatted end time for the Compromiso phase', async () => {
+		render(ProcessTimeline, defaultProps());
+		const endTime = page.getByTestId('phase-compromiso-end-time');
+		await expect.element(endTime).toBeInTheDocument();
+		await expect.element(endTime).toHaveTextContent(/\d{1,2}:\d{2}/);
+	});
+
+	it('renders a dash separator between the start and end of Compromiso', async () => {
+		render(ProcessTimeline, defaultProps());
+		const separator = page.getByTestId('phase-compromiso-separator');
+		await expect.element(separator).toBeInTheDocument();
+		await expect.element(separator).toHaveTextContent('–');
+	});
+
+	// ── Votación: start + end dates and times ────────────────────────────
+
+	it('renders the formatted start date for the Votación phase', async () => {
+		render(ProcessTimeline, defaultProps());
+		const startDate = page.getByTestId('phase-votacion-start-date');
+		await expect.element(startDate).toBeInTheDocument();
+		await expect.element(startDate).toHaveTextContent(/15 jun 2026/);
+	});
+
+	it('renders the formatted end date for the Votación phase', async () => {
+		render(ProcessTimeline, defaultProps());
+		const endDate = page.getByTestId('phase-votacion-end-date');
+		await expect.element(endDate).toBeInTheDocument();
+		await expect.element(endDate).toHaveTextContent(/20 jun 2026/);
+	});
+
+	it('renders the formatted start time for the Votación phase', async () => {
+		render(ProcessTimeline, defaultProps());
+		const startTime = page.getByTestId('phase-votacion-start-time');
+		await expect.element(startTime).toBeInTheDocument();
+		await expect.element(startTime).toHaveTextContent(/\d{1,2}:\d{2}/);
+	});
+
+	it('renders the formatted end time for the Votación phase', async () => {
+		render(ProcessTimeline, defaultProps());
+		const endTime = page.getByTestId('phase-votacion-end-time');
+		await expect.element(endTime).toBeInTheDocument();
+		await expect.element(endTime).toHaveTextContent(/\d{1,2}:\d{2}/);
+	});
+
+	it('renders a dash separator between the start and end of Votación', async () => {
+		render(ProcessTimeline, defaultProps());
+		const separator = page.getByTestId('phase-votacion-separator');
+		await expect.element(separator).toBeInTheDocument();
+		await expect.element(separator).toHaveTextContent('–');
+	});
+
+	// ── Resultados: single point-in-time, no end ─────────────────────────
+
+	it('renders the date for the Resultados phase', async () => {
+		render(ProcessTimeline, defaultProps());
+		const dateLine = page.getByTestId('phase-resultados-date');
+		await expect.element(dateLine).toBeInTheDocument();
+		await expect.element(dateLine).toHaveTextContent(/25 jun 2026/);
+	});
+
+	it('renders a time-only line for the Resultados phase', async () => {
+		render(ProcessTimeline, defaultProps());
+		const timeLine = page.getByTestId('phase-resultados-time');
+		await expect.element(timeLine).toBeInTheDocument();
+		// Time format: HH:MM (12-hour with locale suffix is acceptable).
+		await expect.element(timeLine).toHaveTextContent(/\d{1,2}:\d{2}/);
+	});
+
+	it('does not render a dash separator for the Resultados phase', async () => {
+		render(ProcessTimeline, defaultProps());
+		// Resultados is a single point in time — the rendered text must
+		// not contain the en-dash separator that marks a range.
+		const phase = page.getByTestId('phase-resultados');
+		await expect.element(phase).not.toHaveTextContent('–');
+	});
+
+	// ── Visual treatment: dates bold/fg, times muted/mono ────────────────
+	// Design contract: dates use `text-consensus-fg font-semibold` (primary
+	// text, bold) and times use `text-consensus-muted font-mono` (muted
+	// gray, monospaced). This is the spec the rest of the timeline builds on.
+
+	it('renders Compromiso start date with primary text color (not muted)', async () => {
+		render(ProcessTimeline, defaultProps());
+		const startDate = page.getByTestId('phase-compromiso-start-date');
+		await expect.element(startDate).toHaveClass('text-consensus-fg');
+		await expect.element(startDate).toHaveClass('font-semibold');
+		await expect.element(startDate).not.toHaveClass('text-consensus-muted');
+	});
+
+	it('renders Compromiso start time with muted color and monospaced font', async () => {
+		render(ProcessTimeline, defaultProps());
+		const startTime = page.getByTestId('phase-compromiso-start-time');
+		await expect.element(startTime).toHaveClass('text-consensus-muted');
+		await expect.element(startTime).toHaveClass('font-mono');
+	});
+
+	it('renders Votación end date with primary text color (not muted)', async () => {
+		render(ProcessTimeline, defaultProps());
+		const endDate = page.getByTestId('phase-votacion-end-date');
+		await expect.element(endDate).toHaveClass('text-consensus-fg');
+		await expect.element(endDate).toHaveClass('font-semibold');
+		await expect.element(endDate).not.toHaveClass('text-consensus-muted');
+	});
+
+	it('renders Votación end time with muted color and monospaced font', async () => {
+		render(ProcessTimeline, defaultProps());
+		const endTime = page.getByTestId('phase-votacion-end-time');
+		await expect.element(endTime).toHaveClass('text-consensus-muted');
+		await expect.element(endTime).toHaveClass('font-mono');
+	});
+
+	it('renders Resultados date with primary text color and time with muted color', async () => {
+		render(ProcessTimeline, defaultProps());
+		const dateLine = page.getByTestId('phase-resultados-date');
+		const timeLine = page.getByTestId('phase-resultados-time');
+		await expect.element(dateLine).toHaveClass('text-consensus-fg');
+		await expect.element(dateLine).not.toHaveClass('text-consensus-muted');
+		await expect.element(timeLine).toHaveClass('text-consensus-muted');
+		await expect.element(timeLine).toHaveClass('font-mono');
+	});
+
+	it('renders the Compromiso dash separator with the muted color', async () => {
+		render(ProcessTimeline, defaultProps());
+		const separator = page.getByTestId('phase-compromiso-separator');
+		await expect.element(separator).toHaveClass('text-consensus-muted');
 	});
 
 	// ── Active / done state tests (spec FR-10) ────────────────────────────

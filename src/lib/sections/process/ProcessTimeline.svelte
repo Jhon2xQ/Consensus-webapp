@@ -26,9 +26,8 @@
 		}).format(new Date(iso));
 	}
 
-	function formatTimeRange(startIso: string, endIso: string): string {
-		const fmt = new Intl.DateTimeFormat('es-AR', { timeStyle: 'short' });
-		return `${fmt.format(new Date(startIso))} – ${fmt.format(new Date(endIso))}`;
+	function formatTime(iso: string): string {
+		return new Intl.DateTimeFormat('es-AR', { timeStyle: 'short' }).format(new Date(iso));
 	}
 
 	// State per phase for the current effectiveStatus. "active" = current,
@@ -71,13 +70,52 @@
 		data-state={compromisoState}
 		class="flex flex-col gap-consensus-2"
 	>
-		<span class={cn(labelClass, compromisoState === 'active' && 'text-consensus-red', compromisoState === 'done' && 'text-emerald-700')}>
+		<span
+			class={cn(
+				labelClass,
+				compromisoState === 'active' && 'text-consensus-red',
+				compromisoState === 'done' && 'text-emerald-700'
+			)}
+		>
 			Compromiso
 		</span>
-		<span class="text-sm font-semibold text-consensus-fg">{formatDate(commitmentStart)}</span>
-		<span class="text-xs text-consensus-muted font-mono">
-			{formatTimeRange(commitmentStart, commitmentEnd)}
-		</span>
+		<div class="flex items-center gap-consensus-2">
+			<div class="flex flex-1 flex-col gap-0.5">
+				<span
+					data-testid="phase-compromiso-start-date"
+					class="text-sm font-semibold text-consensus-fg"
+				>
+					{formatDate(commitmentStart)}
+				</span>
+				<span
+					data-testid="phase-compromiso-start-time"
+					class="font-mono text-xs text-consensus-muted"
+				>
+					{formatTime(commitmentStart)}
+				</span>
+			</div>
+			<span
+				data-testid="phase-compromiso-separator"
+				class="self-center text-consensus-muted"
+				aria-hidden="true"
+			>
+				–
+			</span>
+			<div class="flex flex-1 flex-col gap-0.5">
+				<span
+					data-testid="phase-compromiso-end-date"
+					class="text-sm font-semibold text-consensus-fg"
+				>
+					{formatDate(commitmentEnd)}
+				</span>
+				<span
+					data-testid="phase-compromiso-end-time"
+					class="font-mono text-xs text-consensus-muted"
+				>
+					{formatTime(commitmentEnd)}
+				</span>
+			</div>
+		</div>
 	</div>
 
 	<!-- Votación -->
@@ -86,13 +124,52 @@
 		data-state={votacionState}
 		class="flex flex-col gap-consensus-2"
 	>
-		<span class={cn(labelClass, votacionState === 'active' && 'text-consensus-red', votacionState === 'done' && 'text-emerald-700')}>
+		<span
+			class={cn(
+				labelClass,
+				votacionState === 'active' && 'text-consensus-red',
+				votacionState === 'done' && 'text-emerald-700'
+			)}
+		>
 			Votación
 		</span>
-		<span class="text-sm font-semibold text-consensus-fg">{formatDate(votingStart)}</span>
-		<span class="text-xs text-consensus-muted font-mono">
-			{formatTimeRange(votingStart, votingEnd)}
-		</span>
+		<div class="flex items-center gap-consensus-2">
+			<div class="flex flex-1 flex-col gap-0.5">
+				<span
+					data-testid="phase-votacion-start-date"
+					class="text-sm font-semibold text-consensus-fg"
+				>
+					{formatDate(votingStart)}
+				</span>
+				<span
+					data-testid="phase-votacion-start-time"
+					class="font-mono text-xs text-consensus-muted"
+				>
+					{formatTime(votingStart)}
+				</span>
+			</div>
+			<span
+				data-testid="phase-votacion-separator"
+				class="self-center text-consensus-muted"
+				aria-hidden="true"
+			>
+				–
+			</span>
+			<div class="flex flex-1 flex-col gap-0.5">
+				<span
+					data-testid="phase-votacion-end-date"
+					class="text-sm font-semibold text-consensus-fg"
+				>
+					{formatDate(votingEnd)}
+				</span>
+				<span
+					data-testid="phase-votacion-end-time"
+					class="font-mono text-xs text-consensus-muted"
+				>
+					{formatTime(votingEnd)}
+				</span>
+			</div>
+		</div>
 	</div>
 
 	<!-- Resultados -->
@@ -101,12 +178,20 @@
 		data-state={resultadosState}
 		class="flex flex-col gap-consensus-2"
 	>
-		<span class={cn(labelClass, resultadosState === 'active' && 'text-consensus-red', resultadosState === 'done' && 'text-emerald-700')}>
+		<span
+			class={cn(
+				labelClass,
+				resultadosState === 'active' && 'text-consensus-red',
+				resultadosState === 'done' && 'text-emerald-700'
+			)}
+		>
 			Resultados
 		</span>
-		<span class="text-sm font-semibold text-consensus-fg">{formatDate(results)}</span>
-		<span class="text-xs text-consensus-muted font-mono">
-			{new Intl.DateTimeFormat('es-AR', { timeStyle: 'short' }).format(new Date(results))}
+		<span data-testid="phase-resultados-date" class="text-sm font-semibold text-consensus-fg">
+			{formatDate(results)}
+		</span>
+		<span data-testid="phase-resultados-time" class="font-mono text-xs text-consensus-muted">
+			{formatTime(results)}
 		</span>
 	</div>
 </div>

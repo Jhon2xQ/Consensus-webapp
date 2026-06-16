@@ -41,13 +41,6 @@ describe('ProcessHeader', () => {
 		await expect.element(page.getByText('Cerrado', { exact: true })).toBeInTheDocument();
 	});
 
-	it('renders the back link to /procesos', async () => {
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
-		const backLink = page.getByRole('link', { name: /Volver a procesos/ });
-		await expect.element(backLink).toBeInTheDocument();
-		await expect.element(backLink).toHaveAttribute('href', '/procesos');
-	});
-
 	it('renders the scope with the "Alcance:" label', async () => {
 		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
 		await expect.element(page.getByText('Alcance:', { exact: true })).toBeInTheDocument();
@@ -118,38 +111,6 @@ describe('ProcessHeader', () => {
 		const dot = page.getByTestId('status-dot');
 		await expect.element(badge).toBeInTheDocument();
 		await expect.element(dot).toBeInTheDocument();
-	});
-
-	// Phase 3: prominent back-link styling (process-detail-layout-split).
-	describe('back link (prominent red button-like)', () => {
-		it('renders the back link with red text and a red border', async () => {
-			// RED: assert the back link has the new visual treatment —
-			// `text-brand-red` and `border` classes.
-			render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
-			const backLink = page.getByRole('link', { name: /Volver a procesos/ });
-			await expect.element(backLink).toBeInTheDocument();
-			const cls = backLink.element().className;
-			expect(cls).toMatch(/\btext-brand-red\b/);
-			expect(cls).toMatch(/\bborder\b/);
-		});
-
-		it('preserves the back link href to /procesos', async () => {
-			// RED: assert the href is unchanged after the restyle.
-			render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
-			const backLink = page.getByRole('link', { name: /Volver a procesos/ });
-			await expect.element(backLink).toHaveAttribute('href', '/procesos');
-		});
-
-		it('back link has a hover transition to a darker red', async () => {
-			// RED: assert the hover variant — `text-brand-red-hover` and a
-			// `transition-colors` class. The actual hover effect is verified
-			// visually; this asserts the CSS hook is wired.
-			render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
-			const backLink = page.getByRole('link', { name: /Volver a procesos/ });
-			const cls = backLink.element().className;
-			expect(cls).toMatch(/\bhover:text-brand-red-hover\b/);
-			expect(cls).toMatch(/\btransition-colors\b/);
-		});
 	});
 });
 

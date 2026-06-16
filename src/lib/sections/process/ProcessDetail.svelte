@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ArrowLeft } from '@lucide/svelte';
 	import ProcessHeader from './ProcessHeader.svelte';
 	import ProcessTimeline from './ProcessTimeline.svelte';
 	import ProcessStats from './ProcessStats.svelte';
@@ -67,6 +68,13 @@
 
 <section class="pt-24 pb-12">
 	<div class="max-w-7xl mx-auto px-6 lg:px-8">
+		<a
+			href="/procesos"
+			class="inline-flex items-center gap-1.5 text-sm text-brand-red border border-brand-red rounded px-3 py-1.5 hover:text-brand-red-hover hover:border-brand-red-hover transition-colors mb-8"
+		>
+			<ArrowLeft class="size-4" />
+			Volver a procesos
+		</a>
 		<div
 			data-testid="process-detail-grid"
 			class="grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-consensus-8"
