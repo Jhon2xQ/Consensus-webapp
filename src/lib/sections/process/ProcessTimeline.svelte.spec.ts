@@ -131,6 +131,72 @@ describe('ProcessTimeline', () => {
 		await expect.element(phase).not.toHaveTextContent('–');
 	});
 
+	// ── Layout structure: dates on one line, dash between, times below ────
+	// Design contract for range phases (Compromiso, Votación):
+	//   - Start date, dash, and end date share ONE flex row (the dates row).
+	//   - Start time and end time share ANOTHER flex row (the times row).
+	//   - The dash sits between the dates in DOM order so flex centering
+	//     aligns it with both date baselines.
+
+	it('places the Compromiso start date, dash, and end date on the same row in order', async () => {
+		render(ProcessTimeline, defaultProps());
+		const startDate = page.getByTestId('phase-compromiso-start-date').element();
+		const endDate = page.getByTestId('phase-compromiso-end-date').element();
+		const separator = page.getByTestId('phase-compromiso-separator').element();
+
+		// All three are direct children of the same dates-row container.
+		expect(startDate.parentElement).toBe(separator.parentElement);
+		expect(separator.parentElement).toBe(endDate.parentElement);
+
+		// DOM order: start date → dash → end date (so the dash visually
+		// sits between the two dates and is vertically centered by the row).
+		const siblings = Array.from(separator.parentElement!.children);
+		const startIdx = siblings.indexOf(startDate);
+		const sepIdx = siblings.indexOf(separator);
+		const endIdx = siblings.indexOf(endDate);
+		expect(startIdx).toBeLessThan(sepIdx);
+		expect(sepIdx).toBeLessThan(endIdx);
+	});
+
+	it('places the Compromiso start and end times in a row below the dates', async () => {
+		render(ProcessTimeline, defaultProps());
+		const startDate = page.getByTestId('phase-compromiso-start-date').element();
+		const startTime = page.getByTestId('phase-compromiso-start-time').element();
+		const endTime = page.getByTestId('phase-compromiso-end-time').element();
+
+		// The times live in a different parent than the dates.
+		expect(startTime.parentElement).not.toBe(startDate.parentElement);
+		// Both times share the same times-row container.
+		expect(startTime.parentElement).toBe(endTime.parentElement);
+	});
+
+	it('places the Votación start date, dash, and end date on the same row in order', async () => {
+		render(ProcessTimeline, defaultProps());
+		const startDate = page.getByTestId('phase-votacion-start-date').element();
+		const endDate = page.getByTestId('phase-votacion-end-date').element();
+		const separator = page.getByTestId('phase-votacion-separator').element();
+
+		expect(startDate.parentElement).toBe(separator.parentElement);
+		expect(separator.parentElement).toBe(endDate.parentElement);
+
+		const siblings = Array.from(separator.parentElement!.children);
+		const startIdx = siblings.indexOf(startDate);
+		const sepIdx = siblings.indexOf(separator);
+		const endIdx = siblings.indexOf(endDate);
+		expect(startIdx).toBeLessThan(sepIdx);
+		expect(sepIdx).toBeLessThan(endIdx);
+	});
+
+	it('places the Votación start and end times in a row below the dates', async () => {
+		render(ProcessTimeline, defaultProps());
+		const startDate = page.getByTestId('phase-votacion-start-date').element();
+		const startTime = page.getByTestId('phase-votacion-start-time').element();
+		const endTime = page.getByTestId('phase-votacion-end-time').element();
+
+		expect(startTime.parentElement).not.toBe(startDate.parentElement);
+		expect(startTime.parentElement).toBe(endTime.parentElement);
+	});
+
 	// ── Visual treatment: dates bold/fg, times muted/mono ────────────────
 	// Design contract: dates use `text-consensus-fg font-semibold` (primary
 	// text, bold) and times use `text-consensus-muted font-mono` (muted
