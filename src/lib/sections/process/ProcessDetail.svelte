@@ -67,23 +67,32 @@
 
 <section class="pt-24 pb-12">
 	<div class="max-w-7xl mx-auto px-6 lg:px-8">
-		<ProcessHeader
-			name={process.name}
-			status={effectiveStatus}
-			scope={process.scope}
-			description={process.description}
-		/>
+		<div
+			data-testid="process-detail-grid"
+			class="grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-consensus-8"
+		>
+			<div class="flex flex-col gap-consensus-8">
+				<ProcessHeader
+					name={process.name}
+					status={effectiveStatus}
+					scope={process.scope}
+					description={process.description}
+				/>
 
-		<ProcessTimeline
-			commitmentStart={process.commitmentStart}
-			commitmentEnd={process.commitmentEnd}
-			votingStart={process.votingStart}
-			votingEnd={process.votingEnd}
-			results={process.results}
-			{effectiveStatus}
-		/>
+				<ProcessTimeline
+					commitmentStart={process.commitmentStart}
+					commitmentEnd={process.commitmentEnd}
+					votingStart={process.votingStart}
+					votingEnd={process.votingEnd}
+					results={process.results}
+					{effectiveStatus}
+				/>
+			</div>
 
-		<ProcessStats summary={enrollmentSummary} error={enrollmentError} />
+			<div>
+				<ProcessStats summary={enrollmentSummary} error={enrollmentError} variant="vertical" />
+			</div>
+		</div>
 
 		<TeamsList
 			{teams}

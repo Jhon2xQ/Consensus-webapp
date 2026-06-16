@@ -93,4 +93,40 @@ describe('ProcessStats', () => {
 			.element(page.getByText('No disponible', { exact: true }))
 			.not.toBeInTheDocument();
 	});
+
+	describe('variant prop', () => {
+		it('default variant keeps the horizontal grid (sm:grid-cols-3)', async () => {
+			// RED: assert that the default keeps sm:grid-cols-3 so it
+			// preserves the existing layout. With no variant prop, the
+			// component should still render the 3-column grid at sm+.
+			const { container } = render(ProcessStats, defaultProps());
+			const grid = container.querySelector('div.grid');
+			expect(grid).toBeTruthy();
+			expect(grid?.className).toMatch(/\bsm:grid-cols-3\b/);
+		});
+
+		it('variant="vertical" switches to grid-cols-1 (one stat per row)', async () => {
+			// RED: assert that variant="vertical" produces a single-column
+			// grid. The horizontal `sm:grid-cols-3` MUST NOT be applied.
+			const { container } = render(ProcessStats, defaultProps({ variant: 'vertical' }));
+			const grid = container.querySelector('div.grid');
+			expect(grid).toBeTruthy();
+			expect(grid?.className).toMatch(/\bgrid-cols-1\b/);
+			expect(grid?.className).not.toMatch(/\bsm:grid-cols-3\b/);
+		});
+
+		it('variant="vertical" with error=true shows only "No disponible" and no stat grid', async () => {
+			// RED: assert that the error branch is unchanged across variants.
+			// Only the "No disponible" message is rendered; no stat grid.
+			const { container } = render(
+				ProcessStats,
+				defaultProps({ error: true, variant: 'vertical' })
+			);
+			await expect
+				.element(page.getByText('No disponible', { exact: true }))
+				.toBeInTheDocument();
+			const grid = container.querySelector('div.grid');
+			expect(grid).toBeFalsy();
+		});
+	});
 });

@@ -10,6 +10,7 @@
 	let { children } = $props();
 
 	let isDashboard = $derived(page.url.pathname.startsWith('/dashboard'));
+	let isProcessDetail = $derived(page.url.pathname.startsWith('/procesos/'));
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -19,6 +20,6 @@
 	<Header />
 {/if}
 {@render children?.()}
-{#if !isDashboard}
+{#if !isDashboard && !isProcessDetail}
 	<Footer />
 {/if}

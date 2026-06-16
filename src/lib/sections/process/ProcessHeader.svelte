@@ -44,7 +44,7 @@
 <header>
 	<a
 		href="/procesos"
-		class="inline-flex items-center gap-1.5 text-sm text-brand-gray-400 hover:text-brand-red transition-colors mb-8"
+		class="inline-flex items-center gap-1.5 text-sm text-brand-red border border-brand-red rounded px-3 py-1.5 hover:text-brand-red-hover hover:border-brand-red-hover transition-colors mb-8"
 	>
 		<ArrowLeft class="size-4" />
 		Volver a procesos

@@ -323,4 +323,79 @@ describe('ProcessDetail', () => {
 			});
 		});
 	});
+
+	// Phase 2: two-column grid layout (process-detail-layout-split).
+	describe('upper section grid layout', () => {
+		it('desktop: renders a grid container with lg:grid-cols-[3fr_1fr] holding Header+Timeline (left) and Stats (right)', async () => {
+			// RED: assert the grid container exists with the expected class
+			// and that the left/right cells are in the right relationship.
+			const { container } = render(ProcessDetail, baseProps);
+
+			const grid = page.getByTestId('process-detail-grid');
+			await expect.element(grid).toBeInTheDocument();
+			const gridEl = grid.element();
+			expect(gridEl.className).toMatch(/\bgrid\b/);
+			expect(gridEl.className).toMatch(/\bgrid-cols-1\b/);
+			expect(gridEl.className).toMatch(/lg:grid-cols-\[3fr_1fr\]/);
+
+			// Header (h1) and Timeline testids (phase-*) are inside the grid.
+			const h1 = grid.getByRole('heading', { level: 1, name: 'Elección 2026' });
+			await expect.element(h1).toBeInTheDocument();
+			await expect.element(grid.getByTestId('phase-compromiso')).toBeInTheDocument();
+			await expect.element(grid.getByTestId('phase-votacion')).toBeInTheDocument();
+			await expect.element(grid.getByTestId('phase-resultados')).toBeInTheDocument();
+
+			// Stats labels are inside the grid.
+			await expect.element(grid.getByText('Participantes', { exact: true })).toBeInTheDocument();
+			await expect.element(grid.getByText('Compromisos', { exact: true })).toBeInTheDocument();
+			await expect.element(grid.getByText('Votaron', { exact: true })).toBeInTheDocument();
+
+			// The grid is inside the max-w-7xl container.
+			const maxW = container.querySelector('.max-w-7xl');
+			expect(maxW).toBeTruthy();
+			expect(maxW?.contains(gridEl)).toBe(true);
+		});
+
+		it('mobile: columns stack — Header+Timeline come before Stats in DOM order; both are above TeamsList', async () => {
+			// RED: assert DOM order. The grid uses `grid-cols-1 lg:grid-cols-...`
+			// so below `lg` it stacks. The flex-col left cell holds Header+Timeline
+			// first, then the right cell holds Stats. TeamsList is a sibling of
+			// the grid, not inside it.
+			render(ProcessDetail, baseProps);
+
+			const grid = page.getByTestId('process-detail-grid');
+			const h1 = grid.getByRole('heading', { level: 1, name: 'Elección 2026' });
+			const timeline = grid.getByTestId('phase-compromiso');
+			const stats = grid.getByText('Participantes', { exact: true });
+			const teamAlpha = page.getByText('Team Alpha', { exact: true });
+
+			// Header+Timeline appear before Stats within the grid.
+			const headerPos = (await h1.element().getBoundingClientRect()).top;
+			const timelinePos = (await timeline.element().getBoundingClientRect()).top;
+			const statsPos = (await stats.element().getBoundingClientRect()).top;
+			expect(headerPos).toBeLessThan(statsPos);
+			expect(timelinePos).toBeLessThan(statsPos);
+
+			// TeamsList is below the grid (not inside it).
+			const teamEl = teamAlpha.element();
+			const gridEl = grid.element();
+			expect(gridEl.contains(teamEl)).toBe(false);
+			const gridBottom = (await gridEl.getBoundingClientRect()).bottom;
+			const teamPos = (await teamEl.getBoundingClientRect()).top;
+			expect(teamPos).toBeGreaterThanOrEqual(gridBottom - 1);
+		});
+
+		it('ProcessDetail passes variant="vertical" to ProcessStats (one stat per row)', async () => {
+			// RED: assert that the upper-right stats use the vertical layout
+			// by checking the root grid of ProcessStats inside the right cell
+			// does NOT have sm:grid-cols-3.
+			render(ProcessDetail, baseProps);
+
+			const stats = page.getByText('Participantes', { exact: true });
+			const statsRoot = stats.element().closest('div.grid');
+			expect(statsRoot).toBeTruthy();
+			expect(statsRoot?.className).toMatch(/\bgrid-cols-1\b/);
+			expect(statsRoot?.className).not.toMatch(/\bsm:grid-cols-3\b/);
+		});
+	});
 });

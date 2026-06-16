@@ -2,23 +2,32 @@
 	import { cn } from '$lib/utils.js';
 	import type { EnrollmentSummary } from '$lib/types/enrollment';
 
+	type Variant = 'horizontal' | 'vertical';
+
 	type Props = {
 		summary: EnrollmentSummary | null;
 		error?: boolean;
+		variant?: Variant;
 	};
 
-	let { summary, error = false }: Props = $props();
+	let { summary, error = false, variant = 'horizontal' }: Props = $props();
 
 	const valueClass =
 		'font-display font-extrabold leading-[1] tracking-[-0.03em] text-[clamp(28px,4vw,42px)] tabular-nums';
 	const mutedValueClass =
 		'font-display font-extrabold leading-[1] tracking-[-0.03em] text-[clamp(20px,3vw,28px)] text-consensus-muted';
+
+	let gridClass = $derived(
+		variant === 'vertical'
+			? 'grid grid-cols-1 gap-consensus-6'
+			: 'grid grid-cols-1 sm:grid-cols-3 gap-consensus-6'
+	);
 </script>
 
 {#if error}
 	<p class="text-sm text-muted-foreground text-center py-4">No disponible</p>
 {:else}
-	<div class="grid grid-cols-1 sm:grid-cols-3 gap-consensus-6">
+	<div class={gridClass}>
 		<!-- Participants -->
 		<div class="flex flex-col items-center text-center gap-consensus-1">
 			{#if summary !== null}
