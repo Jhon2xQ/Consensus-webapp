@@ -217,10 +217,9 @@ describe("ProcessList.svelte (public)", () => {
 
     it("renders formatted date value for commitment start", async () => {
       render(ProcessList, defaultProps({ processes: [mockProcess] }));
-      // 2026-03-01T13:00:00Z in America/Argentina/Buenos_Aires → 01 de mar de 2026
-      // (full es-AR format with "de" connectors)
+      // 2026-03-01T13:00:00Z → "1 marzo 2026" using local timezone methods
       await expect
-        .element(page.getByText("01 de mar de 2026", { exact: true }))
+        .element(page.getByText("1 marzo 2026", { exact: true }))
         .toBeInTheDocument();
     });
   });

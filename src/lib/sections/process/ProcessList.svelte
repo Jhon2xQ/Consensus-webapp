@@ -50,13 +50,33 @@
     );
   }
 
+  const MONTH_NAMES = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+  ];
+
   function formatDate(iso: string): string {
-    return new Intl.DateTimeFormat("es-AR", {
-      day: "2-digit",
-      month: "short",
+    const date = new Date(iso);
+    const parts = new Intl.DateTimeFormat("es-AR", {
+      day: "numeric",
+      month: "numeric",
       year: "numeric",
       timeZone: "America/Argentina/Buenos_Aires",
-    }).format(new Date(iso));
+    }).formatToParts(date);
+    const day = parts.find((p) => p.type === "day")?.value ?? "";
+    const monthIndex = Number(parts.find((p) => p.type === "month")?.value ?? "1") - 1;
+    const year = parts.find((p) => p.type === "year")?.value ?? "";
+    return `${day} ${MONTH_NAMES[monthIndex]} ${year}`;
   }
 
   function formatTime(iso: string): string {
@@ -151,10 +171,14 @@
                   >{formatDate(process.commitmentStart)}</span
                 >
                 <span class="font-mono text-xs text-consensus-muted"
-                  >{formatTime(process.commitmentStart)} – {formatDate(
-                    process.commitmentEnd,
-                  )}
-                  {formatTime(process.commitmentEnd)}</span
+                  >{formatTime(process.commitmentStart)}</span
+                >
+                <span class="font-mono text-xs text-consensus-muted">–</span>
+                <span class="font-mono text-sm font-medium text-consensus-fg"
+                  >{formatDate(process.commitmentEnd)}</span
+                >
+                <span class="font-mono text-xs text-consensus-muted"
+                  >{formatTime(process.commitmentEnd)}</span
                 >
               </div>
               <!-- Votación -->
@@ -167,10 +191,14 @@
                   >{formatDate(process.votingStart)}</span
                 >
                 <span class="font-mono text-xs text-consensus-muted"
-                  >{formatTime(process.votingStart)} – {formatDate(
-                    process.votingEnd,
-                  )}
-                  {formatTime(process.votingEnd)}</span
+                  >{formatTime(process.votingStart)}</span
+                >
+                <span class="font-mono text-xs text-consensus-muted">–</span>
+                <span class="font-mono text-sm font-medium text-consensus-fg"
+                  >{formatDate(process.votingEnd)}</span
+                >
+                <span class="font-mono text-xs text-consensus-muted"
+                  >{formatTime(process.votingEnd)}</span
                 >
               </div>
               <!-- Resultados -->
