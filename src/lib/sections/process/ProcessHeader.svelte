@@ -58,6 +58,11 @@
 			variant="outline"
 			class={cn('text-xs font-semibold px-3 py-1 w-fit', STATUS_COLORS[status])}
 		>
+			<span
+				aria-hidden="true"
+				data-testid="status-dot"
+				class="w-1.5 h-1.5 rounded-full bg-current shrink-0"
+			></span>
 			{STATUS_LABELS[status]}
 		</Badge>
 	</div>
@@ -72,23 +77,24 @@
 		<div class="flex items-center gap-2 text-sm">
 			<span class="font-medium text-brand-black shrink-0">Alcance:</span>
 			<span
-				class="truncate min-w-0 max-w-[200px] md:max-w-[400px] lg:max-w-[600px] text-brand-gray-400"
+				data-testid="scope-pill"
+				class="font-mono text-sm bg-consensus-gray-100 border border-consensus-border rounded-consensus-sm px-2.5 py-1 text-consensus-fg truncate min-w-0 max-w-[200px] md:max-w-[400px] lg:max-w-[600px] inline-flex items-center gap-2"
 				title={scope}
 			>
 				{scope}
+				<button
+					type="button"
+					onclick={handleCopyScope}
+					class="inline-flex items-center justify-center rounded p-1 text-brand-gray-400 hover:text-brand-red transition-colors shrink-0"
+					aria-label="Copiar alcance"
+				>
+					{#if scopeCopied}
+						<CheckCircle class="size-3.5 text-green-500" />
+					{:else}
+						<Copy class="size-3.5" />
+					{/if}
+				</button>
 			</span>
-			<button
-				type="button"
-				onclick={handleCopyScope}
-				class="inline-flex items-center justify-center rounded p-1 text-brand-gray-400 hover:text-brand-red transition-colors shrink-0"
-				aria-label="Copiar alcance"
-			>
-				{#if scopeCopied}
-					<CheckCircle class="size-3.5 text-green-500" />
-				{:else}
-					<Copy class="size-3.5" />
-				{/if}
-			</button>
 		</div>
 	{/if}
 </header>
