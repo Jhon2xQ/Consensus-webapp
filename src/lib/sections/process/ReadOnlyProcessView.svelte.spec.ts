@@ -110,11 +110,15 @@ describe('ReadOnlyProcessView', () => {
 			await expect.element(page.getByText('Resultados', { exact: true })).toBeInTheDocument();
 		});
 
-		it('renders Inicio, Fin and Resultados sub-labels from the timeline', async () => {
+		it('renders the timeline phase labels and a time-range format', async () => {
 			render(ReadOnlyProcessView, defaultProps());
-			await expect.element(page.getByText(/Inicio:/).first()).toBeInTheDocument();
-			await expect.element(page.getByText(/Fin:/).first()).toBeInTheDocument();
-			await expect.element(page.getByText('Resultados', { exact: true })).toBeInTheDocument();
+			// The Timeline now uses date + time-range format (per HTML design),
+			// not the legacy "Inicio:" / "Fin:" labels. Assert the date pattern
+			// and a time-range pattern are both present.
+			await expect.element(page.getByText(/2026/).first()).toBeInTheDocument();
+			await expect
+				.element(page.getByTestId('phase-compromiso'))
+				.toHaveTextContent(/\d{1,2}:\d{2}[^0-9]+\d{1,2}:\d{2}/);
 		});
 
 		it('renders formatted dates from the process prop', async () => {
