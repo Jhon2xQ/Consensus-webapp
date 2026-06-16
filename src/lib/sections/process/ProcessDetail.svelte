@@ -3,7 +3,7 @@
 	import ProcessTimeline from './ProcessTimeline.svelte';
 	import ProcessStats from './ProcessStats.svelte';
 	import TeamsList from './TeamsList.svelte';
-	import CommitmentView from './CommitmentView.svelte';
+	import CommitmentActionZone from './CommitmentActionZone.svelte';
 	import VotingActionZone from './VotingActionZone.svelte';
 	import { useVoting } from '$lib/composables/useVoting.svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
@@ -58,10 +58,9 @@
 	});
 
 	// TeamsList is always rendered (FR-1). It is interactive only in
-	// VOTING phase and when the user has not already voted. VotingView
-	// (the conditionally rendered action zone) keeps its own useVoting
-	// for now — T-7 will replace it with a leaf that receives voting
-	// as a prop and the two state machines will unify.
+	// VOTING phase and when the user has not already voted. The hoisted
+	// `useVoting` instance drives the interactive prop, the disabled
+	// state, and the VotingActionZone's full state + callbacks.
 	let teamsDisabled = $derived(voting.hasVoted || voting.votingFlow !== 'idle');
 	let teamsInteractive = $derived(isVotingPhase && !voting.hasVoted);
 </script>
@@ -95,7 +94,7 @@
 		/>
 
 		{#if isCommitmentPhase}
-			<CommitmentView {process} {userSub} {userEnrollment} />
+			<CommitmentActionZone {process} {userSub} {userEnrollment} />
 		{:else if isVotingPhase}
 			<VotingActionZone
 				{process}
