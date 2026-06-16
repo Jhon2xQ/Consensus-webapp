@@ -4,7 +4,7 @@
 	import ProcessStats from './ProcessStats.svelte';
 	import TeamsList from './TeamsList.svelte';
 	import CommitmentView from './CommitmentView.svelte';
-	import VotingView from './VotingView.svelte';
+	import VotingActionZone from './VotingActionZone.svelte';
 	import { useVoting } from '$lib/composables/useVoting.svelte';
 	import type { ElectoralProcess, ElectoralProcessStatus } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
@@ -97,13 +97,19 @@
 		{#if isCommitmentPhase}
 			<CommitmentView {process} {userSub} {userEnrollment} />
 		{:else if isVotingPhase}
-			<VotingView
+			<VotingActionZone
 				{process}
-				{teams}
-				{userSub}
-				{userEnrollment}
-				{commitments}
-				{commitmentsError}
+				selectedTeam={voting.selectedTeam}
+				voting={{
+					flow: voting.votingFlow,
+					error: voting.error,
+					hasVoted: voting.hasVoted,
+					showConfirmDialog: voting.showConfirmDialog,
+					openConfirmDialog: voting.openConfirmDialog,
+					closeConfirmDialog: voting.closeConfirmDialog,
+					submitVote: voting.submitVote,
+					resetError: voting.resetError
+				}}
 			/>
 		{/if}
 	</div>
