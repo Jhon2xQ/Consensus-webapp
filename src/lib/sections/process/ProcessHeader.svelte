@@ -66,14 +66,14 @@
 	{/if}
 
 	{#if scope !== null}
-		<div class="flex items-center gap-2 text-sm">
+		<div class="flex items-center gap-2 text-sm min-w-0">
 			<span class="font-medium text-brand-black shrink-0">Alcance:</span>
 			<span
 				data-testid="scope-pill"
-				class="font-mono text-sm bg-consensus-gray-100 border border-consensus-border rounded-consensus-sm px-2.5 py-1 text-consensus-fg truncate min-w-0 max-w-[200px] md:max-w-[400px] lg:max-w-[600px] inline-flex items-center gap-2"
+				class="font-mono text-xs bg-consensus-gray-100 border border-consensus-border rounded-consensus-sm px-2.5 py-1 text-consensus-fg overflow-hidden text-ellipsis inline-flex items-center gap-2 min-w-0 max-w-full md:max-w-[400px] lg:max-w-[600px]"
 				title={scope}
 			>
-				{scope}
+				<span class="truncate min-w-0 flex-1">{scope}</span>
 				<button
 					type="button"
 					onclick={handleCopyScope}

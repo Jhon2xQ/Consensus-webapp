@@ -47,10 +47,13 @@ describe('ProcessHeader', () => {
 		await expect.element(page.getByText('Municipal', { exact: true })).toBeInTheDocument();
 	});
 
-	it('exposes the full scope as a tooltip on the scope element', async () => {
+	it('exposes the full scope as a tooltip on the scope pill', async () => {
+		// The pill is the element that owns the title attribute. The text lives
+		// inside a child span that does the visual truncation; the pill carries
+		// the full scope as a native tooltip for hover/focus users.
 		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
-		const scopeElement = page.getByText('Municipal', { exact: true });
-		await expect.element(scopeElement).toHaveAttribute('title', 'Municipal');
+		const pill = page.getByTestId('scope-pill');
+		await expect.element(pill).toHaveAttribute('title', 'Municipal');
 	});
 
 	it('renders a copy-to-clipboard button when scope is provided', async () => {
