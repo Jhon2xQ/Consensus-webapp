@@ -240,10 +240,9 @@ describe('ProcessDetail', () => {
 
 		// T-9: every status renders the same unified shell — Header,
 		// Timeline, Stats, TeamsList — in that order, and no ActionZone
-		// outside of COMMITMENT/VOTING. This is what was previously
-		// guaranteed by ReadOnlyProcessView's existence; now it must be
-		// asserted directly on the assembler.
-		describe('unified layout shell (T-9: ReadOnlyProcessView removed)', () => {
+		// outside of COMMITMENT/VOTING. This layout is now asserted directly
+		// on the assembler.
+		describe('unified layout shell (T-9: assembler renders the full page for all statuses)', () => {
 			it.each(['OPEN', 'SEALED', 'COUNTING', 'CLOSED'])(
 				'renders Header + Timeline + Stats + TeamsList in %s (no ActionZone)',
 				async (status) => {
