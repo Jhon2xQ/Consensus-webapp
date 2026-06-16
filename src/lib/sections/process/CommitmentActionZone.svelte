@@ -63,7 +63,7 @@
 
 <div class="mt-6 space-y-3">
 	{#if hasCommitted}
-		<Button disabled class="w-full" variant="default">
+		<Button disabled class="w-full bg-brand-red/50 text-white" variant="default">
 			<Shield class="size-4 mr-2" />
 			Compromiso enviado
 		</Button>
@@ -71,7 +71,7 @@
 		<Button
 			onclick={handleSubmitCommitment}
 			disabled={submitting !== 'none'}
-			class="w-full"
+			class="w-full bg-brand-red hover:bg-brand-red/90 text-white"
 			variant="default"
 		>
 			<Send class="size-4 mr-2" />
