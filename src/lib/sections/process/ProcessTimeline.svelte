@@ -21,9 +21,16 @@
   }: Props = $props();
 
   function formatDate(iso: string): string {
-    return new Intl.DateTimeFormat("es-AR", {
-      dateStyle: "medium",
-    }).format(new Date(iso));
+    const date = new Date(iso);
+    const parts = new Intl.DateTimeFormat(undefined, {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).formatToParts(date);
+    // Filter out "literal" parts (locale-specific separators like "de" in es-AR)
+    // and join with spaces so the output is "DD MMMM YYYY" in any locale.
+    const filtered = parts.filter((p) => p.type !== "literal");
+    return filtered.map((p) => p.value).join(" ");
   }
 
   function formatTime(iso: string): string {

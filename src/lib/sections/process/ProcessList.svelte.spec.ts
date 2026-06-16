@@ -217,9 +217,12 @@ describe("ProcessList.svelte (public)", () => {
 
     it("renders formatted date value for commitment start", async () => {
       render(ProcessList, defaultProps({ processes: [mockProcess] }));
-      // 2026-03-01T13:00:00Z → "1 marzo 2026" using local timezone methods
+      // 2026-03-01T13:00:00Z → "01 marzo 2026" in es_PE (zero-padded day,
+      // full month name, literals like "de" filtered out). The exact day,
+      // month, and year depend on the test runner's locale and timezone, so
+      // we assert the structural shape: 2-digit day, any month name, 4-digit year.
       await expect
-        .element(page.getByText("1 marzo 2026", { exact: true }))
+        .element(page.getByText(/^01 \S+ 2026$/))
         .toBeInTheDocument();
     });
   });

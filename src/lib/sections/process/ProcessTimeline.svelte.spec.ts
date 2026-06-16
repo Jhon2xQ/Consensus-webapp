@@ -37,14 +37,18 @@ describe('ProcessTimeline', () => {
 		render(ProcessTimeline, defaultProps());
 		const startDate = page.getByTestId('phase-compromiso-start-date');
 		await expect.element(startDate).toBeInTheDocument();
-		await expect.element(startDate).toHaveTextContent(/1 mar 2026/);
+		// 2026-03-01 → "01 marzo 2026" in es_PE (zero-padded day, full month
+		// name, literals like "de" filtered out). The exact month name and
+		// year depend on the test runner's locale and timezone, so we assert
+		// the structural shape: 2-digit day, any month name, 4-digit year.
+		await expect.element(startDate).toHaveTextContent(/^01 \S+ 2026$/);
 	});
 
 	it('renders the formatted end date for the Compromiso phase', async () => {
 		render(ProcessTimeline, defaultProps());
 		const endDate = page.getByTestId('phase-compromiso-end-date');
 		await expect.element(endDate).toBeInTheDocument();
-		await expect.element(endDate).toHaveTextContent(/30 abr 2026/);
+		await expect.element(endDate).toHaveTextContent(/^30 \S+ 2026$/);
 	});
 
 	it('renders the formatted start time for the Compromiso phase', async () => {
@@ -75,14 +79,14 @@ describe('ProcessTimeline', () => {
 		render(ProcessTimeline, defaultProps());
 		const startDate = page.getByTestId('phase-votacion-start-date');
 		await expect.element(startDate).toBeInTheDocument();
-		await expect.element(startDate).toHaveTextContent(/15 jun 2026/);
+		await expect.element(startDate).toHaveTextContent(/^15 \S+ 2026$/);
 	});
 
 	it('renders the formatted end date for the Votación phase', async () => {
 		render(ProcessTimeline, defaultProps());
 		const endDate = page.getByTestId('phase-votacion-end-date');
 		await expect.element(endDate).toBeInTheDocument();
-		await expect.element(endDate).toHaveTextContent(/20 jun 2026/);
+		await expect.element(endDate).toHaveTextContent(/^20 \S+ 2026$/);
 	});
 
 	it('renders the formatted start time for the Votación phase', async () => {
@@ -112,7 +116,7 @@ describe('ProcessTimeline', () => {
 		render(ProcessTimeline, defaultProps());
 		const dateLine = page.getByTestId('phase-resultados-date');
 		await expect.element(dateLine).toBeInTheDocument();
-		await expect.element(dateLine).toHaveTextContent(/25 jun 2026/);
+		await expect.element(dateLine).toHaveTextContent(/^25 \S+ 2026$/);
 	});
 
 	it('renders a time-only line for the Resultados phase', async () => {

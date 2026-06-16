@@ -50,33 +50,17 @@
     );
   }
 
-  const MONTH_NAMES = [
-    "enero",
-    "febrero",
-    "marzo",
-    "abril",
-    "mayo",
-    "junio",
-    "julio",
-    "agosto",
-    "septiembre",
-    "octubre",
-    "noviembre",
-    "diciembre",
-  ];
-
   function formatDate(iso: string): string {
     const date = new Date(iso);
-    const parts = new Intl.DateTimeFormat("es-AR", {
-      day: "numeric",
-      month: "numeric",
+    const parts = new Intl.DateTimeFormat(undefined, {
+      day: "2-digit",
+      month: "long",
       year: "numeric",
-      timeZone: "America/Argentina/Buenos_Aires",
     }).formatToParts(date);
-    const day = parts.find((p) => p.type === "day")?.value ?? "";
-    const monthIndex = Number(parts.find((p) => p.type === "month")?.value ?? "1") - 1;
-    const year = parts.find((p) => p.type === "year")?.value ?? "";
-    return `${day} ${MONTH_NAMES[monthIndex]} ${year}`;
+    // Filter out "literal" parts (locale-specific separators like "de" in es-AR)
+    // and join with spaces so the output is "DD MMMM YYYY" in any locale.
+    const filtered = parts.filter((p) => p.type !== "literal");
+    return filtered.map((p) => p.value).join(" ");
   }
 
   function formatTime(iso: string): string {
