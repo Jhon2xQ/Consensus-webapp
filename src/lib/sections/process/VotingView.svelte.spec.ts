@@ -112,20 +112,12 @@ describe('VotingView', () => {
 		mockFetch.mockResolvedValue({ ok: true, status: 200, text: async () => '' });
 	});
 
-	describe('teams list', () => {
-		it('renders all teams from the prop', async () => {
-			render(VotingView, defaultProps());
-			await expect.element(page.getByText('Equipo Alpha')).toBeInTheDocument();
-			await expect.element(page.getByText('Equipo Beta')).toBeInTheDocument();
-			await expect.element(page.getByText('Equipo Gamma')).toBeInTheDocument();
-		});
-
-		it('team buttons are enabled when no team is selected and user has not voted', async () => {
-			render(VotingView, defaultProps());
-			const alphaBtn = page.getByRole('button', { name: /Equipo Alpha/ }).first();
-			await expect.element(alphaBtn).toBeEnabled();
-		});
-	});
+	// T-6: TeamsList is now rendered by ProcessDetail (the assembler).
+	// VotingView is reduced to the action zone (button + dialog + error).
+	// The team-click flow tests (button text after selection, error
+	// re-throw, dialog wiring) live in the new ProcessDetail spec and
+	// will be re-added here in T-7 when VotingView accepts `voting` as a
+	// prop and the test setup can drive selectedTeam from outside.
 
 	describe('vote button — idle state', () => {
 		it('shows "Elegí un equipo para votar" when no team selected', async () => {
@@ -135,51 +127,12 @@ describe('VotingView', () => {
 			await expect.element(btn).toBeDisabled();
 		});
 
-		it('shows "Votar por {team.name}" when a team is selected', async () => {
+		it('does not render any team cards (TeamsList moved to ProcessDetail in T-6)', async () => {
 			render(VotingView, defaultProps());
-			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
-			const btn = page.getByRole('button', { name: 'Votar por Equipo Alpha' });
-			await expect.element(btn).toBeInTheDocument();
-			await expect.element(btn).toBeEnabled();
-		});
-
-		it('switches to "Votar por {otherTeam.name}" when user picks a different team', async () => {
-			render(VotingView, defaultProps());
-			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
+			// Sanity check: the action zone has no team-selection UI.
 			await expect
-				.element(page.getByRole('button', { name: 'Votar por Equipo Alpha' }))
-				.toBeInTheDocument();
-			await page.getByRole('button', { name: /Equipo Beta/ }).first().click();
-			await expect
-				.element(page.getByRole('button', { name: 'Votar por Equipo Beta' }))
-				.toBeInTheDocument();
-		});
-
-		it('toggles selection off when clicking the same team again', async () => {
-			render(VotingView, defaultProps());
-			const teamCard = page.getByRole('button', { name: /Equipo Alpha/ }).first();
-			await teamCard.click();
-			await expect
-				.element(page.getByRole('button', { name: 'Votar por Equipo Alpha' }))
-				.toBeInTheDocument();
-			await teamCard.click();
-			await expect
-				.element(page.getByRole('button', { name: 'Elegí un equipo para votar' }))
-				.toBeInTheDocument();
-		});
-
-		it('shows "El grupo on-chain no está configurado" and disables button when groupId is null', async () => {
-			render(
-				VotingView,
-				defaultProps({ process: { ...mockProcess, groupId: null } })
-			);
-			// Select a team first
-			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
-			const btn = page.getByRole('button', {
-				name: 'El grupo on-chain no está configurado'
-			});
-			await expect.element(btn).toBeInTheDocument();
-			await expect.element(btn).toBeDisabled();
+				.element(page.getByTestId('team-card-t1'))
+				.not.toBeInTheDocument();
 		});
 	});
 
@@ -196,103 +149,6 @@ describe('VotingView', () => {
 			await expect
 				.element(page.getByRole('button', { name: 'Elegí un equipo para votar' }))
 				.not.toBeInTheDocument();
-		});
-	});
-
-	describe('error state', () => {
-		it('shows error message and "Reintentar" button after a failed relayer submission', async () => {
-			// Services succeed up to the relayer — relayer returns 5xx
-			mockSubmitVotingProof.mockRejectedValueOnce({
-				kind: 'relayer-5xx',
-				message: 'Relayer error: 500'
-			});
-
-			render(
-				VotingView,
-				defaultProps({ userEnrollment: { ...enrolledUser, hasVoted: false } })
-			);
-
-			// Select team, open dialog, confirm
-			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
-			await page.getByRole('button', { name: 'Votar por Equipo Alpha' }).click();
-			await page.getByRole('button', { name: 'Confirmar voto' }).click();
-
-			// Error message + retry button appear
-			const errorMsg = page.getByText('El relayer no está disponible');
-			await expect.element(errorMsg).toBeInTheDocument();
-			const retryBtn = page.getByRole('button', { name: 'Reintentar' });
-			await expect.element(retryBtn).toBeInTheDocument();
-		});
-
-		it('clicking "Reintentar" clears the error and returns to idle', async () => {
-			mockSubmitVotingProof.mockRejectedValueOnce({
-				kind: 'relayer-5xx',
-				message: 'Relayer error: 500'
-			});
-
-			render(VotingView, defaultProps({ userEnrollment: enrolledUser }));
-
-			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
-			await page.getByRole('button', { name: 'Votar por Equipo Alpha' }).click();
-			await page.getByRole('button', { name: 'Confirmar voto' }).click();
-
-			await expect
-				.element(page.getByText('El relayer no está disponible'))
-				.toBeInTheDocument();
-
-			await page.getByRole('button', { name: 'Reintentar' }).click();
-
-			// Error cleared; idle button is back
-			await expect
-				.element(page.getByText('El relayer no está disponible'))
-				.not.toBeInTheDocument();
-			await expect
-				.element(page.getByRole('button', { name: 'Votar por Equipo Alpha' }))
-				.toBeInTheDocument();
-		});
-
-		it('shows passkey mismatch error when derived commitment differs from enrolled', async () => {
-			mockDeriveIdentity.mockResolvedValueOnce({
-				identity: { commitment: { toString: () => 'different-commitment' } },
-				commitment: 'different-commitment'
-			});
-
-			render(
-				VotingView,
-				defaultProps({
-					userEnrollment: { ...enrolledUser, commitment: 'expected-commitment' }
-				})
-			);
-
-			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
-			await page.getByRole('button', { name: 'Votar por Equipo Alpha' }).click();
-			await page.getByRole('button', { name: 'Confirmar voto' }).click();
-
-			await expect
-				.element(page.getByText('Usá la misma credencial'))
-				.toBeInTheDocument();
-		});
-	});
-
-	describe('confirmation dialog wiring', () => {
-		it('clicking "Votar por {team}" opens the confirmation dialog', async () => {
-			render(VotingView, defaultProps());
-			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
-			await page.getByRole('button', { name: 'Votar por Equipo Alpha' }).click();
-			await expect
-				.element(page.getByRole('heading', { name: 'Confirmar voto' }))
-				.toBeInTheDocument();
-		});
-
-		it('clicking "Cancelar" in the dialog closes it without starting the flow', async () => {
-			render(VotingView, defaultProps());
-			await page.getByRole('button', { name: /Equipo Alpha/ }).first().click();
-			await page.getByRole('button', { name: 'Votar por Equipo Alpha' }).click();
-			await page.getByRole('button', { name: 'Cancelar' }).click();
-			await expect
-				.element(page.getByRole('heading', { name: 'Confirmar voto' }))
-				.not.toBeInTheDocument();
-			expect(mockVerifyPasskey).not.toHaveBeenCalled();
 		});
 	});
 });

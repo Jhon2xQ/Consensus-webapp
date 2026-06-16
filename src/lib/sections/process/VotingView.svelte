@@ -3,7 +3,6 @@
 	import { Vote, Loader2 } from '@lucide/svelte';
 	import { useVoting } from '$lib/composables/useVoting.svelte';
 	import { VOTING_STAGE_MESSAGE } from '$lib/types/proof';
-	import TeamsList from './TeamsList.svelte';
 	import VoteConfirmationDialog from './VoteConfirmationDialog.svelte';
 	import type { ElectoralProcess } from '$lib/types/electoral-process';
 	import type { Team } from '$lib/types/team';
@@ -20,17 +19,16 @@
 
 	let {
 		process,
-		teams,
+		teams: _teams,
 		userSub,
 		userEnrollment,
 		commitments,
 		commitmentsError
 	}: Props = $props();
 
-	// Getter functions keep the composable's snapshot-at-entry semantics intact:
-	// when submitVote runs, it pulls the current value of each prop, so a
-	// parent re-render that swaps props mid-flow still uses the values that
-	// were current when the user clicked Confirmar.
+	// useVoting remains local to VotingView in T-6 — T-7 will replace it
+	// with a `voting` prop received from ProcessDetail. The getter pattern
+	// keeps snapshot-at-entry semantics intact.
 	const voting = useVoting({
 		userSub: () => userSub,
 		processId: () => process.id,
@@ -50,13 +48,10 @@
 	}
 </script>
 
-<TeamsList
-	teams={teams}
-	selectedTeam={voting.selectedTeam}
-	disabled={voting.hasVoted || voting.votingFlow !== 'idle'}
-	onSelect={voting.selectTeam}
-/>
-
+<!--
+	T-6: TeamsList now lives in ProcessDetail (the assembler). VotingView
+	is reduced to the action zone: confirmation dialog + vote button.
+-->
 <VoteConfirmationDialog
 	open={voting.showConfirmDialog}
 	teamName={voting.selectedTeam?.name ?? null}

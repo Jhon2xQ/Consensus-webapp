@@ -210,4 +210,50 @@ describe('ProcessDetail', () => {
 			await expect.element(page.getByText('No disponible')).toBeInTheDocument();
 		});
 	});
+
+	// T-6: ProcessDetail is now the assembler (FR-1, FR-2). TeamsList is
+	// always present; ActionZone is conditional; useVoting is hoisted.
+	describe('assembler (T-6: useVoting hoisted, unified layout)', () => {
+		describe('TeamsList is always present (FR-1)', () => {
+			it.each(['OPEN', 'COMMITMENT', 'SEALED', 'VOTING', 'COUNTING', 'CLOSED'])(
+				'renders team cards in %s status',
+				async (status) => {
+					render(ProcessDetail, {
+						...baseProps,
+						process: { ...baseProcess, estatus: status as ElectoralProcess['estatus'] }
+					});
+					// TeamsList renders each team name as a card.
+					await expect.element(page.getByText('Team Alpha')).toBeInTheDocument();
+					await expect.element(page.getByText('Team Beta')).toBeInTheDocument();
+				}
+			);
+		});
+
+		describe('useVoting callbacks wired (FR-2)', () => {
+			it('clicking a team card in VOTING phase updates its selected state via ProcessDetail\'s useVoting', async () => {
+				render(ProcessDetail, {
+					...baseProps,
+					process: { ...baseProcess, estatus: 'VOTING' }
+				});
+				const teamCard = page.getByTestId('team-card-team-1');
+				await expect.element(teamCard).toHaveAttribute('data-state', 'unselected');
+				await teamCard.click();
+				// ProcessDetail's hoisted useVoting is wired to TeamsList:
+				// clicking a card calls voting.selectTeam, which flips the
+				// card's data-state to "selected" on re-render.
+				await expect.element(teamCard).toHaveAttribute('data-state', 'selected');
+			});
+
+			it('TeamsList cards are non-interactive in COMMITMENT phase (interactive=false)', async () => {
+				render(ProcessDetail, {
+					...baseProps,
+					process: { ...baseProcess, estatus: 'COMMITMENT' }
+				});
+				const teamCard = page.getByTestId('team-card-team-1');
+				// In COMMITMENT phase, the assembler passes interactive=false
+				// to TeamsList, so the card is disabled.
+				await expect.element(teamCard).toBeDisabled();
+			});
+		});
+	});
 });
