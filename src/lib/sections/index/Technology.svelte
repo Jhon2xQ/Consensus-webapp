@@ -67,126 +67,50 @@
 					role="img"
 					aria-label="Circuito criptográfico de conocimiento cero"
 				>
-					<!-- cryptographic circuit wireframe (consensus-landing.html) -->
-					<circle
-						cx="280"
-						cy="210"
-						r="100"
-						stroke="rgba(187,0,18,0.3)"
-						stroke-width="1"
-						stroke-dasharray="6 4"
-					/>
-					<circle cx="280" cy="210" r="60" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
-					<circle
-						cx="280"
-						cy="210"
-						r="20"
-						fill="rgba(187,0,18,0.2)"
-						stroke="rgba(187,0,18,0.5)"
-						stroke-width="1.5"
-					/>
-					<text
-						x="280"
-						y="216"
-						text-anchor="middle"
-						font-family="JetBrains Mono, monospace"
-						font-size="11"
-						fill="rgba(255,107,107,0.8)">zk</text
-					>
-					<!-- outer nodes -->
-					<circle cx="280" cy="90" r="6" fill="rgba(255,255,255,0.3)" />
-					<circle cx="380" cy="130" r="6" fill="rgba(255,255,255,0.3)" />
-					<circle cx="420" cy="210" r="6" fill="rgba(255,255,255,0.3)" />
-					<circle cx="380" cy="290" r="6" fill="rgba(255,255,255,0.3)" />
-					<circle cx="280" cy="330" r="6" fill="rgba(255,255,255,0.3)" />
-					<circle cx="180" cy="290" r="6" fill="rgba(255,255,255,0.3)" />
-					<circle cx="140" cy="210" r="6" fill="rgba(255,255,255,0.3)" />
-					<circle cx="180" cy="130" r="6" fill="rgba(255,255,255,0.3)" />
-					<!-- connecting lines -->
-					<line
-						x1="280"
-						y1="90"
-						x2="280"
-						y2="150"
-						stroke="rgba(255,255,255,0.1)"
-						stroke-width="1"
-					/>
-					<line
-						x1="380"
-						y1="130"
-						x2="320"
-						y2="170"
-						stroke="rgba(255,255,255,0.1)"
-						stroke-width="1"
-					/>
-					<line
-						x1="420"
-						y1="210"
-						x2="350"
-						y2="210"
-						stroke="rgba(255,255,255,0.1)"
-						stroke-width="1"
-					/>
-					<line
-						x1="380"
-						y1="290"
-						x2="320"
-						y2="250"
-						stroke="rgba(255,255,255,0.1)"
-						stroke-width="1"
-					/>
-					<line
-						x1="280"
-						y1="330"
-						x2="280"
-						y2="270"
-						stroke="rgba(255,255,255,0.1)"
-						stroke-width="1"
-					/>
-					<line
-						x1="180"
-						y1="290"
-						x2="240"
-						y2="250"
-						stroke="rgba(255,255,255,0.1)"
-						stroke-width="1"
-					/>
-					<line
-						x1="140"
-						y1="210"
-						x2="210"
-						y2="210"
-						stroke="rgba(255,255,255,0.1)"
-						stroke-width="1"
-					/>
-					<line
-						x1="180"
-						y1="130"
-						x2="240"
-						y2="170"
-						stroke="rgba(255,255,255,0.1)"
-						stroke-width="1"
-					/>
-					<!-- equation -->
-					<text
-						x="280"
-						y="390"
-						text-anchor="middle"
-						font-family="JetBrains Mono, monospace"
-						font-size="10"
-						fill="rgba(255,255,255,0.25)"
-						letter-spacing="1">H(identity) ∈ merkle_tree(group_root)</text
-					>
-					<!-- label -->
-					<text
-						x="280"
-						y="56"
-						text-anchor="middle"
-						font-family="Inter, sans-serif"
-						font-size="11"
-						fill="rgba(255,255,255,0.3)"
-						letter-spacing="2">ZERO-KNOWLEDGE CIRCUIT</text
-					>
+					<!-- Outer ring -->
+					<circle cx="280" cy="210" r="180" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
+					<circle cx="280" cy="210" r="130" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" />
+					<circle cx="280" cy="210" r="80" fill="none" stroke="rgba(187,0,18,0.3)" stroke-width="1.5" />
+
+					<!-- Center node -->
+					<circle cx="280" cy="210" r="24" fill="rgba(187,0,18,0.15)" stroke="#bb0012" stroke-width="2" />
+					<text x="280" y="215" text-anchor="middle" fill="#bb0012" font-family="monospace" font-size="14" font-weight="600">zk</text>
+
+					<!-- Outer nodes (8 points) -->
+					<!-- Top -->
+					<circle cx="280" cy="30" r="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+					<line x1="280" y1="36" x2="280" y2="130" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+					<!-- Top-right -->
+					<circle cx="407" cy="83" r="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+					<line x1="401" y1="89" x2="310" y2="170" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+					<!-- Right -->
+					<circle cx="460" cy="210" r="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+					<line x1="454" y1="210" x2="304" y2="210" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+					<!-- Bottom-right -->
+					<circle cx="407" cy="337" r="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+					<line x1="401" y1="331" x2="310" y2="250" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+					<!-- Bottom -->
+					<circle cx="280" cy="390" r="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+					<line x1="280" y1="384" x2="280" y2="290" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+					<!-- Bottom-left -->
+					<circle cx="153" cy="337" r="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+					<line x1="159" y1="331" x2="250" y2="250" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+					<!-- Left -->
+					<circle cx="100" cy="210" r="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+					<line x1="106" y1="210" x2="256" y2="210" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+					<!-- Top-left -->
+					<circle cx="153" cy="83" r="6" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+					<line x1="159" y1="89" x2="250" y2="170" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+
+					<!-- Connection lines from outer nodes to center -->
+					<line x1="280" y1="36" x2="280" y2="186" stroke="rgba(187,0,18,0.2)" stroke-width="1" />
+					<line x1="401" y1="89" x2="304" y2="190" stroke="rgba(187,0,18,0.2)" stroke-width="1" />
+					<line x1="454" y1="210" x2="304" y2="210" stroke="rgba(187,0,18,0.2)" stroke-width="1" />
+					<line x1="401" y1="331" x2="304" y2="230" stroke="rgba(187,0,18,0.2)" stroke-width="1" />
+					<line x1="280" y1="384" x2="280" y2="234" stroke="rgba(187,0,18,0.2)" stroke-width="1" />
+					<line x1="159" y1="331" x2="256" y2="230" stroke="rgba(187,0,18,0.2)" stroke-width="1" />
+					<line x1="106" y1="210" x2="256" y2="210" stroke="rgba(187,0,18,0.2)" stroke-width="1" />
+					<line x1="159" y1="89" x2="256" y2="190" stroke="rgba(187,0,18,0.2)" stroke-width="1" />
 				</svg>
 			</div>
 		</div>

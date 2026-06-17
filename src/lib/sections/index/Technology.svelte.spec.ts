@@ -67,14 +67,19 @@ describe('Technology.svelte', () => {
 		await expect.element(svg).toHaveAttribute('viewBox', '0 0 560 420');
 	});
 
-	it('renders the zero-knowledge equation text inside the SVG', async () => {
+	it('does NOT render the equation text inside the SVG (cleaned-up design)', async () => {
 		render(Technology);
-		// Per FR-T-4 the SVG includes the equation H(identity) ∈ merkle_tree(group_root).
-		// This string only exists in production code if the SVG is rendered with the
-		// full circuit diagram from the HTML.
+		// The old SVG included the equation H(identity) ∈ merkle_tree(group_root).
+		// The cleanup removed the equation and the "ZERO-KNOWLEDGE CIRCUIT" label
+		// to keep the illustration minimal and design-system compliant.
 		await expect
 			.element(page.getByText('H(identity) ∈ merkle_tree(group_root)'))
-			.toBeInTheDocument();
+			.not.toBeInTheDocument();
+	});
+
+	it('does NOT render the "ZERO-KNOWLEDGE CIRCUIT" label inside the SVG (cleaned-up design)', async () => {
+		render(Technology);
+		await expect.element(page.getByText('ZERO-KNOWLEDGE CIRCUIT')).not.toBeInTheDocument();
 	});
 
 	it('does NOT render an external <img> tag (replaced by inline SVG)', async () => {

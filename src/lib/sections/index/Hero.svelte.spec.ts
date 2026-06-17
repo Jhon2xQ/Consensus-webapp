@@ -42,22 +42,16 @@ describe('Hero.svelte', () => {
 		await expect.element(cta).toHaveAttribute('href', '#');
 	});
 
-	it('does NOT render an external <img> (image replaced by inline SVG)', async () => {
+	it('does NOT render an external <img> with the old Google URL alt', async () => {
 		render(Hero);
 		// No <img> with an external Google URL should exist
 		const imgs = page.getByRole('img', { name: /simboliza la toma de decisiones/ });
 		await expect.element(imgs).not.toBeInTheDocument();
 	});
 
-	it('renders an inline SVG with the institutional wireframe aria-label', async () => {
+	it('renders the hero.png <img> with the institutional architecture alt text', async () => {
 		render(Hero);
-		const svg = page.getByRole('img', { name: 'Vista arquitectónica institucional' });
-		await expect.element(svg).toBeInTheDocument();
-	});
-
-	it('renders the inline SVG with the 560x420 viewBox', async () => {
-		render(Hero);
-		const svg = page.getByRole('img', { name: 'Vista arquitectónica institucional' });
-		await expect.element(svg).toHaveAttribute('viewBox', '0 0 560 420');
+		const img = page.getByRole('img', { name: 'Vista arquitectonica institucional' });
+		await expect.element(img).toBeInTheDocument();
 	});
 });
