@@ -59,12 +59,12 @@ describe('Technology.svelte', () => {
 			.toBeInTheDocument();
 	});
 
-	it('renders an inline SVG with the zero-knowledge circuit aria-label and viewBox', async () => {
+	it('renders the technology.png <img> with the ZK and blockchain alt text', async () => {
 		render(Technology);
-		const svg = page.getByRole('img', { name: 'Circuito criptográfico de conocimiento cero' });
-		await expect.element(svg).toBeInTheDocument();
-		// Per FR-T-4 the viewBox is 560x420 (matches the HTML wireframe).
-		await expect.element(svg).toHaveAttribute('viewBox', '0 0 560 420');
+		const img = page.getByRole('img', {
+			name: 'Representacion de tecnologia ZK y blockchain'
+		});
+		await expect.element(img).toBeInTheDocument();
 	});
 
 	it('does NOT render the equation text inside the SVG (cleaned-up design)', async () => {
@@ -80,12 +80,5 @@ describe('Technology.svelte', () => {
 	it('does NOT render the "ZERO-KNOWLEDGE CIRCUIT" label inside the SVG (cleaned-up design)', async () => {
 		render(Technology);
 		await expect.element(page.getByText('ZERO-KNOWLEDGE CIRCUIT')).not.toBeInTheDocument();
-	});
-
-	it('does NOT render an external <img> tag (replaced by inline SVG)', async () => {
-		render(Technology);
-		// No <img> with the old Google-URL alt text should exist.
-		const imgs = page.getByAltText(/Representación artística de tecnología/);
-		await expect.element(imgs).not.toBeInTheDocument();
 	});
 });
