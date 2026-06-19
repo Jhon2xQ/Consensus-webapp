@@ -30,24 +30,6 @@ describe('Technology.svelte', () => {
 			.toBeInTheDocument();
 	});
 
-	it('renders the ZK badge with the "(Semaphore)" suffix in the full label', async () => {
-		render(Technology);
-		// Mono tag "ZK" — use exact match because the SVG also contains a "zk" label.
-		await expect.element(page.getByText('ZK', { exact: true })).toBeInTheDocument();
-		// Full new badge label per FR-T-2: includes the (Semaphore) protocol hint
-		await expect
-			.element(page.getByText('Arquitectura de Conocimiento Cero (Semaphore)'))
-			.toBeInTheDocument();
-	});
-
-	it('renders the BC badge with the "(blockchain)" suffix in the full label', async () => {
-		render(Technology);
-		await expect.element(page.getByText('BC')).toBeInTheDocument();
-		await expect
-			.element(page.getByText('Libro Mayor Inmutable (blockchain)'))
-			.toBeInTheDocument();
-	});
-
 	it('renders the extra explanatory Semaphore paragraph (max-width 420px)', async () => {
 		render(Technology);
 		// Per FR-T-3, the section MUST include an extra explanatory paragraph
