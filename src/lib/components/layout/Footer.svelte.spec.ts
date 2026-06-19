@@ -11,17 +11,6 @@ describe('Footer.svelte', () => {
 		await expect.element(homeLink).toHaveAttribute('href', '/');
 	});
 
-	it('renders the brand tagline', async () => {
-		render(Footer);
-		await expect
-			.element(
-				page.getByText(
-					'Construyendo la infraestructura para la toma de decisiones verificable, privada y descentralizada.'
-				)
-			)
-			.toBeInTheDocument();
-	});
-
 	it('renders the live navigation links', async () => {
 		render(Footer);
 		const procesos = page.getByRole('link', { name: 'Procesos' });

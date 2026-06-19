@@ -26,10 +26,12 @@
 	];
 </script>
 
-<footer class="bg-consensus-black text-consensus-white">
+<footer
+	class="bg-consensus-white text-consensus-gray-900 border-t border-consensus-border-soft"
+>
 	<div class="max-w-7xl mx-auto px-6 lg:px-8 py-8 md:py-10">
 		<div class="flex flex-col md:flex-row justify-between items-center gap-8">
-			<!-- Brand + tagline -->
+			<!-- Brand -->
 			<div class="flex flex-col items-center md:items-start gap-3">
 				<a href="/" class="flex items-center gap-2">
 					<div
@@ -39,10 +41,6 @@
 					</div>
 					<span class="text-lg font-bold tracking-tight">Consensus</span>
 				</a>
-				<p class="text-sm text-consensus-white/60 text-center md:text-left max-w-sm">
-					Construyendo la infraestructura para la toma de decisiones verificable, privada y
-					descentralizada.
-				</p>
 			</div>
 
 			<!-- Links + socials -->
@@ -53,7 +51,7 @@
 							<li>
 								<a
 									href={link.href}
-									class="text-consensus-white/60 hover:text-consensus-white transition-colors"
+									class="text-consensus-gray-600 hover:text-consensus-gray-900 transition-colors"
 								>
 									{link.label}
 								</a>
@@ -67,7 +65,7 @@
 							<a
 								href={social.href}
 								aria-label={social.label}
-								class="text-consensus-white/60 hover:text-consensus-white transition-colors [&_svg]:size-5"
+								class="text-consensus-gray-600 hover:text-consensus-gray-900 transition-colors [&_svg]:size-5"
 							>
 								<!-- Local static SVGs are inlined so fill="currentColor" inherits the parent text color. -->
 								{@html social.icon}
@@ -79,7 +77,7 @@
 
 		<!-- Copyright -->
 		<div
-			class="mt-8 pt-6 border-t border-consensus-white/10 text-sm text-consensus-white/60 text-center"
+			class="mt-8 pt-6 border-t border-consensus-border-soft text-sm text-consensus-gray-600 text-center"
 		>
 			© 2026 Plataforma Consensus. Todos los derechos reservados.
 		</div>
