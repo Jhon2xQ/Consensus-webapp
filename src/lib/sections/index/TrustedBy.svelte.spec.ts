@@ -7,7 +7,7 @@ describe('TrustedBy.svelte', () => {
 	it('renders the mono section label', async () => {
 		render(TrustedBy);
 		await expect
-			.element(page.getByText('Aliados Estratégicos'))
+			.element(page.getByText('En colaboración con'))
 			.toBeInTheDocument();
 	});
 
