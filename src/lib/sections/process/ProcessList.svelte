@@ -146,57 +146,71 @@
             <!-- Dates Section -->
             <div class="flex flex-col gap-3">
               <!-- Compromiso -->
-              <div class="flex items-baseline gap-3">
+              <div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
                 <span
-                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted shrink-0 w-[90px]"
+                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted sm:shrink-0 sm:w-[90px]"
                   >COMPROMISO</span
                 >
-                <span class="font-mono text-sm font-medium text-consensus-fg"
-                  >{formatDate(process.commitmentStart)}</span
+                <span class="inline-flex items-baseline gap-x-1">
+                  <span class="font-mono text-sm font-medium text-consensus-fg"
+                    >{formatDate(process.commitmentStart)}</span
+                  >
+                  <span class="font-mono text-xs text-consensus-muted"
+                    >{formatTime(process.commitmentStart)}</span
+                  >
+                </span>
+                <span class="font-mono text-xs text-consensus-muted" aria-hidden="true"
+                  >a</span
                 >
-                <span class="font-mono text-xs text-consensus-muted"
-                  >{formatTime(process.commitmentStart)}</span
-                >
-                <span class="font-mono text-xs text-consensus-muted">–</span>
-                <span class="font-mono text-sm font-medium text-consensus-fg"
-                  >{formatDate(process.commitmentEnd)}</span
-                >
-                <span class="font-mono text-xs text-consensus-muted"
-                  >{formatTime(process.commitmentEnd)}</span
-                >
+                <span class="inline-flex items-baseline gap-x-1">
+                  <span class="font-mono text-sm font-medium text-consensus-fg"
+                    >{formatDate(process.commitmentEnd)}</span
+                  >
+                  <span class="font-mono text-xs text-consensus-muted"
+                    >{formatTime(process.commitmentEnd)}</span
+                  >
+                </span>
               </div>
               <!-- Votación -->
-              <div class="flex items-baseline gap-3">
+              <div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
                 <span
-                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted shrink-0 w-[90px]"
+                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted sm:shrink-0 sm:w-[90px]"
                   >VOTACIÓN</span
                 >
-                <span class="font-mono text-sm font-medium text-consensus-fg"
-                  >{formatDate(process.votingStart)}</span
+                <span class="inline-flex items-baseline gap-x-1">
+                  <span class="font-mono text-sm font-medium text-consensus-fg"
+                    >{formatDate(process.votingStart)}</span
+                  >
+                  <span class="font-mono text-xs text-consensus-muted"
+                    >{formatTime(process.votingStart)}</span
+                  >
+                </span>
+                <span class="font-mono text-xs text-consensus-muted" aria-hidden="true"
+                  >a</span
                 >
-                <span class="font-mono text-xs text-consensus-muted"
-                  >{formatTime(process.votingStart)}</span
-                >
-                <span class="font-mono text-xs text-consensus-muted">–</span>
-                <span class="font-mono text-sm font-medium text-consensus-fg"
-                  >{formatDate(process.votingEnd)}</span
-                >
-                <span class="font-mono text-xs text-consensus-muted"
-                  >{formatTime(process.votingEnd)}</span
-                >
+                <span class="inline-flex items-baseline gap-x-1">
+                  <span class="font-mono text-sm font-medium text-consensus-fg"
+                    >{formatDate(process.votingEnd)}</span
+                  >
+                  <span class="font-mono text-xs text-consensus-muted"
+                    >{formatTime(process.votingEnd)}</span
+                  >
+                </span>
               </div>
               <!-- Resultados -->
-              <div class="flex items-baseline gap-3">
+              <div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
                 <span
-                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted shrink-0 w-[90px]"
+                  class="font-mono text-[11px] font-medium tracking-widest uppercase text-consensus-muted sm:shrink-0 sm:w-[90px]"
                   >RESULTADOS</span
                 >
-                <span class="font-mono text-sm font-medium text-consensus-fg"
-                  >{formatDate(process.results)}</span
-                >
-                <span class="font-mono text-xs text-consensus-muted"
-                  >{formatTime(process.results)}</span
-                >
+                <span class="inline-flex items-baseline gap-x-1">
+                  <span class="font-mono text-sm font-medium text-consensus-fg"
+                    >{formatDate(process.results)}</span
+                  >
+                  <span class="font-mono text-xs text-consensus-muted"
+                    >{formatTime(process.results)}</span
+                  >
+                </span>
               </div>
             </div>
 
