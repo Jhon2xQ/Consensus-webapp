@@ -18,17 +18,16 @@
 		'font-display font-extrabold leading-[1] tracking-[-0.03em] text-[clamp(20px,3vw,28px)] text-consensus-muted';
 
 	// Grid strategy:
-	// - No `gap-*` on sm+ — `sm:divide-x` renders dividers between cells, and
-	//   the per-cell `px-consensus-6` padding keeps the numbers away from the
-	//   divider lines. Mixing `gap` + `divide-x` was the previous bug: with
-	//   both, the dividers sat at the edge of each cell, not centered.
-	// - Mobile keeps `divide-y` (stacked) and per-cell `py-consensus-4`.
-	// - The vertical variant is always single-column, so only `divide-y`
-	//   applies; no `sm:` overrides are needed.
+	// - `sm+` (fila): SOLO divisores verticales (`sm:divide-x`). Se apaga `divide-y`
+	//   con `sm:divide-y-0` para que no aparezca la línea debajo de cada stat.
+	// - Mobile (columna): SOLO divisor horizontal (`divide-y`).
+	// - No usamos `gap-*` junto con `divide-x`: ambos juntos desplazan el divisor
+	//   al borde de cada celda. El padding `px-consensus-6` mantiene los números
+	//   lejos del divisor.
 	let gridClass = $derived(
 		variant === 'vertical'
 			? 'grid grid-cols-1 divide-y divide-consensus-border'
-			: 'grid grid-cols-1 sm:grid-cols-3 sm:divide-x sm:divide-consensus-border divide-y divide-consensus-border'
+			: 'grid grid-cols-1 divide-y divide-consensus-border sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:divide-consensus-border'
 	);
 </script>
 
