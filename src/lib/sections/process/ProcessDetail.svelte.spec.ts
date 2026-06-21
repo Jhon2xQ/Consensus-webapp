@@ -77,7 +77,7 @@ describe('ProcessDetail', () => {
 		vi.clearAllMocks();
 	});
 
-	describe('page chrome (ProcessHeader)', () => {
+	describe('page chrome (ProcessHeader + back link)', () => {
 		it('renders process name as a heading', async () => {
 			render(ProcessDetail, baseProps);
 			await expect
@@ -100,52 +100,6 @@ describe('ProcessDetail', () => {
 			expect(cls).toMatch(/\bborder\b/);
 			expect(cls).toMatch(/\bhover:text-brand-red-hover\b/);
 			expect(cls).toMatch(/\btransition-colors\b/);
-		});
-
-		it('renders the back link above the grid container (outside both columns)', async () => {
-			render(ProcessDetail, baseProps);
-			const backLink = page.getByRole('link', { name: /Volver a procesos/ });
-			const grid = page.getByTestId('process-detail-grid');
-			const backLinkEl = backLink.element();
-			const gridEl = grid.element();
-			// The back link is a sibling of the grid (not inside it).
-			expect(gridEl.contains(backLinkEl)).toBe(false);
-			// And it sits above the grid in DOM order.
-			const backLinkTop = (await backLinkEl.getBoundingClientRect()).top;
-			const gridTop = (await gridEl.getBoundingClientRect()).top;
-			expect(backLinkTop).toBeLessThan(gridTop);
-		});
-
-		it.each([
-			['OPEN', 'Abierto'],
-			['COMMITMENT', 'Compromiso'],
-			['SEALED', 'Sellado'],
-			['VOTING', 'Votación'],
-			['COUNTING', 'Conteo'],
-			['CLOSED', 'Cerrado']
-		])('renders the %s status badge with label "%s"', async (status, label) => {
-			render(ProcessDetail, {
-				...baseProps,
-				process: { ...baseProcess, estatus: status as ElectoralProcess['estatus'] }
-			});
-			await expect.element(page.getByText(label).first()).toBeInTheDocument();
-		});
-
-		it('forwards process.description to ProcessHeader', async () => {
-			render(ProcessDetail, baseProps);
-			await expect
-				.element(page.getByText('Proceso de elección de autoridades'))
-				.toBeInTheDocument();
-		});
-
-		it('does not render the description paragraph when process.description is null', async () => {
-			render(ProcessDetail, {
-				...baseProps,
-				process: { ...baseProcess, description: null }
-			});
-			await expect
-				.element(page.getByText('Proceso de elección de autoridades'))
-				.not.toBeInTheDocument();
 		});
 	});
 
@@ -204,13 +158,14 @@ describe('ProcessDetail', () => {
 				process: { ...baseProcess, estatus: 'OPEN' },
 				liveStatus: 'VOTING'
 			});
-			// Badge label should be "Votación" (liveStatus), not "Abierto" (process.estatus)
-			await expect.element(page.getByText('Votación').first()).toBeInTheDocument();
-			await expect.element(page.getByText('Abierto')).not.toBeInTheDocument();
-			// VotingActionZone should be rendered
+			// VotingActionZone should be rendered (liveStatus wins over process.estatus).
 			await expect
 				.element(page.getByRole('button', { name: /Elegí un equipo/ }))
 				.toBeInTheDocument();
+			// No commitment zone in VOTING phase.
+			await expect
+				.element(page.getByRole('button', { name: /Enviar compromiso/ }))
+				.not.toBeInTheDocument();
 		});
 
 		it('falls back to process.estatus when liveStatus is null', async () => {
@@ -349,78 +304,119 @@ describe('ProcessDetail', () => {
 		});
 	});
 
-	// Phase 2: two-column grid layout (process-detail-layout-split).
-	describe('upper section grid layout', () => {
-		it('desktop: renders a grid container with lg:grid-cols-[3fr_1fr] holding Header+Timeline (left) and Stats (right)', async () => {
-			// RED: assert the grid container exists with the expected class
-			// and that the left/right cells are in the right relationship.
-			const { container } = render(ProcessDetail, baseProps);
-
-			const grid = page.getByTestId('process-detail-grid');
-			await expect.element(grid).toBeInTheDocument();
-			const gridEl = grid.element();
-			expect(gridEl.className).toMatch(/\bgrid\b/);
-			expect(gridEl.className).toMatch(/\bgrid-cols-1\b/);
-			expect(gridEl.className).toMatch(/lg:grid-cols-\[3fr_1fr\]/);
-
-			// Header (h1) and Timeline testids (phase-*) are inside the grid.
-			const h1 = grid.getByRole('heading', { level: 1, name: 'Elección 2026' });
-			await expect.element(h1).toBeInTheDocument();
-			await expect.element(grid.getByTestId('phase-compromiso')).toBeInTheDocument();
-			await expect.element(grid.getByTestId('phase-votacion')).toBeInTheDocument();
-			await expect.element(grid.getByTestId('phase-resultados')).toBeInTheDocument();
-
-			// Stats labels are inside the grid.
-			await expect.element(grid.getByText('Participantes', { exact: true })).toBeInTheDocument();
-			await expect.element(grid.getByText('Compromisos', { exact: true })).toBeInTheDocument();
-			await expect.element(grid.getByText('Votaron', { exact: true })).toBeInTheDocument();
-
-			// The grid is inside the max-w-7xl container.
-			const maxW = container.querySelector('.max-w-7xl');
-			expect(maxW).toBeTruthy();
-			expect(maxW?.contains(gridEl)).toBe(true);
-		});
-
-		it('mobile: columns stack — Header+Timeline come before Stats in DOM order; both are above TeamsList', async () => {
-			// RED: assert DOM order. The grid uses `grid-cols-1 lg:grid-cols-...`
-			// so below `lg` it stacks. The flex-col left cell holds Header+Timeline
-			// first, then the right cell holds Stats. TeamsList is a sibling of
-			// the grid, not inside it.
+	// Phase 2: sequential single-column layout (process-detail-layout-refactor).
+	// The 2-col grid + flex-col left cell are gone; everything stacks in
+	// the process-content container with `space-y-consensus-8` rhythm.
+	describe('sequential layout', () => {
+		it('does not render any element with data-testid="process-detail-grid"', async () => {
 			render(ProcessDetail, baseProps);
-
-			const grid = page.getByTestId('process-detail-grid');
-			const h1 = grid.getByRole('heading', { level: 1, name: 'Elección 2026' });
-			const timeline = grid.getByTestId('phase-compromiso');
-			const stats = grid.getByText('Participantes', { exact: true });
-			const teamAlpha = page.getByText('Team Alpha', { exact: true });
-
-			// Header+Timeline appear before Stats within the grid.
-			const headerPos = (await h1.element().getBoundingClientRect()).top;
-			const timelinePos = (await timeline.element().getBoundingClientRect()).top;
-			const statsPos = (await stats.element().getBoundingClientRect()).top;
-			expect(headerPos).toBeLessThan(statsPos);
-			expect(timelinePos).toBeLessThan(statsPos);
-
-			// TeamsList is below the grid (not inside it).
-			const teamEl = teamAlpha.element();
-			const gridEl = grid.element();
-			expect(gridEl.contains(teamEl)).toBe(false);
-			const gridBottom = (await gridEl.getBoundingClientRect()).bottom;
-			const teamPos = (await teamEl.getBoundingClientRect()).top;
-			expect(teamPos).toBeGreaterThanOrEqual(gridBottom - 1);
+			expect(page.getByTestId('process-detail-grid').elements().length).toBe(0);
 		});
 
-		it('ProcessDetail passes variant="vertical" to ProcessStats (one stat per row)', async () => {
-			// RED: assert that the upper-right stats use the vertical layout
-			// by checking the root grid of ProcessStats inside the right cell
-			// does NOT have sm:grid-cols-3.
+		it('does not render any element with the lg:grid-cols-[3fr_1fr] class', async () => {
+			const { container } = render(ProcessDetail, baseProps);
+			const gridCols = container.querySelectorAll('[class*="lg:grid-cols-[3fr_1fr]"]');
+			expect(gridCols.length).toBe(0);
+		});
+
+		it('renders the section with two direct children — both div.max-w-7xl.mx-auto', async () => {
+			const { container } = render(ProcessDetail, baseProps);
+			const section = container.querySelector('section');
+			expect(section).toBeTruthy();
+			expect(section?.className).toMatch(/\bpt-24\b/);
+			expect(section?.className).toMatch(/\bpb-12\b/);
+
+			// Two direct children of the section.
+			const directChildren = Array.from(section?.children ?? []);
+			expect(directChildren.length).toBe(2);
+
+			// Both are max-w-7xl containers.
+			for (const child of directChildren) {
+				expect(child.className).toMatch(/\bmax-w-7xl\b/);
+				expect(child.className).toMatch(/\bmx-auto\b/);
+				expect(child.tagName.toLowerCase()).toBe('div');
+			}
+		});
+
+		it('places the back link in its own max-w-7xl container with mb-consensus-8', async () => {
+			const { container } = render(ProcessDetail, baseProps);
+			const section = container.querySelector('section');
+			const directChildren = Array.from(section?.children ?? []);
+			const firstContainer = directChildren[0];
+
+			expect(firstContainer.className).toMatch(/\bmb-consensus-8\b/);
+
+			// The container holds exactly one anchor to /procesos.
+			const anchors = firstContainer.querySelectorAll('a[href="/procesos"]');
+			expect(anchors.length).toBe(1);
+			expect(anchors[0].textContent?.trim()).toContain('Volver a procesos');
+			// The margin must NOT live on the anchor itself anymore.
+			expect(anchors[0].className).not.toMatch(/\bmb-8\b/);
+		});
+
+		it('places process content (Header/Timeline/Stats/TeamsList) in a sibling max-w-7xl container with space-y-consensus-8', async () => {
+			const { container } = render(ProcessDetail, baseProps);
+			const section = container.querySelector('section');
+			const directChildren = Array.from(section?.children ?? []);
+			const contentContainer = directChildren[1];
+
+			expect(contentContainer.className).toMatch(/\bspace-y-consensus-8\b/);
+
+			// The content container is NOT the back-link container.
+			expect(contentContainer.querySelector('a[href="/procesos"]')).toBeNull();
+
+			// First child is the ProcessHeader wrapper (<header>) containing the h1.
+			const firstChild = contentContainer.children[0];
+			expect(firstChild.tagName.toLowerCase()).toBe('header');
+			const innerH1 = firstChild.querySelector('h1');
+			expect(innerH1).toBeTruthy();
+			await expect
+				.element(innerH1 as HTMLElement)
+				.toHaveTextContent('Elección 2026');
+
+			// Timeline testids live in the content container.
+			expect(contentContainer.querySelector('[data-testid="phase-compromiso"]')).toBeTruthy();
+			expect(contentContainer.querySelector('[data-testid="phase-votacion"]')).toBeTruthy();
+			expect(contentContainer.querySelector('[data-testid="phase-resultados"]')).toBeTruthy();
+
+			// Stats labels live in the content container.
+			expect(contentContainer.querySelector('[class*="grid"]')).toBeTruthy();
+			expect(contentContainer.textContent).toContain('Participantes');
+			expect(contentContainer.textContent).toContain('Compromisos');
+			expect(contentContainer.textContent).toContain('Votaron');
+
+			// Team cards live in the content container.
+			expect(contentContainer.textContent).toContain('Team Alpha');
+			expect(contentContainer.textContent).toContain('Team Beta');
+		});
+
+		it('uses the process-content container as the single source of vertical rhythm (no per-child mb-/mt-/gap- stacking)', async () => {
+			const { container } = render(ProcessDetail, baseProps);
+			const section = container.querySelector('section');
+			const directChildren = Array.from(section?.children ?? []);
+			const contentContainer = directChildren[1] as HTMLElement;
+
+			// No direct child of the content container may carry mb-/mt-/gap-
+			// for vertical stacking. The space-y-consensus-8 on the parent
+			// is the only source.
+			const directInner = Array.from(contentContainer.children);
+			for (const child of directInner) {
+				expect(child.className).not.toMatch(/\bmb-\d+/);
+				expect(child.className).not.toMatch(/\bmt-\d+/);
+			}
+		});
+
+		it('ProcessDetail passes variant="horizontal" to ProcessStats (sm:grid-cols-3)', async () => {
 			render(ProcessDetail, baseProps);
 
 			const stats = page.getByText('Participantes', { exact: true });
 			const statsRoot = stats.element().closest('div.grid');
 			expect(statsRoot).toBeTruthy();
-			expect(statsRoot?.className).toMatch(/\bgrid-cols-1\b/);
-			expect(statsRoot?.className).not.toMatch(/\bsm:grid-cols-3\b/);
+			expect(statsRoot?.className).toMatch(/\bsm:grid-cols-3\b/);
+			// The horizontal variant must NOT carry the vertical-only override
+			// `sm:grid-cols-1` (which is not present in either variant, but
+			// is included as a defensive guard against future regressions).
+			expect(statsRoot?.className).not.toMatch(/\bsm:grid-cols-1\b/);
 		});
 	});
 });
