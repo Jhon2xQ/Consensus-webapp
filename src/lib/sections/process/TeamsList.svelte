@@ -56,16 +56,27 @@
 	}
 </script>
 
-{#if teams.length === 0}
-	<div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
-		<Users class="size-10 mb-3 opacity-40" />
-		<p class="text-sm font-medium">Sin equipos</p>
-	</div>
-{:else}
-	<div
-		class="grid gap-consensus-4"
-		style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"
+<section>
+	<!-- Eyebrow heading: rendered for both the empty-state and the grid
+	     branches so the section structure stays consistent. Centered,
+	     brand-black, slightly larger than the timeline eyebrow so this
+	     section reads as the primary action area. -->
+	<h2
+		class="text-sm md:text-base font-bold uppercase tracking-[0.12em] text-brand-black text-center mb-consensus-6"
 	>
+		Opciones de votación
+	</h2>
+
+	{#if teams.length === 0}
+		<div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+			<Users class="size-10 mb-3 opacity-40" />
+			<p class="text-sm font-medium">Sin equipos</p>
+		</div>
+	{:else}
+		<div
+			class="grid gap-consensus-4"
+			style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));"
+		>
 		{#each teams as team (team.id)}
 			{@const isSelected = selectedTeam?.id === team.id}
 			<button
@@ -134,4 +145,5 @@
 			</button>
 		{/each}
 	</div>
-{/if}
+	{/if}
+</section>

@@ -42,10 +42,13 @@
 </script>
 
 <header>
-	<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-		<h1 class="text-4xl md:text-5xl font-bold tracking-tighter text-brand-black">
-			{name}
-		</h1>
+	<!-- Title -->
+	<h1 class="text-4xl md:text-5xl font-bold tracking-tighter text-brand-black mb-6">
+		{name}
+	</h1>
+
+	<!-- Status badge: its own line, immediately after the h1, before the description. -->
+	<div class="mb-4">
 		<Badge
 			variant="outline"
 			class={cn('text-xs font-semibold px-3 py-1 w-fit', STATUS_COLORS[status])}
@@ -65,8 +68,12 @@
 		</p>
 	{/if}
 
+	<!-- Scope pill row: only when scope is provided. Sits on its own line,
+	     below the description, so the badge line and the scope line never
+	     share a row (the badge stays close to the h1, the scope stays close
+	     to the body content). -->
 	{#if scope !== null}
-		<div class="flex items-center gap-2 text-sm min-w-0">
+		<div class="flex items-center gap-2 text-sm min-w-0 mb-8 flex-wrap">
 			<span class="font-medium text-brand-black shrink-0">Alcance:</span>
 			<span
 				data-testid="scope-pill"
