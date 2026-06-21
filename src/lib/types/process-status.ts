@@ -27,6 +27,21 @@ export const STATUS_COLORS: Record<ElectoralProcessStatus, string> = {
 };
 
 /**
+ * Text-only color classes per status. Used by surfaces that need to tint
+ * individual glyphs (a label, a stepper dot, a status word) with the status
+ * color without pulling in the badge background/border. The hex values match
+ * the `text-*-800` half of `STATUS_COLORS` so badges and labels stay aligned.
+ */
+export const STATUS_LABEL_COLORS: Record<ElectoralProcessStatus, string> = {
+	OPEN: 'text-amber-800',
+	COMMITMENT: 'text-blue-800',
+	SEALED: 'text-violet-800',
+	VOTING: 'text-green-800',
+	COUNTING: 'text-orange-800',
+	CLOSED: 'text-red-800'
+};
+
+/**
  * Canonical display order for status groupings (dashboard distribution, legends, etc.).
  */
 export const STATUS_ORDER: ElectoralProcessStatus[] = [

@@ -120,11 +120,10 @@ describe('ProcessTimeline', () => {
 
 	// ── Phase label color logic ───────────────────────────────────────────
 	// Design contract:
-	//   - default (upcoming / inactive) → text-consensus-muted
-	//   - active                        → text-consensus-red
-	//   - done                          → text-emerald-700 (verified by design
-	//                                     review; structural data-state is the
-	//                                     public hook tested elsewhere)
+	//   - A phase label is tinted IFF that phase is the active one for the
+	//     current effectiveStatus. The color is STATUS_LABEL_COLORS[status].
+	//   - Every other phase (upcoming OR done) reads as text-consensus-muted.
+	//   - The "done is green" treatment was removed: done is now muted gray.
 
 	it('renders the inactive phase label with text-consensus-muted', async () => {
 		// effectiveStatus = OPEN → all three phases are upcoming.
@@ -135,11 +134,173 @@ describe('ProcessTimeline', () => {
 		await expect.element(label).not.toHaveClass('text-emerald-700');
 	});
 
-	it('renders the active phase label with text-consensus-red', async () => {
+	it('renders the done phase label with text-consensus-muted (no green)', async () => {
+		// effectiveStatus = VOTING → Compromiso is done and must read muted.
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+		const label = page.getByTestId('phase-compromiso-label');
+		await expect.element(label).toHaveClass('text-consensus-muted');
+		await expect.element(label).not.toHaveClass('text-emerald-700');
+	});
+
+	it('renders the active phase label with the status color from STATUS_LABEL_COLORS', async () => {
+		// effectiveStatus = VOTING → Votación is active → STATUS_LABEL_COLORS['VOTING']
+		// is `text-green-800`. The old `text-consensus-red` rule is GONE and
+		// the `text-emerald-700` "done" green is GONE.
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
 		const label = page.getByTestId('phase-votacion-label');
-		await expect.element(label).toHaveClass('text-consensus-red');
+		await expect.element(label).toHaveClass('text-green-800');
+		await expect.element(label).not.toHaveClass('text-consensus-red');
 		await expect.element(label).not.toHaveClass('text-emerald-700');
+	});
+
+	describe('label color follows active phase × effectiveStatus', () => {
+		// One assertion per (status, phase) pair, focused on the colored and
+		// the uncolored phases. Avoids asserting on multiple class names that
+		// are not part of the rule (e.g. font-mono) to keep failure messages
+		// specific.
+
+		it('COMMITMENT → Compromiso is blue, the rest are muted', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+			await expect
+				.element(page.getByTestId('phase-compromiso-label'))
+				.toHaveClass('text-blue-800');
+			await expect
+				.element(page.getByTestId('phase-votacion-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-votacion-label'))
+				.not.toHaveClass('text-green-800');
+			await expect
+				.element(page.getByTestId('phase-resultados-label'))
+				.toHaveClass('text-consensus-muted');
+		});
+
+		it('VOTING → Votación is green, Compromiso (done) is muted', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+			await expect
+				.element(page.getByTestId('phase-votacion-label'))
+				.toHaveClass('text-green-800');
+			await expect
+				.element(page.getByTestId('phase-compromiso-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-compromiso-label'))
+				.not.toHaveClass('text-emerald-700');
+			await expect
+				.element(page.getByTestId('phase-resultados-label'))
+				.toHaveClass('text-consensus-muted');
+		});
+
+		it('COUNTING → Resultados is orange, the rest are muted', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
+			await expect
+				.element(page.getByTestId('phase-resultados-label'))
+				.toHaveClass('text-orange-800');
+			await expect
+				.element(page.getByTestId('phase-compromiso-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-votacion-label'))
+				.toHaveClass('text-consensus-muted');
+		});
+
+		it('SEALED → all three labels are muted (Compromiso is done, not active)', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'SEALED' }));
+			await expect
+				.element(page.getByTestId('phase-compromiso-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-compromiso-label'))
+				.not.toHaveClass('text-emerald-700');
+			await expect
+				.element(page.getByTestId('phase-votacion-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-resultados-label'))
+				.toHaveClass('text-consensus-muted');
+		});
+
+		it('CLOSED → all three labels are muted (all done)', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'CLOSED' }));
+			await expect
+				.element(page.getByTestId('phase-compromiso-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-votacion-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-resultados-label'))
+				.toHaveClass('text-consensus-muted');
+		});
+
+		it('OPEN → all three labels are muted (all upcoming)', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
+			await expect
+				.element(page.getByTestId('phase-compromiso-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-votacion-label'))
+				.toHaveClass('text-consensus-muted');
+			await expect
+				.element(page.getByTestId('phase-resultados-label'))
+				.toHaveClass('text-consensus-muted');
+		});
+	});
+
+	// ── Stepper structure (sm+ horizontal stepper) ───────────────────────
+	// The stepper root, connector, and three dots are always present in the
+	// DOM so tests can target them regardless of viewport. At sm+ they form
+	// a horizontal stepper; below sm they're visually hidden by Tailwind's
+	// `hidden sm:flex` / `hidden sm:block` and the grid falls back to a
+	// stacked divide-y layout.
+
+	describe('stepper structure', () => {
+		it('renders the timeline-stepper root', async () => {
+			render(ProcessTimeline, defaultProps());
+			const root = page.getByTestId('timeline-stepper');
+			await expect.element(root).toBeInTheDocument();
+		});
+
+		it('renders the timeline-stepper-connector', async () => {
+			render(ProcessTimeline, defaultProps());
+			const connector = page.getByTestId('timeline-stepper-connector');
+			await expect.element(connector).toBeInTheDocument();
+		});
+
+		it('renders one dot per phase', async () => {
+			render(ProcessTimeline, defaultProps());
+			await expect.element(page.getByTestId('phase-compromiso-dot')).toBeInTheDocument();
+			await expect.element(page.getByTestId('phase-votacion-dot')).toBeInTheDocument();
+			await expect.element(page.getByTestId('phase-resultados-dot')).toBeInTheDocument();
+		});
+
+		it('tints active and done dots with the status color, leaves upcoming dots in the border color', async () => {
+			// VOTING → Compromiso done + Votación active → both colored;
+			// Resultados still upcoming → stays neutral.
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+			await expect
+				.element(page.getByTestId('phase-compromiso-dot'))
+				.toHaveClass('text-green-800');
+			await expect
+				.element(page.getByTestId('phase-votacion-dot'))
+				.toHaveClass('text-green-800');
+			await expect
+				.element(page.getByTestId('phase-resultados-dot'))
+				.toHaveClass('bg-consensus-border');
+		});
+
+		it('leaves all three dots in the border color when nothing has started (OPEN)', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
+			await expect
+				.element(page.getByTestId('phase-compromiso-dot'))
+				.toHaveClass('bg-consensus-border');
+			await expect
+				.element(page.getByTestId('phase-votacion-dot'))
+				.toHaveClass('bg-consensus-border');
+			await expect
+				.element(page.getByTestId('phase-resultados-dot'))
+				.toHaveClass('bg-consensus-border');
+		});
 	});
 
 	// ── Compromiso: start + end dates and times ──────────────────────────
