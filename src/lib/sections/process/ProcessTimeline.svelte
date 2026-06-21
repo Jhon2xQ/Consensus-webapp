@@ -109,38 +109,52 @@
       >
         Compromiso
       </span>
-      <div class="flex items-center gap-consensus-2">
-        <span
-          data-testid="phase-compromiso-start-date"
-          class="text-sm font-semibold text-consensus-fg"
+      <!-- Range = two full datetime units (start, end) on a single flex row.
+           Each unit stacks its date above its time so the pair reads as one
+           timestamp. The en-dash sits between the two units, centered with
+           the units via items-center. -->
+      <div class="flex items-center gap-consensus-3">
+        <div
+          data-testid="phase-compromiso-start"
+          class="flex flex-col items-center gap-consensus-1"
         >
-          {formatDate(commitmentStart)}
-        </span>
+          <span
+            data-testid="phase-compromiso-start-date"
+            class="text-sm font-semibold text-consensus-fg"
+          >
+            {formatDate(commitmentStart)}
+          </span>
+          <span
+            data-testid="phase-compromiso-start-time"
+            class="font-mono text-xs text-consensus-muted"
+          >
+            {formatTime(commitmentStart)}
+          </span>
+        </div>
         <span
           data-testid="phase-compromiso-separator"
-          class="text-consensus-muted self-center"
+          class="text-consensus-muted"
           aria-hidden="true"
         >
           –
         </span>
-        <span
-          data-testid="phase-compromiso-end-date"
-          class="text-sm font-semibold text-consensus-fg"
+        <div
+          data-testid="phase-compromiso-end"
+          class="flex flex-col items-center gap-consensus-1"
         >
-          {formatDate(commitmentEnd)}
-        </span>
-        <span
-          data-testid="phase-compromiso-start-time"
-          class="font-mono text-xs text-consensus-muted"
-        >
-          {formatTime(commitmentStart)}
-        </span>
-        <span
-          data-testid="phase-compromiso-end-time"
-          class="font-mono text-xs text-consensus-muted"
-        >
-          {formatTime(commitmentEnd)}
-        </span>
+          <span
+            data-testid="phase-compromiso-end-date"
+            class="text-sm font-semibold text-consensus-fg"
+          >
+            {formatDate(commitmentEnd)}
+          </span>
+          <span
+            data-testid="phase-compromiso-end-time"
+            class="font-mono text-xs text-consensus-muted"
+          >
+            {formatTime(commitmentEnd)}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -160,38 +174,48 @@
       >
         Votación
       </span>
-      <div class="flex items-center gap-consensus-2">
-        <span
-          data-testid="phase-votacion-start-date"
-          class="text-sm font-semibold text-consensus-fg"
+      <div class="flex items-center gap-consensus-3">
+        <div
+          data-testid="phase-votacion-start"
+          class="flex flex-col items-center gap-consensus-1"
         >
-          {formatDate(votingStart)}
-        </span>
+          <span
+            data-testid="phase-votacion-start-date"
+            class="text-sm font-semibold text-consensus-fg"
+          >
+            {formatDate(votingStart)}
+          </span>
+          <span
+            data-testid="phase-votacion-start-time"
+            class="font-mono text-xs text-consensus-muted"
+          >
+            {formatTime(votingStart)}
+          </span>
+        </div>
         <span
           data-testid="phase-votacion-separator"
-          class="text-consensus-muted self-center"
+          class="text-consensus-muted"
           aria-hidden="true"
         >
           –
         </span>
-        <span
-          data-testid="phase-votacion-end-date"
-          class="text-sm font-semibold text-consensus-fg"
+        <div
+          data-testid="phase-votacion-end"
+          class="flex flex-col items-center gap-consensus-1"
         >
-          {formatDate(votingEnd)}
-        </span>
-        <span
-          data-testid="phase-votacion-start-time"
-          class="font-mono text-xs text-consensus-muted"
-        >
-          {formatTime(votingStart)}
-        </span>
-        <span
-          data-testid="phase-votacion-end-time"
-          class="font-mono text-xs text-consensus-muted"
-        >
-          {formatTime(votingEnd)}
-        </span>
+          <span
+            data-testid="phase-votacion-end-date"
+            class="text-sm font-semibold text-consensus-fg"
+          >
+            {formatDate(votingEnd)}
+          </span>
+          <span
+            data-testid="phase-votacion-end-time"
+            class="font-mono text-xs text-consensus-muted"
+          >
+            {formatTime(votingEnd)}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -211,7 +235,7 @@
       >
         Resultados
       </span>
-      <div class="flex items-center gap-consensus-2">
+      <div class="flex flex-col gap-consensus-1">
         <span
           data-testid="phase-resultados-date"
           class="text-sm font-semibold text-consensus-fg"

@@ -246,78 +246,90 @@ describe('ProcessTimeline', () => {
 		await expect.element(phase).not.toHaveTextContent('–');
 	});
 
-	// ── Layout structure: dates and times merged into one flex row ────────
+	// ── Layout structure: two full datetime units side-by-side ───────────
 	// Design contract for range phases (Compromiso, Votación):
-	//   - start-date, dash, end-date, start-time, end-time ALL share one
-	//     single flex row.
-	//   - DOM order: start-date < separator < end-date < start-time < end-time.
-	//   - The dash sits between the two dates only; between end-date and
-	//     start-time there is no separator — just the row's gap-consensus-2.
+	//   - Each "datetime unit" is a flex-col stacking date above time, with
+	//     date in primary text and time muted/mono.
+	//   - Two units sit on a single flex row, separated by an en-dash.
+	//   - DOM order: start-unit, dash, end-unit.
 
-	it('places Compromiso dates, dash, and times in a single row in order', async () => {
+	it('places Compromiso start/end as stacked datetime units with the dash between them', async () => {
 		render(ProcessTimeline, defaultProps());
 		const startDate = page.getByTestId('phase-compromiso-start-date').element();
+		const startTime = page.getByTestId('phase-compromiso-start-time').element();
 		const separator = page.getByTestId('phase-compromiso-separator').element();
 		const endDate = page.getByTestId('phase-compromiso-end-date').element();
-		const startTime = page.getByTestId('phase-compromiso-start-time').element();
 		const endTime = page.getByTestId('phase-compromiso-end-time').element();
 
-		// All five children share the same parent.
-		const row = startDate.parentElement;
-		expect(row).toBe(separator.parentElement);
-		expect(row).toBe(endDate.parentElement);
-		expect(row).toBe(startTime.parentElement);
-		expect(row).toBe(endTime.parentElement);
+		// start-date and start-time share one parent (the start unit).
+		const startUnit = startDate.parentElement;
+		expect(startUnit).toBe(startTime.parentElement);
+		// end-date and end-time share a different parent (the end unit).
+		const endUnit = endDate.parentElement;
+		expect(endUnit).toBe(endTime.parentElement);
+		expect(endUnit).not.toBe(startUnit);
 
-		// DOM order: start < dash < end < start-time < end-time.
-		const siblings = Array.from(row!.children);
-		const iStart = siblings.indexOf(startDate);
-		const iSep = siblings.indexOf(separator);
-		const iEnd = siblings.indexOf(endDate);
-		const iStartTime = siblings.indexOf(startTime);
-		const iEndTime = siblings.indexOf(endTime);
+		// Inside each unit, the date comes before the time.
+		const startChildren = Array.from(startUnit!.children);
+		expect(startChildren.indexOf(startDate)).toBeLessThan(startChildren.indexOf(startTime));
+		const endChildren = Array.from(endUnit!.children);
+		expect(endChildren.indexOf(endDate)).toBeLessThan(endChildren.indexOf(endTime));
+
+		// Both units and the dash share the SAME row parent.
+		const row = startUnit!.parentElement;
+		expect(row).toBe(separator.parentElement);
+		expect(row).toBe(endUnit!.parentElement);
+
+		// DOM order on the row: start-unit, dash, end-unit.
+		const rowChildren = Array.from(row!.children);
+		const iStart = rowChildren.indexOf(startUnit!);
+		const iSep = rowChildren.indexOf(separator);
+		const iEnd = rowChildren.indexOf(endUnit!);
 		expect(iStart).toBeLessThan(iSep);
 		expect(iSep).toBeLessThan(iEnd);
-		expect(iEnd).toBeLessThan(iStartTime);
-		expect(iStartTime).toBeLessThan(iEndTime);
 	});
 
-	it('places Votación dates, dash, and times in a single row in order', async () => {
+	it('places Votación start/end as stacked datetime units with the dash between them', async () => {
 		render(ProcessTimeline, defaultProps());
 		const startDate = page.getByTestId('phase-votacion-start-date').element();
+		const startTime = page.getByTestId('phase-votacion-start-time').element();
 		const separator = page.getByTestId('phase-votacion-separator').element();
 		const endDate = page.getByTestId('phase-votacion-end-date').element();
-		const startTime = page.getByTestId('phase-votacion-start-time').element();
 		const endTime = page.getByTestId('phase-votacion-end-time').element();
 
-		const row = startDate.parentElement;
-		expect(row).toBe(separator.parentElement);
-		expect(row).toBe(endDate.parentElement);
-		expect(row).toBe(startTime.parentElement);
-		expect(row).toBe(endTime.parentElement);
+		const startUnit = startDate.parentElement;
+		expect(startUnit).toBe(startTime.parentElement);
+		const endUnit = endDate.parentElement;
+		expect(endUnit).toBe(endTime.parentElement);
+		expect(endUnit).not.toBe(startUnit);
 
-		const siblings = Array.from(row!.children);
-		const iStart = siblings.indexOf(startDate);
-		const iSep = siblings.indexOf(separator);
-		const iEnd = siblings.indexOf(endDate);
-		const iStartTime = siblings.indexOf(startTime);
-		const iEndTime = siblings.indexOf(endTime);
-		expect(iStart).toBeLessThan(iSep);
-		expect(iSep).toBeLessThan(iEnd);
-		expect(iEnd).toBeLessThan(iStartTime);
-		expect(iStartTime).toBeLessThan(iEndTime);
+		const startChildren = Array.from(startUnit!.children);
+		expect(startChildren.indexOf(startDate)).toBeLessThan(startChildren.indexOf(startTime));
+		const endChildren = Array.from(endUnit!.children);
+		expect(endChildren.indexOf(endDate)).toBeLessThan(endChildren.indexOf(endTime));
+
+		const row = startUnit!.parentElement;
+		expect(row).toBe(separator.parentElement);
+		expect(row).toBe(endUnit!.parentElement);
+
+		const rowChildren = Array.from(row!.children);
+		expect(rowChildren.indexOf(startUnit!)).toBeLessThan(rowChildren.indexOf(separator));
+		expect(rowChildren.indexOf(separator)).toBeLessThan(rowChildren.indexOf(endUnit!));
 	});
 
-	it('places the Resultados date and time on the same row in order', async () => {
+	it('places the Resultados date and time in a stacked datetime unit', async () => {
 		render(ProcessTimeline, defaultProps());
 		const dateLine = page.getByTestId('phase-resultados-date').element();
 		const timeLine = page.getByTestId('phase-resultados-time').element();
 
-		// Single flex row with two children: date, then time.
-		const row = dateLine.parentElement;
-		expect(row).toBe(timeLine.parentElement);
-		const siblings = Array.from(row!.children);
-		expect(siblings.indexOf(dateLine)).toBeLessThan(siblings.indexOf(timeLine));
+		// Single unit: date and time share the same parent (a flex-col).
+		const unit = dateLine.parentElement;
+		expect(unit).toBe(timeLine.parentElement);
+		expect(unit?.className).toContain('flex-col');
+
+		// Date comes before time inside the unit.
+		const children = Array.from(unit!.children);
+		expect(children.indexOf(dateLine)).toBeLessThan(children.indexOf(timeLine));
 	});
 
 	// ── Visual treatment: dates bold/fg, times muted/mono ────────────────
