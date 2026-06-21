@@ -1,9 +1,5 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { cn } from '$lib/utils.js';
-	import { Copy, CheckCircle } from '@lucide/svelte';
 	import type { ElectoralProcessStatus } from '$lib/types/electoral-process';
-	import { STATUS_LABELS, STATUS_COLORS } from '$lib/types/process-status';
 
 	type Props = {
 		name: string;
@@ -13,87 +9,10 @@
 	};
 
 	let { name, status, scope, description }: Props = $props();
-
-	let scopeCopied = $state(false);
-	let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-	// Clean up pending timeout on component destroy
-	$effect(() => {
-		return () => {
-			if (timeoutId !== null) {
-				clearTimeout(timeoutId);
-				timeoutId = null;
-			}
-		};
-	});
-
-	function handleCopyScope() {
-		if (!scope) return;
-		navigator.clipboard.writeText(scope);
-		scopeCopied = true;
-		if (timeoutId !== null) {
-			clearTimeout(timeoutId);
-		}
-		timeoutId = setTimeout(() => {
-			scopeCopied = false;
-			timeoutId = null;
-		}, 1500);
-	}
 </script>
 
 <header>
-	<!-- Title -->
-	<h1 class="text-4xl md:text-5xl font-bold tracking-tighter text-brand-black mb-6">
+	<h1 class="text-4xl md:text-5xl font-bold tracking-tighter text-brand-black">
 		{name}
 	</h1>
-
-	<!-- Status badge: its own line, immediately after the h1, before the description. -->
-	<div class="mb-4">
-		<Badge
-			variant="outline"
-			class={cn('text-xs font-semibold px-3 py-1 w-fit', STATUS_COLORS[status])}
-		>
-			<span
-				aria-hidden="true"
-				data-testid="status-dot"
-				class="w-1.5 h-1.5 rounded-full bg-current shrink-0"
-			></span>
-			{STATUS_LABELS[status]}
-		</Badge>
-	</div>
-
-	{#if description != null}
-		<p class="text-base md:text-lg leading-relaxed text-brand-gray-800 mb-6">
-			{description}
-		</p>
-	{/if}
-
-	<!-- Scope pill row: only when scope is provided. Sits on its own line,
-	     below the description, so the badge line and the scope line never
-	     share a row (the badge stays close to the h1, the scope stays close
-	     to the body content). -->
-	{#if scope !== null}
-		<div class="flex items-center gap-2 text-sm min-w-0 mb-8 flex-wrap">
-			<span class="font-medium text-brand-black shrink-0">Alcance:</span>
-			<span
-				data-testid="scope-pill"
-				class="font-mono text-xs bg-consensus-gray-100 border border-consensus-border rounded-consensus-sm px-2.5 py-1 text-consensus-fg overflow-hidden text-ellipsis inline-flex items-center gap-2 min-w-0 max-w-full md:max-w-[400px] lg:max-w-[600px]"
-				title={scope}
-			>
-				<span class="truncate min-w-0 flex-1">{scope}</span>
-				<button
-					type="button"
-					onclick={handleCopyScope}
-					class="inline-flex items-center justify-center rounded p-1 text-brand-gray-400 hover:text-brand-red transition-colors shrink-0"
-					aria-label="Copiar alcance"
-				>
-					{#if scopeCopied}
-						<CheckCircle class="size-3.5 text-green-500" />
-					{:else}
-						<Copy class="size-3.5" />
-					{/if}
-				</button>
-			</span>
-		</div>
-	{/if}
 </header>

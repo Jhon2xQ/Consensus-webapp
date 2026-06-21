@@ -1,140 +1,52 @@
 import { page } from 'vitest/browser';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ProcessHeader from './ProcessHeader.svelte';
 
-describe('ProcessHeader', () => {
-	beforeEach(() => {
-		// navigator.clipboard is defined as a read-only property in the browser test
-		// environment, so we override it with Object.defineProperty (vi.stubGlobal
-		// + Object.assign fails because the setter is missing).
-		Object.defineProperty(navigator, 'clipboard', {
-			value: { writeText: vi.fn().mockResolvedValue(undefined) },
-			writable: true,
-			configurable: true
-		});
-	});
-
-	afterEach(() => {
-		vi.useRealTimers();
-	});
-
-	it('renders process name in an H1', async () => {
-		render(ProcessHeader, { name: 'Elecciones 2026', status: 'OPEN', scope: 'Nacional' });
-		await expect
-			.element(page.getByRole('heading', { level: 1, name: 'Elecciones 2026' }))
-			.toBeInTheDocument();
-	});
-
-	it('renders the canonical Spanish label for OPEN status', async () => {
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
-		await expect.element(page.getByText('Abierto', { exact: true })).toBeInTheDocument();
-	});
-
-	it('renders the canonical Spanish label for VOTING status', async () => {
-		render(ProcessHeader, { name: 'Test', status: 'VOTING', scope: 'Nacional' });
-		await expect.element(page.getByText('Votación', { exact: true })).toBeInTheDocument();
-	});
-
-	it('renders the canonical Spanish label for CLOSED status', async () => {
-		render(ProcessHeader, { name: 'Test', status: 'CLOSED', scope: 'Nacional' });
-		await expect.element(page.getByText('Cerrado', { exact: true })).toBeInTheDocument();
-	});
-
-	it('renders the scope with the "Alcance:" label', async () => {
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
-		await expect.element(page.getByText('Alcance:', { exact: true })).toBeInTheDocument();
-		await expect.element(page.getByText('Municipal', { exact: true })).toBeInTheDocument();
-	});
-
-	it('exposes the full scope as a tooltip on the scope pill', async () => {
-		// The pill is the element that owns the title attribute. The text lives
-		// inside a child span that does the visual truncation; the pill carries
-		// the full scope as a native tooltip for hover/focus users.
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
-		const pill = page.getByTestId('scope-pill');
-		await expect.element(pill).toHaveAttribute('title', 'Municipal');
-	});
-
-	it('renders a copy-to-clipboard button when scope is provided', async () => {
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
-		await expect.element(page.getByRole('button', { name: 'Copiar alcance' })).toBeInTheDocument();
-	});
-
-	it('does not render the Alcance row when scope is null', async () => {
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: null });
-		await expect.element(page.getByText('Alcance:', { exact: true })).not.toBeInTheDocument();
-	});
-
-	it('does not render the copy button when scope is null', async () => {
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: null });
-		await expect
-			.element(page.getByRole('button', { name: 'Copiar alcance' }))
-			.not.toBeInTheDocument();
-	});
-
-	it('clicking the copy button writes the scope to the clipboard', async () => {
-		const writeTextSpy = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Provincial' });
-		await page.getByRole('button', { name: 'Copiar alcance' }).click();
-		expect(writeTextSpy).toHaveBeenCalledWith('Provincial');
-	});
-
-	it('clicking the copy button triggers the clipboard write (success state)', async () => {
-		// Use fake timers so the 1500ms reset doesn't fire during the assertion.
-		vi.useFakeTimers();
-		const writeTextSpy = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Provincial' });
-		await page.getByRole('button', { name: 'Copiar alcance' }).click();
-		expect(writeTextSpy).toHaveBeenCalled();
-	});
-
-	it('renders the scope value inside a pill element identified by data-testid="scope-pill"', async () => {
-		// Spec FR-8: scope is a mono pill. The data-testid is the public hook
-		// for the pill; visual styling is verified via design review.
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Municipal' });
-		const pill = page.getByTestId('scope-pill');
-		await expect.element(pill).toBeInTheDocument();
-		await expect.element(pill).toHaveTextContent('Municipal');
-	});
-
-	it('renders a status dot inside the status badge', async () => {
-		// Spec FR-9: a 6px dot span prefix inside the existing shadcn Badge.
-		// The dot is the first child of the badge (before the label).
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
-		const dot = page.getByTestId('status-dot');
-		await expect.element(dot).toBeInTheDocument();
-	});
-
-	it('does not render the status dot outside the badge (badge wraps the dot)', async () => {
-		// The dot lives inside the badge. Locate the badge by its label and
-		// assert the dot exists as a descendant.
-		render(ProcessHeader, { name: 'Test', status: 'OPEN', scope: 'Nacional' });
-		const badge = page.getByText('Abierto', { exact: true });
-		const dot = page.getByTestId('status-dot');
-		await expect.element(badge).toBeInTheDocument();
-		await expect.element(dot).toBeInTheDocument();
-	});
-});
-
-describe('description', () => {
-	it('renders description text when provided', async () => {
+describe('ProcessHeader.svelte', () => {
+	it('renders the process name in an h1 with the project heading style and no bottom margin', async () => {
 		render(ProcessHeader, {
-			name: 'Test',
+			name: 'Elección de autoridades 2026',
 			status: 'OPEN',
-			scope: null,
-			description: 'A great process'
+			scope: 'org-xyz-2026',
+			description: 'Proceso de prueba'
 		});
-		await expect.element(page.getByText('A great process')).toBeInTheDocument();
+
+		const heading = page.getByRole('heading', { level: 1 });
+		await expect.element(heading).toHaveTextContent('Elección de autoridades 2026');
+
+		const headingEl = heading.element();
+		expect(headingEl.tagName.toLowerCase()).toBe('h1');
+		expect(headingEl.className).toMatch(/^text-4xl md:text-5xl font-bold tracking-tighter text-brand-black$/);
+		expect(headingEl.className).not.toMatch(/\bmb-\d+\b/);
 	});
 
-	it('does not render description when null', async () => {
+	it('renders only the h1 and no badge, scope-pill, status-dot, or description', async () => {
 		render(ProcessHeader, {
-			name: 'Test',
-			status: 'OPEN',
-			scope: null,
-			description: null
+			name: 'Elección de autoridades 2026',
+			status: 'COMMITMENT',
+			scope: 'org-xyz-2026',
+			description: 'Proceso de prueba'
 		});
-		await expect.element(page.getByText('A great process')).not.toBeInTheDocument();
+
+		// Exactly one h1 in the document.
+		const h1s = page.getByRole('heading', { level: 1 });
+		expect(h1s.elements().length).toBe(1);
+		await expect.element(h1s).toHaveTextContent('Elección de autoridades 2026');
+
+		// No status badge plumbing.
+		expect(page.getByTestId('status-dot').elements().length).toBe(0);
+
+		// No scope-pill plumbing.
+		expect(page.getByTestId('scope-pill').elements().length).toBe(0);
+
+		// No description <p>.
+		const paragraphs = document.querySelectorAll('p');
+		expect(paragraphs.length).toBe(0);
+
+		// No copy-to-clipboard button.
+		expect(
+			page.getByRole('button', { name: 'Copiar alcance' }).elements().length
+		).toBe(0);
 	});
 });
