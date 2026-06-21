@@ -67,40 +67,36 @@
 </script>
 
 <section class="pt-24 pb-12">
-	<div class="max-w-7xl mx-auto px-6 lg:px-8">
+	<!-- Back-link container: own max-w-7xl, agnostic of process content below -->
+	<div class="max-w-7xl mx-auto px-6 lg:px-8 mb-consensus-8">
 		<a
 			href="/procesos"
-			class="inline-flex items-center gap-1.5 text-sm text-brand-red border border-brand-red rounded px-3 py-1.5 hover:text-brand-red-hover hover:border-brand-red-hover transition-colors mb-8"
+			class="inline-flex items-center gap-1.5 text-sm text-brand-red border border-brand-red rounded px-3 py-1.5 hover:text-brand-red-hover hover:border-brand-red-hover transition-colors"
 		>
 			<ArrowLeft class="size-4" />
 			Volver a procesos
 		</a>
-		<div
-			data-testid="process-detail-grid"
-			class="grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-consensus-8"
-		>
-			<div class="flex flex-col gap-consensus-8">
-				<ProcessHeader
-					name={process.name}
-					status={effectiveStatus}
-					scope={process.scope}
-					description={process.description}
-				/>
+	</div>
 
-				<ProcessTimeline
-					commitmentStart={process.commitmentStart}
-					commitmentEnd={process.commitmentEnd}
-					votingStart={process.votingStart}
-					votingEnd={process.votingEnd}
-					results={process.results}
-					{effectiveStatus}
-				/>
-			</div>
+	<!-- Process-content container: single source of vertical rhythm -->
+	<div class="max-w-7xl mx-auto px-6 lg:px-8 space-y-consensus-8">
+		<ProcessHeader
+			name={process.name}
+			status={effectiveStatus}
+			scope={process.scope}
+			description={process.description}
+		/>
 
-			<div>
-				<ProcessStats summary={enrollmentSummary} error={enrollmentError} variant="vertical" />
-			</div>
-		</div>
+		<ProcessTimeline
+			commitmentStart={process.commitmentStart}
+			commitmentEnd={process.commitmentEnd}
+			votingStart={process.votingStart}
+			votingEnd={process.votingEnd}
+			results={process.results}
+			{effectiveStatus}
+		/>
+
+		<ProcessStats summary={enrollmentSummary} error={enrollmentError} variant="horizontal" />
 
 		<TeamsList
 			{teams}
