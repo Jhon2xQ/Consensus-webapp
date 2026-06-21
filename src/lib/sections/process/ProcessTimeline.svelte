@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ElectoralProcessStatus } from "$lib/types/electoral-process";
+  import { STATUS_LABELS } from "$lib/types/process-status";
   import { cn } from "$lib/utils.js";
 
   type Props = {
@@ -73,19 +74,22 @@
 </script>
 
 <section>
-  <!-- Eyebrow heading: matches the muted/small aesthetic of section
-       eyebrows elsewhere on the page. Centered, tracks +0.12em, muted. -->
+  <!-- Eyebrow: status indicator. Mirrors the static eyebrow copy that lived
+       here before, but now surfaces the process effectiveStatus so the user
+       can read "where we are" at a glance. Style stays the same: small,
+       uppercase, tracked, muted, centered. -->
   <h2
+    data-testid="timeline-status-eyebrow"
     class="text-xs font-semibold uppercase tracking-[0.12em] text-consensus-muted text-center mb-consensus-4"
   >
-    Línea de tiempo
+    ESTADO : {STATUS_LABELS[effectiveStatus]}
   </h2>
 
   <!-- Grid: no `gap` on sm+ — `sm:divide-x` renders dividers between phase
        columns so they read as a cohesive timeline. Mobile uses `divide-y`
        so the three phases stack with horizontal dividers. Each phase
-       column is `items-center text-center` so the label, dates row, and
-       times row all align down a shared vertical axis. -->
+       column is `items-center text-center` so the label and merged
+       date+time row align down a shared vertical axis. -->
   <div
     class="grid grid-cols-1 sm:grid-cols-3 sm:divide-x sm:divide-consensus-border divide-y divide-consensus-border"
   >
@@ -96,6 +100,7 @@
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
       <span
+        data-testid="phase-compromiso-label"
         class={cn(
           labelClass,
           compromisoState === "active" && "text-consensus-red",
@@ -104,43 +109,38 @@
       >
         Compromiso
       </span>
-      <div class="flex flex-col gap-consensus-1">
-        <div class="flex items-center gap-consensus-2">
-          <span
-            data-testid="phase-compromiso-start-date"
-            class="text-sm font-semibold text-consensus-fg"
-          >
-            {formatDate(commitmentStart)}
-          </span>
-          <span
-            data-testid="phase-compromiso-separator"
-            class="text-consensus-muted self-center"
-            aria-hidden="true"
-          >
-            –
-          </span>
-          <span
-            data-testid="phase-compromiso-end-date"
-            class="text-sm font-semibold text-consensus-fg"
-          >
-            {formatDate(commitmentEnd)}
-          </span>
-        </div>
-        <div class="flex items-center gap-consensus-2">
-          <span
-            data-testid="phase-compromiso-start-time"
-            class="font-mono text-xs text-consensus-muted"
-          >
-            {formatTime(commitmentStart)}
-          </span>
-          <span class="w-2 shrink-0" aria-hidden="true"></span>
-          <span
-            data-testid="phase-compromiso-end-time"
-            class="font-mono text-xs text-consensus-muted"
-          >
-            {formatTime(commitmentEnd)}
-          </span>
-        </div>
+      <div class="flex items-center gap-consensus-2">
+        <span
+          data-testid="phase-compromiso-start-date"
+          class="text-sm font-semibold text-consensus-fg"
+        >
+          {formatDate(commitmentStart)}
+        </span>
+        <span
+          data-testid="phase-compromiso-separator"
+          class="text-consensus-muted self-center"
+          aria-hidden="true"
+        >
+          –
+        </span>
+        <span
+          data-testid="phase-compromiso-end-date"
+          class="text-sm font-semibold text-consensus-fg"
+        >
+          {formatDate(commitmentEnd)}
+        </span>
+        <span
+          data-testid="phase-compromiso-start-time"
+          class="font-mono text-xs text-consensus-muted"
+        >
+          {formatTime(commitmentStart)}
+        </span>
+        <span
+          data-testid="phase-compromiso-end-time"
+          class="font-mono text-xs text-consensus-muted"
+        >
+          {formatTime(commitmentEnd)}
+        </span>
       </div>
     </div>
 
@@ -151,6 +151,7 @@
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
       <span
+        data-testid="phase-votacion-label"
         class={cn(
           labelClass,
           votacionState === "active" && "text-consensus-red",
@@ -159,43 +160,38 @@
       >
         Votación
       </span>
-      <div class="flex flex-col gap-consensus-1">
-        <div class="flex items-center gap-consensus-2">
-          <span
-            data-testid="phase-votacion-start-date"
-            class="text-sm font-semibold text-consensus-fg"
-          >
-            {formatDate(votingStart)}
-          </span>
-          <span
-            data-testid="phase-votacion-separator"
-            class="text-consensus-muted self-center"
-            aria-hidden="true"
-          >
-            –
-          </span>
-          <span
-            data-testid="phase-votacion-end-date"
-            class="text-sm font-semibold text-consensus-fg"
-          >
-            {formatDate(votingEnd)}
-          </span>
-        </div>
-        <div class="flex items-center gap-consensus-2">
-          <span
-            data-testid="phase-votacion-start-time"
-            class="font-mono text-xs text-consensus-muted"
-          >
-            {formatTime(votingStart)}
-          </span>
-          <span class="w-2 shrink-0" aria-hidden="true"></span>
-          <span
-            data-testid="phase-votacion-end-time"
-            class="font-mono text-xs text-consensus-muted"
-          >
-            {formatTime(votingEnd)}
-          </span>
-        </div>
+      <div class="flex items-center gap-consensus-2">
+        <span
+          data-testid="phase-votacion-start-date"
+          class="text-sm font-semibold text-consensus-fg"
+        >
+          {formatDate(votingStart)}
+        </span>
+        <span
+          data-testid="phase-votacion-separator"
+          class="text-consensus-muted self-center"
+          aria-hidden="true"
+        >
+          –
+        </span>
+        <span
+          data-testid="phase-votacion-end-date"
+          class="text-sm font-semibold text-consensus-fg"
+        >
+          {formatDate(votingEnd)}
+        </span>
+        <span
+          data-testid="phase-votacion-start-time"
+          class="font-mono text-xs text-consensus-muted"
+        >
+          {formatTime(votingStart)}
+        </span>
+        <span
+          data-testid="phase-votacion-end-time"
+          class="font-mono text-xs text-consensus-muted"
+        >
+          {formatTime(votingEnd)}
+        </span>
       </div>
     </div>
 
@@ -206,6 +202,7 @@
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
       <span
+        data-testid="phase-resultados-label"
         class={cn(
           labelClass,
           resultadosState === "active" && "text-consensus-red",
@@ -214,18 +211,20 @@
       >
         Resultados
       </span>
-      <span
-        data-testid="phase-resultados-date"
-        class="text-sm font-semibold text-consensus-fg"
-      >
-        {formatDate(results)}
-      </span>
-      <span
-        data-testid="phase-resultados-time"
-        class="font-mono text-xs text-consensus-muted"
-      >
-        {formatTime(results)}
-      </span>
+      <div class="flex items-center gap-consensus-2">
+        <span
+          data-testid="phase-resultados-date"
+          class="text-sm font-semibold text-consensus-fg"
+        >
+          {formatDate(results)}
+        </span>
+        <span
+          data-testid="phase-resultados-time"
+          class="font-mono text-xs text-consensus-muted"
+        >
+          {formatTime(results)}
+        </span>
+      </div>
     </div>
   </div>
 </section>

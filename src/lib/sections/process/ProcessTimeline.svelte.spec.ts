@@ -22,13 +22,124 @@ function defaultProps(overrides?: Record<string, unknown>) {
 }
 
 describe('ProcessTimeline', () => {
+	// ── Status eyebrow (FR: dynamic indicator of effectiveStatus) ─────────
+	// The eyebrow surfaces the current effectiveStatus as Spanish copy using
+	// STATUS_LABELS as the single source of truth. Format is the literal
+	// string "ESTADO : <label>", uppercased to match the eyebrow aesthetic.
+
+	// One test per status — splitting keeps `getByText(..., { exact: true })`
+	// strict-mode friendly (a loop leaves multiple renders in the DOM).
+
+	it('renders "ESTADO : Abierto" when effectiveStatus is OPEN', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
+		await expect
+			.element(page.getByText('ESTADO : Abierto', { exact: true }))
+			.toBeInTheDocument();
+	});
+
+	it('renders "ESTADO : Compromiso" when effectiveStatus is COMMITMENT', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+		await expect
+			.element(page.getByText('ESTADO : Compromiso', { exact: true }))
+			.toBeInTheDocument();
+	});
+
+	it('renders "ESTADO : Sellado" when effectiveStatus is SEALED', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'SEALED' }));
+		await expect
+			.element(page.getByText('ESTADO : Sellado', { exact: true }))
+			.toBeInTheDocument();
+	});
+
+	it('renders "ESTADO : Votación" when effectiveStatus is VOTING', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+		await expect
+			.element(page.getByText('ESTADO : Votación', { exact: true }))
+			.toBeInTheDocument();
+	});
+
+	it('renders "ESTADO : Conteo" when effectiveStatus is COUNTING', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
+		await expect
+			.element(page.getByText('ESTADO : Conteo', { exact: true }))
+			.toBeInTheDocument();
+	});
+
+	it('renders "ESTADO : Cerrado" when effectiveStatus is CLOSED', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'CLOSED' }));
+		await expect
+			.element(page.getByText('ESTADO : Cerrado', { exact: true }))
+			.toBeInTheDocument();
+	});
+
+	it('exposes the status eyebrow via data-testid="timeline-status-eyebrow"', async () => {
+		// Defensive check that the eyebrow is queryable by testid — the
+		// other eyebrow tests use text matching; this one locks the hook
+		// itself so consumers (or future refactors) can target it directly.
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+		const eyebrow = page.getByTestId('timeline-status-eyebrow');
+		await expect.element(eyebrow).toBeInTheDocument();
+		await expect.element(eyebrow).toHaveTextContent('ESTADO : Compromiso');
+	});
+
 	// ── Phase labels ──────────────────────────────────────────────────────
 
 	it('renders all three phase labels', async () => {
 		render(ProcessTimeline, defaultProps());
-		await expect.element(page.getByText('Compromiso', { exact: true })).toBeInTheDocument();
-		await expect.element(page.getByText('Votación', { exact: true })).toBeInTheDocument();
-		await expect.element(page.getByText('Resultados', { exact: true })).toBeInTheDocument();
+		await expect
+			.element(page.getByTestId('phase-compromiso-label'))
+			.toBeInTheDocument();
+		await expect
+			.element(page.getByTestId('phase-votacion-label'))
+			.toBeInTheDocument();
+		await expect
+			.element(page.getByTestId('phase-resultados-label'))
+			.toBeInTheDocument();
+	});
+
+	it('renders the Compromiso label with the phase text', async () => {
+		render(ProcessTimeline, defaultProps());
+		await expect
+			.element(page.getByTestId('phase-compromiso-label'))
+			.toHaveTextContent('Compromiso');
+	});
+
+	it('renders the Votación label with the phase text', async () => {
+		render(ProcessTimeline, defaultProps());
+		await expect
+			.element(page.getByTestId('phase-votacion-label'))
+			.toHaveTextContent('Votación');
+	});
+
+	it('renders the Resultados label with the phase text', async () => {
+		render(ProcessTimeline, defaultProps());
+		await expect
+			.element(page.getByTestId('phase-resultados-label'))
+			.toHaveTextContent('Resultados');
+	});
+
+	// ── Phase label color logic ───────────────────────────────────────────
+	// Design contract:
+	//   - default (upcoming / inactive) → text-consensus-muted
+	//   - active                        → text-consensus-red
+	//   - done                          → text-emerald-700 (verified by design
+	//                                     review; structural data-state is the
+	//                                     public hook tested elsewhere)
+
+	it('renders the inactive phase label with text-consensus-muted', async () => {
+		// effectiveStatus = OPEN → all three phases are upcoming.
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
+		const label = page.getByTestId('phase-votacion-label');
+		await expect.element(label).toHaveClass('text-consensus-muted');
+		await expect.element(label).not.toHaveClass('text-consensus-red');
+		await expect.element(label).not.toHaveClass('text-emerald-700');
+	});
+
+	it('renders the active phase label with text-consensus-red', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+		const label = page.getByTestId('phase-votacion-label');
+		await expect.element(label).toHaveClass('text-consensus-red');
+		await expect.element(label).not.toHaveClass('text-emerald-700');
 	});
 
 	// ── Compromiso: start + end dates and times ──────────────────────────
@@ -119,7 +230,7 @@ describe('ProcessTimeline', () => {
 		await expect.element(dateLine).toHaveTextContent(/^25 \S+ 2026$/);
 	});
 
-	it('renders a time-only line for the Resultados phase', async () => {
+	it('renders the time for the Resultados phase', async () => {
 		render(ProcessTimeline, defaultProps());
 		const timeLine = page.getByTestId('phase-resultados-time');
 		await expect.element(timeLine).toBeInTheDocument();
@@ -135,70 +246,78 @@ describe('ProcessTimeline', () => {
 		await expect.element(phase).not.toHaveTextContent('–');
 	});
 
-	// ── Layout structure: dates on one line, dash between, times below ────
+	// ── Layout structure: dates and times merged into one flex row ────────
 	// Design contract for range phases (Compromiso, Votación):
-	//   - Start date, dash, and end date share ONE flex row (the dates row).
-	//   - Start time and end time share ANOTHER flex row (the times row).
-	//   - The dash sits between the dates in DOM order so flex centering
-	//     aligns it with both date baselines.
+	//   - start-date, dash, end-date, start-time, end-time ALL share one
+	//     single flex row.
+	//   - DOM order: start-date < separator < end-date < start-time < end-time.
+	//   - The dash sits between the two dates only; between end-date and
+	//     start-time there is no separator — just the row's gap-consensus-2.
 
-	it('places the Compromiso start date, dash, and end date on the same row in order', async () => {
+	it('places Compromiso dates, dash, and times in a single row in order', async () => {
 		render(ProcessTimeline, defaultProps());
 		const startDate = page.getByTestId('phase-compromiso-start-date').element();
-		const endDate = page.getByTestId('phase-compromiso-end-date').element();
 		const separator = page.getByTestId('phase-compromiso-separator').element();
-
-		// All three are direct children of the same dates-row container.
-		expect(startDate.parentElement).toBe(separator.parentElement);
-		expect(separator.parentElement).toBe(endDate.parentElement);
-
-		// DOM order: start date → dash → end date (so the dash visually
-		// sits between the two dates and is vertically centered by the row).
-		const siblings = Array.from(separator.parentElement!.children);
-		const startIdx = siblings.indexOf(startDate);
-		const sepIdx = siblings.indexOf(separator);
-		const endIdx = siblings.indexOf(endDate);
-		expect(startIdx).toBeLessThan(sepIdx);
-		expect(sepIdx).toBeLessThan(endIdx);
-	});
-
-	it('places the Compromiso start and end times in a row below the dates', async () => {
-		render(ProcessTimeline, defaultProps());
-		const startDate = page.getByTestId('phase-compromiso-start-date').element();
+		const endDate = page.getByTestId('phase-compromiso-end-date').element();
 		const startTime = page.getByTestId('phase-compromiso-start-time').element();
 		const endTime = page.getByTestId('phase-compromiso-end-time').element();
 
-		// The times live in a different parent than the dates.
-		expect(startTime.parentElement).not.toBe(startDate.parentElement);
-		// Both times share the same times-row container.
-		expect(startTime.parentElement).toBe(endTime.parentElement);
+		// All five children share the same parent.
+		const row = startDate.parentElement;
+		expect(row).toBe(separator.parentElement);
+		expect(row).toBe(endDate.parentElement);
+		expect(row).toBe(startTime.parentElement);
+		expect(row).toBe(endTime.parentElement);
+
+		// DOM order: start < dash < end < start-time < end-time.
+		const siblings = Array.from(row!.children);
+		const iStart = siblings.indexOf(startDate);
+		const iSep = siblings.indexOf(separator);
+		const iEnd = siblings.indexOf(endDate);
+		const iStartTime = siblings.indexOf(startTime);
+		const iEndTime = siblings.indexOf(endTime);
+		expect(iStart).toBeLessThan(iSep);
+		expect(iSep).toBeLessThan(iEnd);
+		expect(iEnd).toBeLessThan(iStartTime);
+		expect(iStartTime).toBeLessThan(iEndTime);
 	});
 
-	it('places the Votación start date, dash, and end date on the same row in order', async () => {
+	it('places Votación dates, dash, and times in a single row in order', async () => {
 		render(ProcessTimeline, defaultProps());
 		const startDate = page.getByTestId('phase-votacion-start-date').element();
-		const endDate = page.getByTestId('phase-votacion-end-date').element();
 		const separator = page.getByTestId('phase-votacion-separator').element();
-
-		expect(startDate.parentElement).toBe(separator.parentElement);
-		expect(separator.parentElement).toBe(endDate.parentElement);
-
-		const siblings = Array.from(separator.parentElement!.children);
-		const startIdx = siblings.indexOf(startDate);
-		const sepIdx = siblings.indexOf(separator);
-		const endIdx = siblings.indexOf(endDate);
-		expect(startIdx).toBeLessThan(sepIdx);
-		expect(sepIdx).toBeLessThan(endIdx);
-	});
-
-	it('places the Votación start and end times in a row below the dates', async () => {
-		render(ProcessTimeline, defaultProps());
-		const startDate = page.getByTestId('phase-votacion-start-date').element();
+		const endDate = page.getByTestId('phase-votacion-end-date').element();
 		const startTime = page.getByTestId('phase-votacion-start-time').element();
 		const endTime = page.getByTestId('phase-votacion-end-time').element();
 
-		expect(startTime.parentElement).not.toBe(startDate.parentElement);
-		expect(startTime.parentElement).toBe(endTime.parentElement);
+		const row = startDate.parentElement;
+		expect(row).toBe(separator.parentElement);
+		expect(row).toBe(endDate.parentElement);
+		expect(row).toBe(startTime.parentElement);
+		expect(row).toBe(endTime.parentElement);
+
+		const siblings = Array.from(row!.children);
+		const iStart = siblings.indexOf(startDate);
+		const iSep = siblings.indexOf(separator);
+		const iEnd = siblings.indexOf(endDate);
+		const iStartTime = siblings.indexOf(startTime);
+		const iEndTime = siblings.indexOf(endTime);
+		expect(iStart).toBeLessThan(iSep);
+		expect(iSep).toBeLessThan(iEnd);
+		expect(iEnd).toBeLessThan(iStartTime);
+		expect(iStartTime).toBeLessThan(iEndTime);
+	});
+
+	it('places the Resultados date and time on the same row in order', async () => {
+		render(ProcessTimeline, defaultProps());
+		const dateLine = page.getByTestId('phase-resultados-date').element();
+		const timeLine = page.getByTestId('phase-resultados-time').element();
+
+		// Single flex row with two children: date, then time.
+		const row = dateLine.parentElement;
+		expect(row).toBe(timeLine.parentElement);
+		const siblings = Array.from(row!.children);
+		expect(siblings.indexOf(dateLine)).toBeLessThan(siblings.indexOf(timeLine));
 	});
 
 	// ── Visual treatment: dates bold/fg, times muted/mono ────────────────
