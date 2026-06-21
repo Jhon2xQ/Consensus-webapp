@@ -112,55 +112,51 @@
 </script>
 
 <section>
-  <!-- Eyebrow: status indicator. Mirrors the static eyebrow copy that lived
-       here before, but now surfaces the process effectiveStatus so the user
-       can read "where we are" at a glance. Style stays the same: small,
-       uppercase, tracked, muted, centered. -->
+  <!-- Eyebrow: status indicator. "ESTADO :" stays muted; the status word
+       itself picks up the status text color from STATUS_LABEL_COLORS, so
+       the eyebrow reads as a labeled highlight rather than a uniform
+       muted string. -->
   <h2
     data-testid="timeline-status-eyebrow"
     class="text-xs font-semibold uppercase tracking-[0.12em] text-consensus-muted text-center mb-consensus-4"
   >
-    ESTADO : {STATUS_LABELS[effectiveStatus]}
+    ESTADO : <span data-testid="timeline-status-eyebrow-value" class={STATUS_LABEL_COLORS[effectiveStatus]}>
+      {STATUS_LABELS[effectiveStatus]}
+    </span>
   </h2>
 
-  <!-- Stepper grid. On sm+ this renders as a 3-column horizontal stepper
-       with an absolute connector line running through three dots (one per
-       column). On mobile (<640px) it stacks the three phases with a
-       horizontal `divide-y` line between them, and the connector/dots are
-       hidden — `divide-y` does the visual separation work on small screens.
+  <!-- Stepper grid. On sm+ this renders a 3-column horizontal stepper with
+       three dots and two progress segments between adjacent dots. No
+       background hairline — only filled segments appear, so the spine is
+       the colored progress itself. On mobile (<640px) it stacks the three
+       phases with a horizontal `divide-y` line between them, and the dots
+       and segments are hidden.
 
-       Manual visual check for the sm+ connector: confirm the hairline runs
-       flush with the dot centers and the progress overlays color the
-       correct segments (vitest-browser-svelte uses a fixed viewport that
-       may not exercise the sm breakpoint). -->
-  <div
+       Manual visual check for the sm+ stepper: confirm the segments align
+       with the dot centers and the colors match the status (vitest-browser
+       uses a fixed viewport that may not exercise the sm breakpoint). -->
+   <div
     data-testid="timeline-stepper"
     class="relative grid grid-cols-1 sm:grid-cols-3 divide-y divide-consensus-border sm:divide-y-0"
   >
-    <!-- Base connector hairline. Vertical on mobile (column = phase),
-         horizontal across the row on sm+. -->
+    <!-- Progress segment: Compromiso → Votación. Renders only when that
+         segment has been reached; otherwise the space between dots stays
+         empty (no hairline). -->
     <div
-      data-testid="timeline-stepper-connector"
-      aria-hidden="true"
-      class="hidden sm:block absolute left-0 right-0 top-2 h-px bg-consensus-border"
-    ></div>
-
-    <!-- Progress overlay: Compromiso → Votación segment. Sits on top of the
-         base connector, between the two dots (column centers at 1/6 and
-         1/2 in a 3-column grid). -->
-    <div
+      data-testid="timeline-stepper-segment-compromiso-votacion"
       aria-hidden="true"
       class="hidden sm:block absolute top-2 left-[16.6667%] right-1/2 h-px {compVotFilled
         ? STATUS_LABEL_COLORS[effectiveStatus].replace('text-', 'bg-')
-        : 'bg-consensus-border'}"
+        : 'bg-transparent'}"
     ></div>
 
-    <!-- Progress overlay: Votación → Resultados segment. -->
+    <!-- Progress segment: Votación → Resultados. -->
     <div
+      data-testid="timeline-stepper-segment-votacion-resultados"
       aria-hidden="true"
       class="hidden sm:block absolute top-2 left-1/2 right-[16.6667%] h-px {votResFilled
         ? STATUS_LABEL_COLORS[effectiveStatus].replace('text-', 'bg-')
-        : 'bg-consensus-border'}"
+        : 'bg-transparent'}"
     ></div>
 
     <!-- Compromiso -->

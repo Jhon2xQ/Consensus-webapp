@@ -82,6 +82,44 @@ describe('ProcessTimeline', () => {
 		await expect.element(eyebrow).toHaveTextContent('ESTADO : Compromiso');
 	});
 
+	// The status word inside the eyebrow (the value after "ESTADO :") carries
+	// the status text color from STATUS_LABEL_COLORS, while "ESTADO :" itself
+	// stays muted. Mirrors the badge color treatment in ProcessList but only
+	// tints the glyph — no badge background.
+
+	it('tints the eyebrow status word with the status color (COMMITMENT → blue)', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+		const value = page.getByTestId('timeline-status-eyebrow-value');
+		await expect.element(value).toBeInTheDocument();
+		await expect.element(value).toHaveClass('text-blue-800');
+		await expect.element(value).toHaveTextContent('Compromiso');
+	});
+
+	it('tints the eyebrow status word with the status color (VOTING → green)', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+		const value = page.getByTestId('timeline-status-eyebrow-value');
+		await expect.element(value).toHaveClass('text-green-800');
+		await expect.element(value).toHaveTextContent('Votación');
+	});
+
+	it('tints the eyebrow status word with the status color (COUNTING → orange)', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
+		const value = page.getByTestId('timeline-status-eyebrow-value');
+		await expect.element(value).toHaveClass('text-orange-800');
+		await expect.element(value).toHaveTextContent('Conteo');
+	});
+
+	it('keeps the "ESTADO :" prefix muted regardless of status', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+		const eyebrow = page.getByTestId('timeline-status-eyebrow');
+		// The wrapper still carries text-consensus-muted.
+		await expect.element(eyebrow).toHaveClass('text-consensus-muted');
+		// The inner value span must NOT also be muted — it must carry the
+		// status color so it visually pops against the prefix.
+		const value = page.getByTestId('timeline-status-eyebrow-value');
+		await expect.element(value).not.toHaveClass('text-consensus-muted');
+	});
+
 	// ── Phase labels ──────────────────────────────────────────────────────
 
 	it('renders all three phase labels', async () => {
@@ -261,17 +299,43 @@ describe('ProcessTimeline', () => {
 			await expect.element(root).toBeInTheDocument();
 		});
 
-		it('renders the timeline-stepper-connector', async () => {
-			render(ProcessTimeline, defaultProps());
-			const connector = page.getByTestId('timeline-stepper-connector');
-			await expect.element(connector).toBeInTheDocument();
-		});
-
 		it('renders one dot per phase', async () => {
 			render(ProcessTimeline, defaultProps());
 			await expect.element(page.getByTestId('phase-compromiso-dot')).toBeInTheDocument();
 			await expect.element(page.getByTestId('phase-votacion-dot')).toBeInTheDocument();
 			await expect.element(page.getByTestId('phase-resultados-dot')).toBeInTheDocument();
+		});
+
+		// The stepper has two progress segments between adjacent dots. The
+		// segments are present in the DOM but stay transparent (bg-transparent)
+		// until their phase has been reached. No background hairline is
+		// rendered — dots alone mark the timeline's spine.
+
+		it('renders both progress segments in the DOM', async () => {
+			render(ProcessTimeline, defaultProps());
+			await expect
+				.element(page.getByTestId('timeline-stepper-segment-compromiso-votacion'))
+				.toBeInTheDocument();
+			await expect
+				.element(page.getByTestId('timeline-stepper-segment-votacion-resultados'))
+				.toBeInTheDocument();
+		});
+
+		it('fills the Compromiso→Votación segment with the status color when that segment has been reached', async () => {
+			// VOTING → Compromiso is done, so the segment is filled green-800.
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+			const segment = page.getByTestId('timeline-stepper-segment-compromiso-votacion');
+			await expect.element(segment).toHaveClass('bg-green-800');
+		});
+
+		it('leaves both segments transparent when nothing has started (OPEN)', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
+			const cV = page.getByTestId('timeline-stepper-segment-compromiso-votacion');
+			const vR = page.getByTestId('timeline-stepper-segment-votacion-resultados');
+			await expect.element(cV).toHaveClass('bg-transparent');
+			await expect.element(vR).toHaveClass('bg-transparent');
+			await expect.element(cV).not.toHaveClass('bg-consensus-border');
+			await expect.element(vR).not.toHaveClass('bg-consensus-border');
 		});
 
 		it('tints active and done dots with the status color, leaves upcoming dots in the border color', async () => {
