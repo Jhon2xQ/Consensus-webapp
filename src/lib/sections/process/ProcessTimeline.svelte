@@ -40,75 +40,63 @@
     );
   }
 
-  // State per phase for the current effectiveStatus. "active" = current,
-  // "done" = past, "upcoming" = future. The COMPROMISO phase transitions
-  // from active (during COMMITMENT) to done (from SEALED onwards).
+  // Per-phase visual state:
+  //   "active"   → current phase for the effectiveStatus
+  //   "done"     → past phase (and reached at least once during the process)
+  //   "upcoming" → future phase
+  // COMPROMISO transitions active (during COMMITMENT) to done (SEALED/VOTING/
+  // COUNTING) and back to a non-done read in the terminal CLOSED state (all
+  // phases collapse to the "pending dot" affordance).
   type PhaseState = "active" | "done" | "upcoming";
   const compromisoState: PhaseState = $derived(
     effectiveStatus === "COMMITMENT"
       ? "active"
-      : effectiveStatus === "SEALED" ||
-          effectiveStatus === "VOTING" ||
-          effectiveStatus === "COUNTING" ||
-          effectiveStatus === "CLOSED"
+      : effectiveStatus === "VOTING" || effectiveStatus === "COUNTING"
         ? "done"
         : "upcoming",
   );
   const votacionState: PhaseState = $derived(
     effectiveStatus === "VOTING"
       ? "active"
-      : effectiveStatus === "COUNTING" || effectiveStatus === "CLOSED"
+      : effectiveStatus === "COUNTING"
         ? "done"
         : "upcoming",
   );
   const resultadosState: PhaseState = $derived(
-    effectiveStatus === "COUNTING"
-      ? "active"
-      : effectiveStatus === "CLOSED"
-        ? "done"
-        : "upcoming",
+    effectiveStatus === "COUNTING" ? "active" : "upcoming",
   );
 
-  // Stepper geometry — Tailwind v4 arbitrary values. On sm+ the connector is
-  // a horizontal hairline; on mobile it stays vertical. Dots live on the
-  // connector at the column centers (sm+). Mobile falls back to divide-y
-  // for separation and the dots/connector are `hidden sm:flex/sm:block`.
+  // Per-phase icon. A phase shows a CHECK inside a circle when it was reached
+  // and passed successfully (done). Otherwise it shows a DOT inside a circle
+  // (active OR upcoming OR terminal CLOSED — anything that hasn't fully
+  // completed shows the pending marker). This collapses the CLOSED state to
+  // all-dots by design, per product spec.
+  function iconKind(state: PhaseState): "check" | "dot" {
+    return state === "done" ? "check" : "dot";
+  }
 
-  // Stepper progress: a segment between two adjacent dots fills with the
-  // status color when the LEFT phase is done OR the RIGHT phase has been
-  // reached (active or done). Otherwise it stays the default border color.
-  const compVotFilled = $derived(
-    compromisoState === "done" || votacionState !== "upcoming",
-  );
-  const votResFilled = $derived(
-    votacionState === "done" || resultadosState !== "upcoming",
-  );
+  const compromisoIcon = $derived(iconKind(compromisoState));
+  const votacionIcon = $derived(iconKind(votacionState));
+  const resultadosIcon = $derived(iconKind(resultadosState));
 
-  // Per-dot bg class. Active/done dots wear the status color; upcoming dots
-  // sit in the neutral border. text-color tokens are safe to use for `bg-*`
-  // in this app because the Tailwind config maps both the text and bg
-  // variants to the same CSS variable.
-  const compromisoDotClass = $derived(
-    compromisoState === "active" || compromisoState === "done"
-      ? STATUS_LABEL_COLORS[effectiveStatus]
-      : "bg-consensus-border",
-  );
-  const votacionDotClass = $derived(
-    votacionState === "active" || votacionState === "done"
-      ? STATUS_LABEL_COLORS[effectiveStatus]
-      : "bg-consensus-border",
-  );
-  const resultadosDotClass = $derived(
-    resultadosState === "active" || resultadosState === "done"
-      ? STATUS_LABEL_COLORS[effectiveStatus]
-      : "bg-consensus-border",
-  );
-
-  // Phase label color rule (post-refactor): a label is tinted ONLY when its
-  // phase is the active one for the current effectiveStatus. All other
-  // phases (upcoming OR done) read as muted gray.
+  // Phase label color rule: a label is tinted IFF that phase is the active
+  // one for the current effectiveStatus. The status word in the eyebrow and
+  // the active phase label share STATUS_LABEL_COLORS so the page reads as a
+  // single highlighted step.
   const labelClass =
     "font-mono text-[11px] font-semibold tracking-[0.08em] uppercase text-consensus-muted";
+
+  // Per-icon container styling. Both check and dot use the same neutral
+  // muted color so the icon reads as a passive state marker (done vs
+  // pending). Per product spec, no status color is applied to the icons —
+  // the eyebrow status word is the single source of color for the timeline.
+  function iconRingClass(): string {
+    return "border-consensus-border text-consensus-muted";
+  }
+
+  const compromisoIconClass = $derived(iconRingClass());
+  const votacionIconClass = $derived(iconRingClass());
+  const resultadosIconClass = $derived(iconRingClass());
 </script>
 
 <section>
@@ -120,67 +108,67 @@
     data-testid="timeline-status-eyebrow"
     class="text-xs font-semibold uppercase tracking-[0.12em] text-consensus-muted text-center mb-consensus-4"
   >
-    ESTADO : <span data-testid="timeline-status-eyebrow-value" class={STATUS_LABEL_COLORS[effectiveStatus]}>
+    ESTADO : <span
+      data-testid="timeline-status-eyebrow-value"
+      class={STATUS_LABEL_COLORS[effectiveStatus]}
+    >
       {STATUS_LABELS[effectiveStatus]}
     </span>
   </h2>
 
-  <!-- Stepper grid. On sm+ this renders a 3-column horizontal stepper with
-       three dots and two progress segments between adjacent dots. No
-       background hairline — only filled segments appear, so the spine is
-       the colored progress itself. On mobile (<640px) it stacks the three
-       phases with a horizontal `divide-y` line between them, and the dots
-       and segments are hidden.
-
-       Manual visual check for the sm+ stepper: confirm the segments align
-       with the dot centers and the colors match the status (vitest-browser
-       uses a fixed viewport that may not exercise the sm breakpoint). -->
-   <div
-    data-testid="timeline-stepper"
-    class="relative grid grid-cols-1 sm:grid-cols-3 divide-y divide-consensus-border sm:divide-y-0"
+  <!-- Phase columns. Each phase shows a small circle next to its label:
+       a check inside the circle means the phase was completed (done); a
+       dot inside means it's pending (active / upcoming / terminal CLOSED).
+       Mobile (<640px) stacks the three phases with a horizontal divide-y
+       line between them; sm+ keeps them as a 3-column row. -->
+  <div
+    class="grid grid-cols-1 sm:grid-cols-3 divide-y divide-consensus-border sm:divide-y-0"
   >
-    <!-- Progress segment: Compromiso → Votación. Renders only when that
-         segment has been reached; otherwise the space between dots stays
-         empty (no hairline). -->
-    <div
-      data-testid="timeline-stepper-segment-compromiso-votacion"
-      aria-hidden="true"
-      class="hidden sm:block absolute top-2 left-[16.6667%] right-1/2 h-px {compVotFilled
-        ? STATUS_LABEL_COLORS[effectiveStatus].replace('text-', 'bg-')
-        : 'bg-transparent'}"
-    ></div>
-
-    <!-- Progress segment: Votación → Resultados. -->
-    <div
-      data-testid="timeline-stepper-segment-votacion-resultados"
-      aria-hidden="true"
-      class="hidden sm:block absolute top-2 left-1/2 right-[16.6667%] h-px {votResFilled
-        ? STATUS_LABEL_COLORS[effectiveStatus].replace('text-', 'bg-')
-        : 'bg-transparent'}"
-    ></div>
-
     <!-- Compromiso -->
     <div
       data-testid="phase-compromiso"
       data-state={compromisoState}
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
-      <span
-        data-testid="phase-compromiso-dot"
-        aria-hidden="true"
-        class={cn(
-          "hidden sm:inline-block size-2.5 rounded-full ring-2 ring-consensus-white z-10",
-          compromisoDotClass,
-        )}
-      ></span>
-      <span
-        data-testid="phase-compromiso-label"
-        class={cn(
-          labelClass,
-          compromisoState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
-        )}
-      >
-        Compromiso
+      <span class="flex items-center gap-consensus-2">
+        <span
+          data-testid="phase-compromiso-label"
+          class={cn(
+            labelClass,
+            compromisoState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
+          )}
+        >
+          Compromiso
+        </span>
+        <span
+          data-testid="phase-compromiso-icon"
+          data-icon={compromisoIcon}
+          aria-hidden="true"
+          class={cn(
+            "inline-flex items-center justify-center size-4 rounded-full border-2",
+            compromisoIconClass,
+          )}
+        >
+          {#if compromisoIcon === "check"}
+            <svg
+              data-testid="phase-compromiso-icon-check"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-3"
+            >
+              <polyline points="2.5 6.2 4.8 8.5 9.5 3.8" />
+            </svg>
+          {:else}
+            <span
+              data-testid="phase-compromiso-icon-dot"
+              class="block size-1.5 rounded-full bg-current"
+            ></span>
+          {/if}
+        </span>
       </span>
       <!-- Range = two full datetime units (start, end) on a single flex row.
            Each unit stacks its date above its time so the pair reads as one
@@ -237,22 +225,45 @@
       data-state={votacionState}
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
-      <span
-        data-testid="phase-votacion-dot"
-        aria-hidden="true"
-        class={cn(
-          "hidden sm:inline-block size-2.5 rounded-full ring-2 ring-consensus-white z-10",
-          votacionDotClass,
-        )}
-      ></span>
-      <span
-        data-testid="phase-votacion-label"
-        class={cn(
-          labelClass,
-          votacionState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
-        )}
-      >
-        Votación
+      <span class="flex items-center gap-consensus-2">
+        <span
+          data-testid="phase-votacion-label"
+          class={cn(
+            labelClass,
+            votacionState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
+          )}
+        >
+          Votación
+        </span>
+        <span
+          data-testid="phase-votacion-icon"
+          data-icon={votacionIcon}
+          aria-hidden="true"
+          class={cn(
+            "inline-flex items-center justify-center size-4 rounded-full border-2",
+            votacionIconClass,
+          )}
+        >
+          {#if votacionIcon === "check"}
+            <svg
+              data-testid="phase-votacion-icon-check"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-3"
+            >
+              <polyline points="2.5 6.2 4.8 8.5 9.5 3.8" />
+            </svg>
+          {:else}
+            <span
+              data-testid="phase-votacion-icon-dot"
+              class="block size-1.5 rounded-full bg-current"
+            ></span>
+          {/if}
+        </span>
       </span>
       <div class="flex items-center gap-consensus-3">
         <div
@@ -305,22 +316,45 @@
       data-state={resultadosState}
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
-      <span
-        data-testid="phase-resultados-dot"
-        aria-hidden="true"
-        class={cn(
-          "hidden sm:inline-block size-2.5 rounded-full ring-2 ring-consensus-white z-10",
-          resultadosDotClass,
-        )}
-      ></span>
-      <span
-        data-testid="phase-resultados-label"
-        class={cn(
-          labelClass,
-          resultadosState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
-        )}
-      >
-        Resultados
+      <span class="flex items-center gap-consensus-2">
+        <span
+          data-testid="phase-resultados-label"
+          class={cn(
+            labelClass,
+            resultadosState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
+          )}
+        >
+          Resultados
+        </span>
+        <span
+          data-testid="phase-resultados-icon"
+          data-icon={resultadosIcon}
+          aria-hidden="true"
+          class={cn(
+            "inline-flex items-center justify-center size-4 rounded-full border-2",
+            resultadosIconClass,
+          )}
+        >
+          {#if resultadosIcon === "check"}
+            <svg
+              data-testid="phase-resultados-icon-check"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-3"
+            >
+              <polyline points="2.5 6.2 4.8 8.5 9.5 3.8" />
+            </svg>
+          {:else}
+            <span
+              data-testid="phase-resultados-icon-dot"
+              class="block size-1.5 rounded-full bg-current"
+            ></span>
+          {/if}
+        </span>
       </span>
       <div class="flex flex-col gap-consensus-1">
         <span

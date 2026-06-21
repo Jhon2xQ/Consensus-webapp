@@ -285,85 +285,98 @@ describe('ProcessTimeline', () => {
 		});
 	});
 
-	// ── Stepper structure (sm+ horizontal stepper) ───────────────────────
-	// The stepper root, connector, and three dots are always present in the
-	// DOM so tests can target them regardless of viewport. At sm+ they form
-	// a horizontal stepper; below sm they're visually hidden by Tailwind's
-	// `hidden sm:flex` / `hidden sm:block` and the grid falls back to a
-	// stacked divide-y layout.
+	// ── Phase icon (check vs dot) ──────────────────────────────────────────
+	// Design contract:
+	//   - Each phase renders a small circle next to its label.
+	//   - Inside the circle: a CHECK (svg polyline) when the phase is
+	//     "done" (was reached and passed), a DOT (filled small circle)
+	//     otherwise (active / upcoming / terminal CLOSED).
+	//   - data-icon="check" | "dot" exposes the choice; data-testid points
+	//     to the inner glyph for asserting which one rendered.
+	// Truth table (effectiveStatus → phase icon):
+	//   OPEN       → Compromiso dot, Votación dot, Resultados dot
+	//   COMMITMENT → Compromiso dot, Votación dot, Resultados dot
+	//   SEALED     → Compromiso dot, Votación dot, Resultados dot
+	//   VOTING     → Compromiso CHECK, Votación dot, Resultados dot
+	//   COUNTING   → Compromiso CHECK, Votación CHECK, Resultados dot
+	//   CLOSED     → Compromiso dot, Votación dot, Resultados dot
 
-	describe('stepper structure', () => {
-		it('renders the timeline-stepper root', async () => {
+	describe('phase icon', () => {
+		it('renders one icon per phase in the DOM', async () => {
 			render(ProcessTimeline, defaultProps());
-			const root = page.getByTestId('timeline-stepper');
-			await expect.element(root).toBeInTheDocument();
+			await expect.element(page.getByTestId('phase-compromiso-icon')).toBeInTheDocument();
+			await expect.element(page.getByTestId('phase-votacion-icon')).toBeInTheDocument();
+			await expect.element(page.getByTestId('phase-resultados-icon')).toBeInTheDocument();
 		});
 
-		it('renders one dot per phase', async () => {
-			render(ProcessTimeline, defaultProps());
-			await expect.element(page.getByTestId('phase-compromiso-dot')).toBeInTheDocument();
-			await expect.element(page.getByTestId('phase-votacion-dot')).toBeInTheDocument();
-			await expect.element(page.getByTestId('phase-resultados-dot')).toBeInTheDocument();
-		});
-
-		// The stepper has two progress segments between adjacent dots. The
-		// segments are present in the DOM but stay transparent (bg-transparent)
-		// until their phase has been reached. No background hairline is
-		// rendered — dots alone mark the timeline's spine.
-
-		it('renders both progress segments in the DOM', async () => {
-			render(ProcessTimeline, defaultProps());
-			await expect
-				.element(page.getByTestId('timeline-stepper-segment-compromiso-votacion'))
-				.toBeInTheDocument();
-			await expect
-				.element(page.getByTestId('timeline-stepper-segment-votacion-resultados'))
-				.toBeInTheDocument();
-		});
-
-		it('fills the Compromiso→Votación segment with the status color when that segment has been reached', async () => {
-			// VOTING → Compromiso is done, so the segment is filled green-800.
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
-			const segment = page.getByTestId('timeline-stepper-segment-compromiso-votacion');
-			await expect.element(segment).toHaveClass('bg-green-800');
-		});
-
-		it('leaves both segments transparent when nothing has started (OPEN)', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
-			const cV = page.getByTestId('timeline-stepper-segment-compromiso-votacion');
-			const vR = page.getByTestId('timeline-stepper-segment-votacion-resultados');
-			await expect.element(cV).toHaveClass('bg-transparent');
-			await expect.element(vR).toHaveClass('bg-transparent');
-			await expect.element(cV).not.toHaveClass('bg-consensus-border');
-			await expect.element(vR).not.toHaveClass('bg-consensus-border');
-		});
-
-		it('tints active and done dots with the status color, leaves upcoming dots in the border color', async () => {
-			// VOTING → Compromiso done + Votación active → both colored;
-			// Resultados still upcoming → stays neutral.
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
-			await expect
-				.element(page.getByTestId('phase-compromiso-dot'))
-				.toHaveClass('text-green-800');
-			await expect
-				.element(page.getByTestId('phase-votacion-dot'))
-				.toHaveClass('text-green-800');
-			await expect
-				.element(page.getByTestId('phase-resultados-dot'))
-				.toHaveClass('bg-consensus-border');
-		});
-
-		it('leaves all three dots in the border color when nothing has started (OPEN)', async () => {
+		it('exposes the icon kind via data-icon="dot" by default', async () => {
 			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
 			await expect
-				.element(page.getByTestId('phase-compromiso-dot'))
-				.toHaveClass('bg-consensus-border');
+				.element(page.getByTestId('phase-compromiso-icon'))
+				.toHaveAttribute('data-icon', 'dot');
 			await expect
-				.element(page.getByTestId('phase-votacion-dot'))
-				.toHaveClass('bg-consensus-border');
+				.element(page.getByTestId('phase-compromiso-icon-dot'))
+				.toBeInTheDocument();
 			await expect
-				.element(page.getByTestId('phase-resultados-dot'))
-				.toHaveClass('bg-consensus-border');
+				.element(page.getByTestId('phase-compromiso-icon'))
+				.not.toHaveAttribute('data-icon', 'check');
+		});
+
+		it('OPEN → all three phases show a dot', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
+			for (const id of ['phase-compromiso-icon', 'phase-votacion-icon', 'phase-resultados-icon']) {
+				await expect.element(page.getByTestId(id)).toHaveAttribute('data-icon', 'dot');
+			}
+		});
+
+		it('COMMITMENT → all three phases show a dot (active phase still pending)', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+			for (const id of ['phase-compromiso-icon', 'phase-votacion-icon', 'phase-resultados-icon']) {
+				await expect.element(page.getByTestId(id)).toHaveAttribute('data-icon', 'dot');
+			}
+		});
+
+		it('SEALED → all three phases show a dot (no phase reached yet)', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'SEALED' }));
+			for (const id of ['phase-compromiso-icon', 'phase-votacion-icon', 'phase-resultados-icon']) {
+				await expect.element(page.getByTestId(id)).toHaveAttribute('data-icon', 'dot');
+			}
+		});
+
+		it('VOTING → Compromiso shows a check (done), Votación and Resultados show dots', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+			await expect
+				.element(page.getByTestId('phase-compromiso-icon'))
+				.toHaveAttribute('data-icon', 'check');
+			await expect
+				.element(page.getByTestId('phase-compromiso-icon-check'))
+				.toBeInTheDocument();
+			await expect
+				.element(page.getByTestId('phase-votacion-icon'))
+				.toHaveAttribute('data-icon', 'dot');
+			await expect
+				.element(page.getByTestId('phase-resultados-icon'))
+				.toHaveAttribute('data-icon', 'dot');
+		});
+
+		it('COUNTING → Compromiso and Votación show checks, Resultados shows a dot', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
+			await expect
+				.element(page.getByTestId('phase-compromiso-icon'))
+				.toHaveAttribute('data-icon', 'check');
+			await expect
+				.element(page.getByTestId('phase-votacion-icon'))
+				.toHaveAttribute('data-icon', 'check');
+			await expect
+				.element(page.getByTestId('phase-resultados-icon'))
+				.toHaveAttribute('data-icon', 'dot');
+		});
+
+		it('CLOSED → all three phases show a dot (terminal collapse, per spec)', async () => {
+			render(ProcessTimeline, defaultProps({ effectiveStatus: 'CLOSED' }));
+			for (const id of ['phase-compromiso-icon', 'phase-votacion-icon', 'phase-resultados-icon']) {
+				await expect.element(page.getByTestId(id)).toHaveAttribute('data-icon', 'dot');
+			}
 		});
 	});
 
@@ -635,24 +648,31 @@ describe('ProcessTimeline', () => {
 			.toHaveAttribute('data-state', 'upcoming');
 	});
 
-	it('marks all three phases as done when effectiveStatus is CLOSED', async () => {
+	it('marks all three phases as upcoming when effectiveStatus is CLOSED (terminal collapse)', async () => {
+		// Per product spec, CLOSED collapses every phase to "pending dot",
+		// so data-state reads as "upcoming" for all three even though the
+		// process is finished. The icon (not data-state) carries the
+		// "all done" semantic through the dot-in-circle affordance.
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'CLOSED' }));
 		await expect
 			.element(page.getByTestId('phase-compromiso'))
-			.toHaveAttribute('data-state', 'done');
+			.toHaveAttribute('data-state', 'upcoming');
 		await expect
 			.element(page.getByTestId('phase-votacion'))
-			.toHaveAttribute('data-state', 'done');
+			.toHaveAttribute('data-state', 'upcoming');
 		await expect
 			.element(page.getByTestId('phase-resultados'))
-			.toHaveAttribute('data-state', 'done');
+			.toHaveAttribute('data-state', 'upcoming');
 	});
 
-	it('marks Compromiso as done and the rest as upcoming when effectiveStatus is SEALED', async () => {
+	it('marks all three phases as upcoming when effectiveStatus is SEALED (no phase reached)', async () => {
+		// SEALED is the brief pause between COMMITMENT and VOTING; no phase
+		// has been fully completed yet, so all three read as upcoming. The
+		// "done" transition for Compromiso only happens once VOTING starts.
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'SEALED' }));
 		await expect
 			.element(page.getByTestId('phase-compromiso'))
-			.toHaveAttribute('data-state', 'done');
+			.toHaveAttribute('data-state', 'upcoming');
 		await expect
 			.element(page.getByTestId('phase-votacion'))
 			.toHaveAttribute('data-state', 'upcoming');
