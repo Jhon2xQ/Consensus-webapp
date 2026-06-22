@@ -128,6 +128,19 @@ describe('ProcessTimeline', () => {
 		await expect.element(value).not.toHaveClass('text-blue-800');
 	});
 
+	// ── Eyebrow / phases divider ──────────────────────────────────────────
+	// A hairline divider sits between the status eyebrow and the phase
+	// columns. It's a presentational element (aria-hidden) — the test just
+	// locks its presence and its neutral border color so a regression that
+	// re-tints or removes it fails loudly.
+
+	it('renders a divider between the eyebrow and the phase columns', async () => {
+		render(ProcessTimeline, defaultProps());
+		const divider = page.getByTestId('timeline-divider');
+		await expect.element(divider).toBeInTheDocument();
+		await expect.element(divider).toHaveClass('border-consensus-border');
+	});
+
 	// ── Phase labels ──────────────────────────────────────────────────────
 
 	it('renders all three phase labels', async () => {

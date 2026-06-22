@@ -104,6 +104,15 @@
     </h2>
   </div>
 
+  <!-- Divider between the status eyebrow and the phase columns. Hairline
+       width, full content width (max-w-7xl like the page container) so
+       it visually separates the two sections without dominating them. -->
+  <div
+    data-testid="timeline-divider"
+    aria-hidden="true"
+    class="max-w-7xl mx-auto border-t border-consensus-border mb-consensus-4"
+  ></div>
+
   <!-- Phase columns. Mobile (<640px) stacks the three phases with a
        horizontal divide-y line between them; sm+ keeps them as a 3-column
        row. Labels are plain muted text — no icons, no per-phase tints. -->
