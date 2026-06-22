@@ -55,7 +55,7 @@ importers:
         specifier: ^5.2.8
         version: 5.2.8
       '@lucide/svelte':
-        specifier: ^1.20.0
+        specifier: ^1.21.0
         version: 1.21.0(svelte@5.56.3)
       '@sveltejs/adapter-node':
         specifier: latest
@@ -76,7 +76,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@8.0.16(@types/node@25.9.4)(jiti@2.7.0))
       '@types/node':
-        specifier: ^25.9.3
+        specifier: ^25.9.4
         version: 25.9.4
       '@vitest/browser-playwright':
         specifier: ^4.1.9
@@ -747,8 +747,8 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@testing-library/svelte-core@1.1.0':
-    resolution: {integrity: sha512-7ZAFtBhUI/gFoevSSg9K1zkcSETJMXxUa6qwlW1SpCOvelSbrGhr8uvjK2+REhQ5HHjXwsTUaH//FImAhT4UWg==}
+  '@testing-library/svelte-core@1.1.1':
+    resolution: {integrity: sha512-VSLPUWqERf+jwffdMXMPJkXJqUYt5hW4mHNmGYJ9UFfgME0Vf4wDsgMzHgIwMWR++3OLS1WhQKmtIMOikaZwng==}
     engines: {node: '>=16'}
     peerDependencies:
       svelte: ^3 || ^4 || ^5 || ^5.0.0-next.0
@@ -2500,7 +2500,7 @@ snapshots:
       tailwindcss: 4.3.1
       vite: 8.0.16(@types/node@25.9.4)(jiti@2.7.0)
 
-  '@testing-library/svelte-core@1.1.0(svelte@5.56.3)':
+  '@testing-library/svelte-core@1.1.1(svelte@5.56.3)':
     dependencies:
       svelte: 5.56.3
 
@@ -3663,7 +3663,7 @@ snapshots:
 
   vitest-browser-svelte@2.1.1(svelte@5.56.3)(vitest@4.1.9):
     dependencies:
-      '@testing-library/svelte-core': 1.1.0(svelte@5.56.3)
+      '@testing-library/svelte-core': 1.1.1(svelte@5.56.3)
       svelte: 5.56.3
       vitest: 4.1.9(@types/node@25.9.4)(@vitest/browser-playwright@4.1.9)(vite@8.0.16(@types/node@25.9.4)(jiti@2.7.0))
 
