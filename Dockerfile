@@ -1,13 +1,15 @@
 # syntax=docker/dockerfile:1
-ARG NODE_VERSION=24
+ARG NODE_VERSION=24.17.0
+ARG PNPM_VERSION=11.7.0
 
 # ============================================================
 # Stage 1: Dependencias (con cache de capas)
 # ============================================================
 FROM node:${NODE_VERSION}-alpine AS deps
+ARG PNPM_VERSION
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
@@ -17,9 +19,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 # Stage 2: Build
 # ============================================================
 FROM node:${NODE_VERSION}-alpine AS build
+ARG PNPM_VERSION
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
