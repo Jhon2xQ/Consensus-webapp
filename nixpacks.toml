@@ -8,4 +8,7 @@ cmds = ["corepack enable", "pnpm install --frozen-lockfile"]
 cmds = ["pnpm build"]
 
 [start]
-cmd = "pnpm start"
+cmd = "node build"
+
+[phases.install]
+cacheDirectories = ["/root/.local/share/pnpm/store/v3"]
