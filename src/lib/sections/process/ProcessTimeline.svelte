@@ -42,85 +42,71 @@
 
   // Per-phase visual state:
   //   "active"   → current phase for the effectiveStatus
-  //   "done"     → past phase (and reached at least once during the process)
+  //   "done"     → past phase
   //   "upcoming" → future phase
-  // COMPROMISO transitions active (during COMMITMENT) to done (SEALED/VOTING/
-  // COUNTING) and back to a non-done read in the terminal CLOSED state (all
-  // phases collapse to the "pending dot" affordance).
+  // The COMPROMISO phase transitions from active (during COMMITMENT) to
+  // done from SEALED onwards (SEALED / VOTING / COUNTING / CLOSED).
   type PhaseState = "active" | "done" | "upcoming";
   const compromisoState: PhaseState = $derived(
     effectiveStatus === "COMMITMENT"
       ? "active"
-      : effectiveStatus === "VOTING" || effectiveStatus === "COUNTING"
+      : effectiveStatus === "SEALED" ||
+          effectiveStatus === "VOTING" ||
+          effectiveStatus === "COUNTING" ||
+          effectiveStatus === "CLOSED"
         ? "done"
         : "upcoming",
   );
   const votacionState: PhaseState = $derived(
     effectiveStatus === "VOTING"
       ? "active"
-      : effectiveStatus === "COUNTING"
+      : effectiveStatus === "COUNTING" || effectiveStatus === "CLOSED"
         ? "done"
         : "upcoming",
   );
   const resultadosState: PhaseState = $derived(
-    effectiveStatus === "COUNTING" ? "active" : "upcoming",
+    effectiveStatus === "COUNTING"
+      ? "active"
+      : effectiveStatus === "CLOSED"
+        ? "done"
+        : "upcoming",
   );
 
-  // Per-phase icon. A phase shows a CHECK inside a circle when it was reached
-  // and passed successfully (done). Otherwise it shows a DOT inside a circle
-  // (active OR upcoming OR terminal CLOSED — anything that hasn't fully
-  // completed shows the pending marker). This collapses the CLOSED state to
-  // all-dots by design, per product spec.
-  function iconKind(state: PhaseState): "check" | "dot" {
-    return state === "done" ? "check" : "dot";
-  }
+  // Eyebrow styling: the whole eyebrow block — label, separator, and value
+  // word — wears the status color (text and border). Mirrors the badge
+  // treatment in ProcessList but rendered inline rather than as a pill.
+  const eyebrowClass = $derived(
+    cn(
+      "inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em]",
+      "px-3 py-1.5 rounded-consensus-sm border",
+      STATUS_LABEL_COLORS[effectiveStatus],
+      STATUS_LABEL_COLORS[effectiveStatus].replace('text-', 'border-'),
+    ),
+  );
 
-  const compromisoIcon = $derived(iconKind(compromisoState));
-  const votacionIcon = $derived(iconKind(votacionState));
-  const resultadosIcon = $derived(iconKind(resultadosState));
-
-  // Phase label color rule: a label is tinted IFF that phase is the active
-  // one for the current effectiveStatus. The status word in the eyebrow and
-  // the active phase label share STATUS_LABEL_COLORS so the page reads as a
-  // single highlighted step.
+  // Phase label: always muted. The eyebrow carries the status color, so the
+  // labels below stay neutral and let the eyebrow do the highlighting.
   const labelClass =
     "font-mono text-[11px] font-semibold tracking-[0.08em] uppercase text-consensus-muted";
-
-  // Per-icon container styling. Both check and dot use the same neutral
-  // muted color so the icon reads as a passive state marker (done vs
-  // pending). Per product spec, no status color is applied to the icons —
-  // the eyebrow status word is the single source of color for the timeline.
-  function iconRingClass(): string {
-    return "border-consensus-border text-consensus-muted";
-  }
-
-  const compromisoIconClass = $derived(iconRingClass());
-  const votacionIconClass = $derived(iconRingClass());
-  const resultadosIconClass = $derived(iconRingClass());
 </script>
 
 <section>
-  <!-- Eyebrow: status indicator. "ESTADO :" stays muted; the status word
-       itself picks up the status text color from STATUS_LABEL_COLORS, so
-       the eyebrow reads as a labeled highlight rather than a uniform
-       muted string. -->
-  <h2
-    data-testid="timeline-status-eyebrow"
-    class="text-xs font-semibold uppercase tracking-[0.12em] text-consensus-muted text-center mb-consensus-4"
-  >
-    ESTADO : <span
-      data-testid="timeline-status-eyebrow-value"
-      class={STATUS_LABEL_COLORS[effectiveStatus]}
-    >
-      {STATUS_LABELS[effectiveStatus]}
-    </span>
-  </h2>
+  <!-- Eyebrow: status indicator. Renders the literal "ESTADO ACTUAL :"
+       followed by the Spanish status label. The whole block wears the
+       status text color and a matching border so it reads as a labeled
+       pill, not plain chrome. -->
+  <div class="flex justify-center mb-consensus-4">
+    <h2 data-testid="timeline-status-eyebrow" class={eyebrowClass}>
+      <span>ESTADO ACTUAL :</span>
+      <span data-testid="timeline-status-eyebrow-value">
+        {STATUS_LABELS[effectiveStatus]}
+      </span>
+    </h2>
+  </div>
 
-  <!-- Phase columns. Each phase shows a small circle next to its label:
-       a check inside the circle means the phase was completed (done); a
-       dot inside means it's pending (active / upcoming / terminal CLOSED).
-       Mobile (<640px) stacks the three phases with a horizontal divide-y
-       line between them; sm+ keeps them as a 3-column row. -->
+  <!-- Phase columns. Mobile (<640px) stacks the three phases with a
+       horizontal divide-y line between them; sm+ keeps them as a 3-column
+       row. Labels are plain muted text — no icons, no per-phase tints. -->
   <div
     class="grid grid-cols-1 sm:grid-cols-3 divide-y divide-consensus-border sm:divide-y-0"
   >
@@ -130,45 +116,8 @@
       data-state={compromisoState}
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
-      <span class="flex items-center gap-consensus-2">
-        <span
-          data-testid="phase-compromiso-label"
-          class={cn(
-            labelClass,
-            compromisoState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
-          )}
-        >
-          Compromiso
-        </span>
-        <span
-          data-testid="phase-compromiso-icon"
-          data-icon={compromisoIcon}
-          aria-hidden="true"
-          class={cn(
-            "inline-flex items-center justify-center size-4 rounded-full border-2",
-            compromisoIconClass,
-          )}
-        >
-          {#if compromisoIcon === "check"}
-            <svg
-              data-testid="phase-compromiso-icon-check"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="size-3"
-            >
-              <polyline points="2.5 6.2 4.8 8.5 9.5 3.8" />
-            </svg>
-          {:else}
-            <span
-              data-testid="phase-compromiso-icon-dot"
-              class="block size-1.5 rounded-full bg-current"
-            ></span>
-          {/if}
-        </span>
+      <span data-testid="phase-compromiso-label" class={labelClass}>
+        Compromiso
       </span>
       <!-- Range = two full datetime units (start, end) on a single flex row.
            Each unit stacks its date above its time so the pair reads as one
@@ -225,45 +174,8 @@
       data-state={votacionState}
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
-      <span class="flex items-center gap-consensus-2">
-        <span
-          data-testid="phase-votacion-label"
-          class={cn(
-            labelClass,
-            votacionState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
-          )}
-        >
-          Votación
-        </span>
-        <span
-          data-testid="phase-votacion-icon"
-          data-icon={votacionIcon}
-          aria-hidden="true"
-          class={cn(
-            "inline-flex items-center justify-center size-4 rounded-full border-2",
-            votacionIconClass,
-          )}
-        >
-          {#if votacionIcon === "check"}
-            <svg
-              data-testid="phase-votacion-icon-check"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="size-3"
-            >
-              <polyline points="2.5 6.2 4.8 8.5 9.5 3.8" />
-            </svg>
-          {:else}
-            <span
-              data-testid="phase-votacion-icon-dot"
-              class="block size-1.5 rounded-full bg-current"
-            ></span>
-          {/if}
-        </span>
+      <span data-testid="phase-votacion-label" class={labelClass}>
+        Votación
       </span>
       <div class="flex items-center gap-consensus-3">
         <div
@@ -316,45 +228,8 @@
       data-state={resultadosState}
       class="flex flex-col gap-consensus-2 items-center text-center px-consensus-4 py-consensus-4 sm:py-consensus-2"
     >
-      <span class="flex items-center gap-consensus-2">
-        <span
-          data-testid="phase-resultados-label"
-          class={cn(
-            labelClass,
-            resultadosState === "active" && STATUS_LABEL_COLORS[effectiveStatus],
-          )}
-        >
-          Resultados
-        </span>
-        <span
-          data-testid="phase-resultados-icon"
-          data-icon={resultadosIcon}
-          aria-hidden="true"
-          class={cn(
-            "inline-flex items-center justify-center size-4 rounded-full border-2",
-            resultadosIconClass,
-          )}
-        >
-          {#if resultadosIcon === "check"}
-            <svg
-              data-testid="phase-resultados-icon-check"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="size-3"
-            >
-              <polyline points="2.5 6.2 4.8 8.5 9.5 3.8" />
-            </svg>
-          {:else}
-            <span
-              data-testid="phase-resultados-icon-dot"
-              class="block size-1.5 rounded-full bg-current"
-            ></span>
-          {/if}
-        </span>
+      <span data-testid="phase-resultados-label" class={labelClass}>
+        Resultados
       </span>
       <div class="flex flex-col gap-consensus-1">
         <span

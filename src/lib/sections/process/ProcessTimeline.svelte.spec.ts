@@ -25,50 +25,52 @@ describe('ProcessTimeline', () => {
 	// ── Status eyebrow (FR: dynamic indicator of effectiveStatus) ─────────
 	// The eyebrow surfaces the current effectiveStatus as Spanish copy using
 	// STATUS_LABELS as the single source of truth. Format is the literal
-	// string "ESTADO : <label>", uppercased to match the eyebrow aesthetic.
+	// string "ESTADO ACTUAL : <label>", uppercased to match the eyebrow
+	// aesthetic. The whole block wears the status text color AND a matching
+	// border (border-{color} derived from STATUS_LABEL_COLORS via .replace).
 
 	// One test per status — splitting keeps `getByText(..., { exact: true })`
 	// strict-mode friendly (a loop leaves multiple renders in the DOM).
 
-	it('renders "ESTADO : Abierto" when effectiveStatus is OPEN', async () => {
+	it('renders "ESTADO ACTUAL : Abierto" when effectiveStatus is OPEN', async () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
 		await expect
-			.element(page.getByText('ESTADO : Abierto', { exact: true }))
+			.element(page.getByText('ESTADO ACTUAL : Abierto', { exact: true }))
 			.toBeInTheDocument();
 	});
 
-	it('renders "ESTADO : Compromiso" when effectiveStatus is COMMITMENT', async () => {
+	it('renders "ESTADO ACTUAL : Compromiso" when effectiveStatus is COMMITMENT', async () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
 		await expect
-			.element(page.getByText('ESTADO : Compromiso', { exact: true }))
+			.element(page.getByText('ESTADO ACTUAL : Compromiso', { exact: true }))
 			.toBeInTheDocument();
 	});
 
-	it('renders "ESTADO : Sellado" when effectiveStatus is SEALED', async () => {
+	it('renders "ESTADO ACTUAL : Sellado" when effectiveStatus is SEALED', async () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'SEALED' }));
 		await expect
-			.element(page.getByText('ESTADO : Sellado', { exact: true }))
+			.element(page.getByText('ESTADO ACTUAL : Sellado', { exact: true }))
 			.toBeInTheDocument();
 	});
 
-	it('renders "ESTADO : Votación" when effectiveStatus is VOTING', async () => {
+	it('renders "ESTADO ACTUAL : Votación" when effectiveStatus is VOTING', async () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
 		await expect
-			.element(page.getByText('ESTADO : Votación', { exact: true }))
+			.element(page.getByText('ESTADO ACTUAL : Votación', { exact: true }))
 			.toBeInTheDocument();
 	});
 
-	it('renders "ESTADO : Conteo" when effectiveStatus is COUNTING', async () => {
+	it('renders "ESTADO ACTUAL : Conteo" when effectiveStatus is COUNTING', async () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
 		await expect
-			.element(page.getByText('ESTADO : Conteo', { exact: true }))
+			.element(page.getByText('ESTADO ACTUAL : Conteo', { exact: true }))
 			.toBeInTheDocument();
 	});
 
-	it('renders "ESTADO : Cerrado" when effectiveStatus is CLOSED', async () => {
+	it('renders "ESTADO ACTUAL : Cerrado" when effectiveStatus is CLOSED', async () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'CLOSED' }));
 		await expect
-			.element(page.getByText('ESTADO : Cerrado', { exact: true }))
+			.element(page.getByText('ESTADO ACTUAL : Cerrado', { exact: true }))
 			.toBeInTheDocument();
 	});
 
@@ -79,45 +81,51 @@ describe('ProcessTimeline', () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
 		const eyebrow = page.getByTestId('timeline-status-eyebrow');
 		await expect.element(eyebrow).toBeInTheDocument();
-		await expect.element(eyebrow).toHaveTextContent('ESTADO : Compromiso');
+		await expect.element(eyebrow).toHaveTextContent('ESTADO ACTUAL : Compromiso');
 	});
 
-	// The status word inside the eyebrow (the value after "ESTADO :") carries
-	// the status text color from STATUS_LABEL_COLORS, while "ESTADO :" itself
-	// stays muted. Mirrors the badge color treatment in ProcessList but only
-	// tints the glyph — no badge background.
+	// The eyebrow block wears the status color (text + border). The status
+	// text color comes from STATUS_LABEL_COLORS[status]; the matching border
+	// color is derived by swapping the text- prefix for border-.
 
-	it('tints the eyebrow status word with the status color (COMMITMENT → blue)', async () => {
+	it('applies the status text color to the eyebrow block (COMMITMENT → blue)', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+		const eyebrow = page.getByTestId('timeline-status-eyebrow');
+		await expect.element(eyebrow).toHaveClass('text-blue-800');
+		await expect.element(eyebrow).toHaveClass('border-blue-800');
+	});
+
+	it('applies the status text color to the eyebrow block (VOTING → green)', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
+		const eyebrow = page.getByTestId('timeline-status-eyebrow');
+		await expect.element(eyebrow).toHaveClass('text-green-800');
+		await expect.element(eyebrow).toHaveClass('border-green-800');
+	});
+
+	it('applies the status text color to the eyebrow block (COUNTING → orange)', async () => {
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
+		const eyebrow = page.getByTestId('timeline-status-eyebrow');
+		await expect.element(eyebrow).toHaveClass('text-orange-800');
+		await expect.element(eyebrow).toHaveClass('border-orange-800');
+	});
+
+	it('does not keep the eyebrow in text-consensus-muted (color is status-driven)', async () => {
+		// Inverse of the old "prefix stays muted" rule. The whole block is
+		// tinted by the status color, so the muted class must be absent.
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+		const eyebrow = page.getByTestId('timeline-status-eyebrow');
+		await expect.element(eyebrow).not.toHaveClass('text-consensus-muted');
+	});
+
+	it('keeps the timeline-status-eyebrow-value testid with the status word as plain text', async () => {
+		// The inner span keeps its testid but is now plain text — no per-span
+		// color class, since the parent h2 carries the color for the whole
+		// block (label + value).
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
 		const value = page.getByTestId('timeline-status-eyebrow-value');
 		await expect.element(value).toBeInTheDocument();
-		await expect.element(value).toHaveClass('text-blue-800');
 		await expect.element(value).toHaveTextContent('Compromiso');
-	});
-
-	it('tints the eyebrow status word with the status color (VOTING → green)', async () => {
-		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
-		const value = page.getByTestId('timeline-status-eyebrow-value');
-		await expect.element(value).toHaveClass('text-green-800');
-		await expect.element(value).toHaveTextContent('Votación');
-	});
-
-	it('tints the eyebrow status word with the status color (COUNTING → orange)', async () => {
-		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
-		const value = page.getByTestId('timeline-status-eyebrow-value');
-		await expect.element(value).toHaveClass('text-orange-800');
-		await expect.element(value).toHaveTextContent('Conteo');
-	});
-
-	it('keeps the "ESTADO :" prefix muted regardless of status', async () => {
-		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
-		const eyebrow = page.getByTestId('timeline-status-eyebrow');
-		// The wrapper still carries text-consensus-muted.
-		await expect.element(eyebrow).toHaveClass('text-consensus-muted');
-		// The inner value span must NOT also be muted — it must carry the
-		// status color so it visually pops against the prefix.
-		const value = page.getByTestId('timeline-status-eyebrow-value');
-		await expect.element(value).not.toHaveClass('text-consensus-muted');
+		await expect.element(value).not.toHaveClass('text-blue-800');
 	});
 
 	// ── Phase labels ──────────────────────────────────────────────────────
@@ -158,226 +166,40 @@ describe('ProcessTimeline', () => {
 
 	// ── Phase label color logic ───────────────────────────────────────────
 	// Design contract:
-	//   - A phase label is tinted IFF that phase is the active one for the
-	//     current effectiveStatus. The color is STATUS_LABEL_COLORS[status].
-	//   - Every other phase (upcoming OR done) reads as text-consensus-muted.
-	//   - The "done is green" treatment was removed: done is now muted gray.
+	//   - Phase labels are ALWAYS text-consensus-muted. No status color,
+	//     no per-phase tinting. The eyebrow block is the single source of
+	//     status color on the page; labels stay neutral so the eyebrow
+	//     reads as the highlighted affordance.
 
-	it('renders the inactive phase label with text-consensus-muted', async () => {
-		// effectiveStatus = OPEN → all three phases are upcoming.
-		render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
-		const label = page.getByTestId('phase-votacion-label');
-		await expect.element(label).toHaveClass('text-consensus-muted');
-		await expect.element(label).not.toHaveClass('text-consensus-red');
-		await expect.element(label).not.toHaveClass('text-emerald-700');
-	});
-
-	it('renders the done phase label with text-consensus-muted (no green)', async () => {
-		// effectiveStatus = VOTING → Compromiso is done and must read muted.
+	it('renders every phase label as text-consensus-muted', async () => {
+		// Active phase (VOTING → Votación) and inactive phases alike must
+		// all read muted. This locks the "no per-phase tint" rule so a
+		// future regression that re-tints the active label fails loudly.
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
-		const label = page.getByTestId('phase-compromiso-label');
-		await expect.element(label).toHaveClass('text-consensus-muted');
-		await expect.element(label).not.toHaveClass('text-emerald-700');
+		await expect
+			.element(page.getByTestId('phase-compromiso-label'))
+			.toHaveClass('text-consensus-muted');
+		await expect
+			.element(page.getByTestId('phase-votacion-label'))
+			.toHaveClass('text-consensus-muted');
+		await expect
+			.element(page.getByTestId('phase-resultados-label'))
+			.toHaveClass('text-consensus-muted');
 	});
 
-	it('renders the active phase label with the status color from STATUS_LABEL_COLORS', async () => {
-		// effectiveStatus = VOTING → Votación is active → STATUS_LABEL_COLORS['VOTING']
-		// is `text-green-800`. The old `text-consensus-red` rule is GONE and
-		// the `text-emerald-700` "done" green is GONE.
-		render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
-		const label = page.getByTestId('phase-votacion-label');
-		await expect.element(label).toHaveClass('text-green-800');
-		await expect.element(label).not.toHaveClass('text-consensus-red');
-		await expect.element(label).not.toHaveClass('text-emerald-700');
-	});
-
-	describe('label color follows active phase × effectiveStatus', () => {
-		// One assertion per (status, phase) pair, focused on the colored and
-		// the uncolored phases. Avoids asserting on multiple class names that
-		// are not part of the rule (e.g. font-mono) to keep failure messages
-		// specific.
-
-		it('COMMITMENT → Compromiso is blue, the rest are muted', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
-			await expect
-				.element(page.getByTestId('phase-compromiso-label'))
-				.toHaveClass('text-blue-800');
-			await expect
-				.element(page.getByTestId('phase-votacion-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-votacion-label'))
-				.not.toHaveClass('text-green-800');
-			await expect
-				.element(page.getByTestId('phase-resultados-label'))
-				.toHaveClass('text-consensus-muted');
-		});
-
-		it('VOTING → Votación is green, Compromiso (done) is muted', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
-			await expect
-				.element(page.getByTestId('phase-votacion-label'))
-				.toHaveClass('text-green-800');
-			await expect
-				.element(page.getByTestId('phase-compromiso-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-compromiso-label'))
-				.not.toHaveClass('text-emerald-700');
-			await expect
-				.element(page.getByTestId('phase-resultados-label'))
-				.toHaveClass('text-consensus-muted');
-		});
-
-		it('COUNTING → Resultados is orange, the rest are muted', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
-			await expect
-				.element(page.getByTestId('phase-resultados-label'))
-				.toHaveClass('text-orange-800');
-			await expect
-				.element(page.getByTestId('phase-compromiso-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-votacion-label'))
-				.toHaveClass('text-consensus-muted');
-		});
-
-		it('SEALED → all three labels are muted (Compromiso is done, not active)', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'SEALED' }));
-			await expect
-				.element(page.getByTestId('phase-compromiso-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-compromiso-label'))
-				.not.toHaveClass('text-emerald-700');
-			await expect
-				.element(page.getByTestId('phase-votacion-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-resultados-label'))
-				.toHaveClass('text-consensus-muted');
-		});
-
-		it('CLOSED → all three labels are muted (all done)', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'CLOSED' }));
-			await expect
-				.element(page.getByTestId('phase-compromiso-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-votacion-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-resultados-label'))
-				.toHaveClass('text-consensus-muted');
-		});
-
-		it('OPEN → all three labels are muted (all upcoming)', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
-			await expect
-				.element(page.getByTestId('phase-compromiso-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-votacion-label'))
-				.toHaveClass('text-consensus-muted');
-			await expect
-				.element(page.getByTestId('phase-resultados-label'))
-				.toHaveClass('text-consensus-muted');
-		});
-	});
-
-	// ── Phase icon (check vs dot) ──────────────────────────────────────────
-	// Design contract:
-	//   - Each phase renders a small circle next to its label.
-	//   - Inside the circle: a CHECK (svg polyline) when the phase is
-	//     "done" (was reached and passed), a DOT (filled small circle)
-	//     otherwise (active / upcoming / terminal CLOSED).
-	//   - data-icon="check" | "dot" exposes the choice; data-testid points
-	//     to the inner glyph for asserting which one rendered.
-	// Truth table (effectiveStatus → phase icon):
-	//   OPEN       → Compromiso dot, Votación dot, Resultados dot
-	//   COMMITMENT → Compromiso dot, Votación dot, Resultados dot
-	//   SEALED     → Compromiso dot, Votación dot, Resultados dot
-	//   VOTING     → Compromiso CHECK, Votación dot, Resultados dot
-	//   COUNTING   → Compromiso CHECK, Votación CHECK, Resultados dot
-	//   CLOSED     → Compromiso dot, Votación dot, Resultados dot
-
-	describe('phase icon', () => {
-		it('renders one icon per phase in the DOM', async () => {
-			render(ProcessTimeline, defaultProps());
-			await expect.element(page.getByTestId('phase-compromiso-icon')).toBeInTheDocument();
-			await expect.element(page.getByTestId('phase-votacion-icon')).toBeInTheDocument();
-			await expect.element(page.getByTestId('phase-resultados-icon')).toBeInTheDocument();
-		});
-
-		it('exposes the icon kind via data-icon="dot" by default', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
-			await expect
-				.element(page.getByTestId('phase-compromiso-icon'))
-				.toHaveAttribute('data-icon', 'dot');
-			await expect
-				.element(page.getByTestId('phase-compromiso-icon-dot'))
-				.toBeInTheDocument();
-			await expect
-				.element(page.getByTestId('phase-compromiso-icon'))
-				.not.toHaveAttribute('data-icon', 'check');
-		});
-
-		it('OPEN → all three phases show a dot', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'OPEN' }));
-			for (const id of ['phase-compromiso-icon', 'phase-votacion-icon', 'phase-resultados-icon']) {
-				await expect.element(page.getByTestId(id)).toHaveAttribute('data-icon', 'dot');
-			}
-		});
-
-		it('COMMITMENT → all three phases show a dot (active phase still pending)', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
-			for (const id of ['phase-compromiso-icon', 'phase-votacion-icon', 'phase-resultados-icon']) {
-				await expect.element(page.getByTestId(id)).toHaveAttribute('data-icon', 'dot');
-			}
-		});
-
-		it('SEALED → all three phases show a dot (no phase reached yet)', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'SEALED' }));
-			for (const id of ['phase-compromiso-icon', 'phase-votacion-icon', 'phase-resultados-icon']) {
-				await expect.element(page.getByTestId(id)).toHaveAttribute('data-icon', 'dot');
-			}
-		});
-
-		it('VOTING → Compromiso shows a check (done), Votación and Resultados show dots', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'VOTING' }));
-			await expect
-				.element(page.getByTestId('phase-compromiso-icon'))
-				.toHaveAttribute('data-icon', 'check');
-			await expect
-				.element(page.getByTestId('phase-compromiso-icon-check'))
-				.toBeInTheDocument();
-			await expect
-				.element(page.getByTestId('phase-votacion-icon'))
-				.toHaveAttribute('data-icon', 'dot');
-			await expect
-				.element(page.getByTestId('phase-resultados-icon'))
-				.toHaveAttribute('data-icon', 'dot');
-		});
-
-		it('COUNTING → Compromiso and Votación show checks, Resultados shows a dot', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'COUNTING' }));
-			await expect
-				.element(page.getByTestId('phase-compromiso-icon'))
-				.toHaveAttribute('data-icon', 'check');
-			await expect
-				.element(page.getByTestId('phase-votacion-icon'))
-				.toHaveAttribute('data-icon', 'check');
-			await expect
-				.element(page.getByTestId('phase-resultados-icon'))
-				.toHaveAttribute('data-icon', 'dot');
-		});
-
-		it('CLOSED → all three phases show a dot (terminal collapse, per spec)', async () => {
-			render(ProcessTimeline, defaultProps({ effectiveStatus: 'CLOSED' }));
-			for (const id of ['phase-compromiso-icon', 'phase-votacion-icon', 'phase-resultados-icon']) {
-				await expect.element(page.getByTestId(id)).toHaveAttribute('data-icon', 'dot');
-			}
-		});
+	it('does not apply any status text color to any phase label', async () => {
+		// Inverse guard: no label carries text-blue-800 / text-green-800 /
+		// text-orange-800 / text-red-800 / text-violet-800 / text-amber-800.
+		render(ProcessTimeline, defaultProps({ effectiveStatus: 'COMMITMENT' }));
+		for (const id of ['phase-compromiso-label', 'phase-votacion-label', 'phase-resultados-label']) {
+			const label = page.getByTestId(id);
+			await expect.element(label).not.toHaveClass('text-blue-800');
+			await expect.element(label).not.toHaveClass('text-green-800');
+			await expect.element(label).not.toHaveClass('text-orange-800');
+			await expect.element(label).not.toHaveClass('text-red-800');
+			await expect.element(label).not.toHaveClass('text-violet-800');
+			await expect.element(label).not.toHaveClass('text-amber-800');
+		}
 	});
 
 	// ── Compromiso: start + end dates and times ──────────────────────────
@@ -648,31 +470,24 @@ describe('ProcessTimeline', () => {
 			.toHaveAttribute('data-state', 'upcoming');
 	});
 
-	it('marks all three phases as upcoming when effectiveStatus is CLOSED (terminal collapse)', async () => {
-		// Per product spec, CLOSED collapses every phase to "pending dot",
-		// so data-state reads as "upcoming" for all three even though the
-		// process is finished. The icon (not data-state) carries the
-		// "all done" semantic through the dot-in-circle affordance.
+	it('marks all three phases as done when effectiveStatus is CLOSED', async () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'CLOSED' }));
 		await expect
 			.element(page.getByTestId('phase-compromiso'))
-			.toHaveAttribute('data-state', 'upcoming');
+			.toHaveAttribute('data-state', 'done');
 		await expect
 			.element(page.getByTestId('phase-votacion'))
-			.toHaveAttribute('data-state', 'upcoming');
+			.toHaveAttribute('data-state', 'done');
 		await expect
 			.element(page.getByTestId('phase-resultados'))
-			.toHaveAttribute('data-state', 'upcoming');
+			.toHaveAttribute('data-state', 'done');
 	});
 
-	it('marks all three phases as upcoming when effectiveStatus is SEALED (no phase reached)', async () => {
-		// SEALED is the brief pause between COMMITMENT and VOTING; no phase
-		// has been fully completed yet, so all three read as upcoming. The
-		// "done" transition for Compromiso only happens once VOTING starts.
+	it('marks Compromiso as done and the rest as upcoming when effectiveStatus is SEALED', async () => {
 		render(ProcessTimeline, defaultProps({ effectiveStatus: 'SEALED' }));
 		await expect
 			.element(page.getByTestId('phase-compromiso'))
-			.toHaveAttribute('data-state', 'upcoming');
+			.toHaveAttribute('data-state', 'done');
 		await expect
 			.element(page.getByTestId('phase-votacion'))
 			.toHaveAttribute('data-state', 'upcoming');
