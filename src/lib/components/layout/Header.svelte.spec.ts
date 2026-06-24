@@ -20,6 +20,12 @@ vi.mock('$lib/services/passkey.service', () => ({
 	registerPasskey: mockRegisterPasskey
 }));
 
+// Mock $app/navigation for afterNavigate
+const mockAfterNavigate = vi.hoisted(() => vi.fn());
+vi.mock('$app/navigation', () => ({
+	afterNavigate: mockAfterNavigate
+}));
+
 describe('Header.svelte', () => {
 	// Restore navigator.userAgent after each test (Firefox mocking)
 	let originalUserAgent: PropertyDescriptor | undefined;
@@ -296,6 +302,168 @@ describe('Header.svelte', () => {
 			const link = page.getByRole('link', { name: 'Dashboard' });
 			await expect.element(link).toBeInTheDocument();
 			await expect.element(link).toHaveAttribute('href', '/dashboard');
+		});
+	});
+
+	// =========================================================================
+	// Mobile sheet (responsive refactor)
+	// =========================================================================
+
+	describe('mobile sheet', () => {
+		it('renders a hamburger button with accessible label', async () => {
+			mockPage.data.user = null;
+			render(Header);
+			const hamburger = page.getByRole('button', { name: 'Abrir menú de navegación' });
+			await expect.element(hamburger).toBeInTheDocument();
+		});
+
+		describe('guest Sheet content', () => {
+			beforeEach(() => {
+				mockPage.data.user = null;
+			});
+
+			it('opens a dialog when hamburger is tapped', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				await expect.element(page.getByRole('dialog')).toBeInTheDocument();
+			});
+
+			it('shows Iniciar Sesión button in the Sheet', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const signInBtn = page.getByRole('dialog').getByRole('button', { name: 'Iniciar Sesión' });
+				await expect.element(signInBtn).toBeInTheDocument();
+			});
+
+			it('shows Procesos link in the Sheet navigation', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const procesosLink = page.getByRole('dialog').getByRole('link', { name: 'Procesos' });
+				await expect.element(procesosLink).toBeInTheDocument();
+				await expect.element(procesosLink).toHaveAttribute('href', '/procesos');
+			});
+
+			it('renders a separator between auth and navigation sections', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				await expect.element(page.getByRole('dialog').getByRole('separator')).toBeInTheDocument();
+			});
+
+			it('does NOT show Dashboard link in the Sheet for guests', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				await expect.element(
+					page.getByRole('dialog').getByRole('link', { name: 'Dashboard' })
+				).not.toBeInTheDocument();
+			});
+		});
+
+		describe('authenticated Sheet content', () => {
+			beforeEach(() => {
+				mockPage.data.user = {
+					sub: 'test-user-123',
+					name: 'María García',
+					email: '[email protected]',
+					picture: 'https://example.com/avatar.jpg',
+				};
+			});
+
+			it('shows user avatar and name in the Sheet', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				await expect.element(dialog.getByText('María García')).toBeInTheDocument();
+				await expect.element(dialog.getByRole('img', { name: 'Avatar de María García' })).toBeInTheDocument();
+			});
+
+			it('shows user email in the Sheet', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				await expect.element(
+					page.getByRole('dialog').getByText('[email protected]')
+				).toBeInTheDocument();
+			});
+
+			it('shows Registrar Credencial and Cerrar Sesión in the Sheet', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				await expect.element(dialog.getByRole('button', { name: 'Registrar Credencial' })).toBeInTheDocument();
+				await expect.element(dialog.getByRole('button', { name: 'Cerrar Sesión' })).toBeInTheDocument();
+			});
+
+			it('invokes registerPasskey when Registrar Credencial is tapped in Sheet', async () => {
+				mockSupportsPasskeys.mockReturnValue(true);
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				await page.getByRole('dialog').getByRole('button', { name: 'Registrar Credencial' }).click();
+				expect(mockRegisterPasskey).toHaveBeenCalledWith('test-user-123', 'María García');
+			});
+
+			it('shows Firefox warning in Sheet when UA matches Firefox', async () => {
+				stubUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0');
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				await expect.element(
+					page.getByRole('dialog').getByText('Firefox no soporta QR cross-device. Usá Chrome o Safari.')
+				).toBeInTheDocument();
+			});
+		});
+
+		describe('creator Dashboard link in Sheet', () => {
+			it('shows Dashboard link for consensus-creator role', async () => {
+				mockPage.data.user = {
+					sub: 'creator-1',
+					name: 'Creator User',
+					email: '[email protected]',
+					roles: ['consensus-creator'],
+				};
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dashboardLink = page.getByRole('dialog').getByRole('link', { name: 'Dashboard' });
+				await expect.element(dashboardLink).toBeInTheDocument();
+				await expect.element(dashboardLink).toHaveAttribute('href', '/dashboard');
+			});
+
+			it('does NOT show Dashboard link for user without consensus-creator role', async () => {
+				mockPage.data.user = {
+					sub: 'plain-user',
+					name: 'Plain User',
+					email: '[email protected]',
+				};
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				await expect.element(
+					page.getByRole('dialog').getByRole('link', { name: 'Dashboard' })
+				).not.toBeInTheDocument();
+			});
+		});
+
+		describe('afterNavigate closes Sheet', () => {
+			it('registers an afterNavigate callback on mount', async () => {
+				mockPage.data.user = null;
+				mockAfterNavigate.mockReset();
+				render(Header);
+				expect(mockAfterNavigate).toHaveBeenCalledOnce();
+			});
+
+			it('afterNavigate callback sets sheetOpen to false', async () => {
+				mockPage.data.user = null;
+				let afterNavigateCallback: (() => void) | undefined;
+				mockAfterNavigate.mockImplementation((cb: () => void) => {
+					afterNavigateCallback = cb;
+				});
+				render(Header);
+				// Open the sheet
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				await expect.element(page.getByRole('dialog')).toBeInTheDocument();
+				// Simulate navigation
+				if (afterNavigateCallback) {
+					afterNavigateCallback();
+				}
+				// Sheet should close — dialog should be removed
+				await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
+			});
 		});
 	});
 });

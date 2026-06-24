@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { afterNavigate } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
-	import { ChevronDown, Shield } from '@lucide/svelte';
+	import * as Sheet from '$lib/components/ui/sheet';
+	import { Separator } from '$lib/components/ui/separator';
+	import { ChevronDown, Menu, Shield } from '@lucide/svelte';
 	import { supportsPasskeys, registerPasskey } from '$lib/services/passkey.service';
 
 	let user = $derived(page.data.user);
 	let dropdownOpen = $state(false);
+	let sheetOpen = $state(false);
 
 	let dropdownRef: HTMLDivElement | undefined = $state();
 	let triggerRef: HTMLButtonElement | undefined = $state();
@@ -32,6 +36,11 @@
 			registering = false;
 		}
 	}
+
+	// Close sheet on route change
+	afterNavigate(() => {
+		sheetOpen = false;
+	});
 
 	// Close on click outside
 	$effect(() => {
@@ -79,7 +88,7 @@
 				</a>
 			{/if}
 			{#if user}
-				<div class="relative">
+				<div class="relative hidden md:flex">
 					<button
 						bind:this={triggerRef}
 						type="button"
@@ -161,7 +170,7 @@
 					{/if}
 				</div>
 			{:else}
-				<form method="POST" action="/?/signIn" aria-label="Iniciar sesión">
+				<form method="POST" action="/?/signIn" aria-label="Iniciar sesión" class="hidden md:flex">
 					<Button
 						variant="default"
 						type="submit"
@@ -171,6 +180,94 @@
 					</Button>
 				</form>
 			{/if}
+
+			<!-- Mobile hamburger + Sheet -->
+			<Sheet.Root bind:open={sheetOpen}>
+				<Sheet.Trigger
+					aria-label="Abrir menú de navegación"
+					class="md:hidden flex items-center justify-center size-9 rounded-md border border-brand-gray-200 hover:bg-brand-gray-50 transition-colors"
+				>
+					<Menu class="size-5" />
+				</Sheet.Trigger>
+
+				<Sheet.Content side="right" class="w-full max-w-sm p-0 gap-0">
+					<Sheet.Header class="border-b border-brand-gray-100 px-4 py-3">
+						<Sheet.Title class="text-base">Menú</Sheet.Title>
+					</Sheet.Header>
+
+					<!-- Auth section -->
+					<div class="p-4 border-b border-brand-gray-100">
+						{#if user}
+							<div class="flex items-center gap-3 mb-3">
+								{#if user.picture}
+									<img
+										src={user.picture}
+										alt="Avatar de {user.name ?? user.username ?? 'Usuario'}"
+										class="w-10 h-10 rounded-full object-cover"
+									/>
+								{:else}
+									<div
+										class="w-10 h-10 rounded-full bg-brand-gray-200 flex items-center justify-center text-sm font-medium text-brand-gray-600"
+									>
+										{(user.name ?? user.username ?? 'U').charAt(0).toUpperCase()}
+									</div>
+								{/if}
+								<div>
+									<p class="text-sm font-medium text-brand-gray-900">
+										{user.name ?? user.username ?? 'Usuario'}
+									</p>
+									<p class="text-xs text-brand-gray-500 truncate">
+										{user.email ?? 'No disponible'}
+									</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onclick={handleRegisterPasskey}
+								disabled={!passkeysSupported || registering}
+								class="text-sm text-brand-black flex items-center gap-2 w-full px-3 py-2 rounded-md hover:bg-brand-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								<Shield class="size-4" />
+								{registering ? 'Registrando...' : 'Registrar Credencial'}
+							</button>
+							{#if isFirefox}
+								<p class="text-[10px] text-brand-gray-400 mt-1.5 px-3">
+									Firefox no soporta QR cross-device. Usá Chrome o Safari.
+								</p>
+							{/if}
+							<form method="POST" action="/?/signOut" aria-label="Cerrar sesión" class="mt-1">
+								<Button variant="ghost" type="submit" class="w-full justify-start rounded-md text-sm">
+									Cerrar Sesión
+								</Button>
+							</form>
+						{:else}
+							<form method="POST" action="/?/signIn" aria-label="Iniciar sesión">
+								<Button
+									variant="default"
+									type="submit"
+									class="w-full rounded-full bg-brand-black hover:bg-brand-red border-0 shadow-sm"
+								>
+									Iniciar Sesión
+								</Button>
+							</form>
+						{/if}
+					</div>
+
+					<Separator class="bg-brand-gray-100" />
+
+					<!-- Navigation section -->
+					<nav aria-label="Navegación principal" class="p-4 flex flex-col gap-1 text-sm font-medium">
+						<a href="/procesos" class="px-3 py-2 rounded-md hover:bg-brand-gray-50 transition-colors">
+							Procesos
+						</a>
+						{#if user?.roles?.includes('consensus-creator')}
+							<a href="/dashboard" class="px-3 py-2 rounded-md hover:bg-brand-gray-50 transition-colors">
+								Dashboard
+							</a>
+						{/if}
+					</nav>
+				</Sheet.Content>
+			</Sheet.Root>
 		</div>
 	</div>
 </header>
