@@ -4,7 +4,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { Separator } from '$lib/components/ui/separator';
-	import { ChevronDown, Menu, Shield } from '@lucide/svelte';
+	import { ChevronDown, LogOut, Menu, Shield } from '@lucide/svelte';
 	import { supportsPasskeys, registerPasskey } from '$lib/services/passkey.service';
 
 	let user = $derived(page.data.user);
@@ -74,21 +74,13 @@
 			</div>
 			<span class="text-xl font-bold tracking-tight">Consensus</span>
 		</a>
-		<div class="flex items-center gap-6">
+		<div class="flex items-center gap-6 self-stretch">
 			<nav aria-label="Navegación principal" class="hidden md:flex items-center gap-6 text-sm font-medium">
 				<a href="/procesos" class="hover:text-brand-red transition-colors">Procesos</a>
 			</nav>
 			<div class="h-6 w-px bg-brand-gray-200 hidden md:block" aria-hidden="true"></div>
-			{#if user?.roles?.includes('consensus-creator')}
-				<a
-					href="/dashboard"
-					class="hidden md:flex bg-brand-black hover:bg-brand-red text-white rounded-full px-4 py-2 text-sm font-medium transition-colors"
-				>
-					Dashboard
-				</a>
-			{/if}
 			{#if user}
-				<div class="relative hidden md:flex">
+				<div class="relative hidden md:flex self-stretch">
 					<button
 						bind:this={triggerRef}
 						type="button"
@@ -122,48 +114,62 @@
 					{#if dropdownOpen}
 						<div
 							bind:this={dropdownRef}
-							class="absolute right-0 mt-2 w-56 bg-brand-white border border-brand-gray-200 rounded-lg shadow-lg z-50"
+							class="absolute right-0 top-full mt-1 w-auto min-w-[200px] bg-brand-white border border-brand-gray-200 rounded-lg shadow-lg z-50"
 							role="menu"
 						>
 							<!-- Email header (FR-H-1) -->
 							<div class="px-4 py-3 border-b border-brand-gray-100">
-								<p class="text-sm text-brand-gray-800 truncate">
+								<p class="text-sm text-brand-gray-800">
 									{user.email ?? 'No disponible'}
 								</p>
 							</div>
 
-							<!-- Action 1: Registrar Credencial (FR-H-2) -->
+							{#if user?.roles?.includes('consensus-creator')}
+								<div class="p-2 border-b border-brand-gray-100">
+									<a
+										href="/dashboard"
+										class="flex items-center gap-2 w-full px-2 py-1.5 rounded-md bg-brand-black hover:bg-brand-red text-white text-sm font-medium transition-colors"
+										role="menuitem"
+									>
+										Dashboard
+									</a>
+								</div>
+							{/if}
+
+							<!-- Action: Registrar Credencial (FR-H-2) -->
 							<div class="p-2 border-b border-brand-gray-100">
-								<button
-									type="button"
-									role="menuitem"
-									onclick={handleRegisterPasskey}
-									disabled={!passkeysSupported || registering}
-									class="text-sm text-brand-black flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-brand-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-								>
-									<Shield class="size-4" />
-									{registering ? 'Registrando...' : 'Registrar Credencial'}
-								</button>
+								{#if !isFirefox}
+									<button
+										type="button"
+										role="menuitem"
+										onclick={handleRegisterPasskey}
+										disabled={!passkeysSupported || registering}
+										class="text-sm text-brand-black flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-brand-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+									>
+										<Shield class="size-4" />
+										{registering ? 'Registrando...' : 'Registrar Credencial'}
+									</button>
+								{/if}
 
 								<!-- Firefox passkey warning (FR-H-3) — UA-only condition -->
 								{#if isFirefox}
-									<p class="text-[10px] text-brand-gray-400 mt-1.5 px-2">
+									<p class="text-[10px] text-brand-gray-400 px-2">
 										Firefox no soporta QR cross-device. Usá Chrome o Safari.
 									</p>
 								{/if}
 							</div>
 
-							<!-- Action 2: Cerrar Sesión (FR-H-2) -->
+							<!-- Action: Cerrar Sesión (FR-H-2) -->
 							<div class="p-2">
 								<form method="POST" action="/?/signOut" aria-label="Cerrar sesión">
-									<Button
-										variant="ghost"
+									<button
 										type="submit"
-										class="w-full justify-start rounded-md text-sm"
+										class="text-sm text-red-600 hover:text-red-700 flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-brand-gray-50 transition-colors"
 										role="menuitem"
 									>
+										<LogOut class="size-4" />
 										Cerrar Sesión
-									</Button>
+									</button>
 								</form>
 							</div>
 						</div>
@@ -198,7 +204,7 @@
 					<!-- Auth section -->
 					<div class="p-4 border-b border-brand-gray-100">
 						{#if user}
-							<div class="flex items-center gap-3 mb-3">
+							<div class="flex flex-col items-center gap-2 mb-3">
 								{#if user.picture}
 									<img
 										src={user.picture}
@@ -212,34 +218,49 @@
 										{(user.name ?? user.username ?? 'U').charAt(0).toUpperCase()}
 									</div>
 								{/if}
-								<div>
-									<p class="text-sm font-medium text-brand-gray-900">
-										{user.name ?? user.username ?? 'Usuario'}
-									</p>
-									<p class="text-xs text-brand-gray-500 truncate">
-										{user.email ?? 'No disponible'}
-									</p>
-								</div>
-							</div>
-							<button
-								type="button"
-								onclick={handleRegisterPasskey}
-								disabled={!passkeysSupported || registering}
-								class="text-sm text-brand-black flex items-center gap-2 w-full px-3 py-2 rounded-md hover:bg-brand-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								<Shield class="size-4" />
-								{registering ? 'Registrando...' : 'Registrar Credencial'}
-							</button>
-							{#if isFirefox}
-								<p class="text-[10px] text-brand-gray-400 mt-1.5 px-3">
-									Firefox no soporta QR cross-device. Usá Chrome o Safari.
+								<p class="text-sm font-medium text-brand-gray-900">
+									{user.name ?? user.username ?? 'Usuario'}
 								</p>
-							{/if}
-							<form method="POST" action="/?/signOut" aria-label="Cerrar sesión" class="mt-1">
-								<Button variant="ghost" type="submit" class="w-full justify-start rounded-md text-sm">
-									Cerrar Sesión
-								</Button>
-							</form>
+								<p class="text-xs text-brand-gray-500">
+									{user.email ?? 'No disponible'}
+								</p>
+							</div>
+
+							<div class="flex flex-col items-center gap-2">
+								{#if user?.roles?.includes('consensus-creator')}
+									<a
+										href="/dashboard"
+										class="bg-brand-black hover:bg-brand-red text-white rounded-full px-4 py-2 text-sm font-medium transition-colors text-center w-full"
+									>
+										Dashboard
+									</a>
+								{/if}
+								{#if !isFirefox}
+									<button
+										type="button"
+										onclick={handleRegisterPasskey}
+										disabled={!passkeysSupported || registering}
+										class="text-sm text-brand-black flex items-center gap-2 w-full px-3 py-2 rounded-md hover:bg-brand-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+									>
+										<Shield class="size-4" />
+										{registering ? 'Registrando...' : 'Registrar Credencial'}
+									</button>
+								{/if}
+								{#if isFirefox}
+									<p class="text-[10px] text-brand-gray-400 px-3">
+										Firefox no soporta QR cross-device. Usá Chrome o Safari.
+									</p>
+								{/if}
+								<form method="POST" action="/?/signOut" aria-label="Cerrar sesión" class="w-full">
+									<button
+										type="submit"
+										class="text-sm text-red-600 hover:text-red-700 flex items-center gap-2 w-full px-3 py-2 rounded-md hover:bg-brand-gray-50 transition-colors"
+									>
+										<LogOut class="size-4" />
+										Cerrar Sesión
+									</button>
+								</form>
+							</div>
 						{:else}
 							<form method="POST" action="/?/signIn" aria-label="Iniciar sesión">
 								<Button
@@ -260,11 +281,6 @@
 						<a href="/procesos" class="px-3 py-2 rounded-md hover:bg-brand-gray-50 transition-colors">
 							Procesos
 						</a>
-						{#if user?.roles?.includes('consensus-creator')}
-							<a href="/dashboard" class="px-3 py-2 rounded-md hover:bg-brand-gray-50 transition-colors">
-								Dashboard
-							</a>
-						{/if}
 					</nav>
 				</Sheet.Content>
 			</Sheet.Root>

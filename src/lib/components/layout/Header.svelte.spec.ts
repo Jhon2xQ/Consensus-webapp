@@ -27,15 +27,19 @@ vi.mock('$app/navigation', () => ({
 }));
 
 describe('Header.svelte', () => {
-	// Restore navigator.userAgent after each test (Firefox mocking)
-	let originalUserAgent: PropertyDescriptor | undefined;
+	// Restore navigator.userAgent after each test (Firefox mocking).
+	// We save the UA string value (not the descriptor) because the getter
+	// lives on Navigator.prototype — getOwnPropertyDescriptor returns undefined
+	// for inherited properties, which caused the UA to leak between tests.
+	let originalUserAgent: string;
 	beforeEach(() => {
-		originalUserAgent = Object.getOwnPropertyDescriptor(globalThis.navigator, 'userAgent');
+		originalUserAgent = navigator.userAgent;
 	});
 	afterEach(() => {
-		if (originalUserAgent) {
-			Object.defineProperty(globalThis.navigator, 'userAgent', originalUserAgent);
-		}
+		Object.defineProperty(globalThis.navigator, 'userAgent', {
+			value: originalUserAgent,
+			configurable: true,
+		});
 		mockSupportsPasskeys.mockReturnValue(true);
 		mockRegisterPasskey.mockReset();
 	});
@@ -183,8 +187,8 @@ describe('Header.svelte', () => {
 		});
 
 		describe('dropdown', () => {
-			async function openDropdown() {
-				const trigger = page.getByRole('button', { name: 'María García' });
+			async function openDropdown(userName = 'María García') {
+				const trigger = page.getByRole('button', { name: userName });
 				await trigger.click();
 			}
 
@@ -194,13 +198,28 @@ describe('Header.svelte', () => {
 				await expect.element(page.getByText('[email protected]')).toBeInTheDocument();
 			});
 
-			it('renders EXACTLY two action buttons: Registrar Credencial and Cerrar Sesión', async () => {
+			it('does NOT have truncate on desktop dropdown email', async () => {
 				render(Header);
 				await openDropdown();
-				// Both action buttons live inside the menu, so their accessible role
-				// is "menuitem" (explicitly set via role="menuitem" for the Registrar
-				// button and inherited from the shadcn Button inside the form for
-				// Cerrar Sesión). We assert the menuitem role to be unambiguous.
+				const email = page.getByText('[email protected]');
+				const cls = email.element().className;
+				expect(cls).not.toContain('truncate');
+			});
+
+			it('dropdown does NOT use fixed w-56 width — adapts to content', async () => {
+				render(Header);
+				await openDropdown();
+				// Find the dropdown menu container (role="menu")
+				const menu = page.getByRole('menu');
+				const cls = menu.element().className;
+				expect(cls).not.toMatch(/\bw-56\b/);
+				expect(cls).toContain('w-auto');
+			});
+
+			it('renders Registrar Credencial and Cerrar Sesión in the dropdown', async () => {
+				render(Header);
+				await openDropdown();
+				// Action items inside the menu use role="menuitem"
 				await expect
 					.element(page.getByRole('menuitem', { name: 'Registrar Credencial' }))
 					.toBeInTheDocument();
@@ -234,6 +253,23 @@ describe('Header.svelte', () => {
 				await expect.element(form).toBeInTheDocument();
 				await expect.element(form).toHaveAttribute('method', 'POST');
 				await expect.element(form).toHaveAttribute('action', '/?/signOut');
+			});
+
+			it('dropdown is positioned below the header using self-stretch ancestor', async () => {
+				render(Header);
+				await openDropdown();
+				const menu = page.getByRole('menu');
+				await expect.element(menu).toBeInTheDocument();
+				// The dropdown's positioned ancestor is a relative div with self-stretch
+				// which spans the full header height, so top-full + mt-1 positions
+				// the dropdown below the header
+				const menuEl = menu.element();
+				const parent = menuEl.parentElement;
+				expect(parent).toBeTruthy();
+				expect(parent!.className).toContain('relative');
+				expect(parent!.className).toContain('self-stretch');
+				expect(menuEl.className).toContain('top-full');
+				expect(menuEl.className).toContain('mt-1');
 			});
 
 			it('invokes registerPasskey(user.sub, user.name) when Registrar Credencial is clicked', async () => {
@@ -272,26 +308,117 @@ describe('Header.svelte', () => {
 					await openDropdown();
 					await expect.element(page.getByText(FIREFOX_WARNING)).not.toBeInTheDocument();
 				});
+
+				it('HIDES Registrar Credencial button on Firefox (dropdown)', async () => {
+					stubUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0');
+					render(Header);
+					await openDropdown();
+					await expect
+						.element(page.getByRole('menuitem', { name: 'Registrar Credencial' }))
+						.not.toBeInTheDocument();
+				});
+
+				it('still shows Cerrar Sesión on Firefox (dropdown)', async () => {
+					stubUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0');
+					render(Header);
+					await openDropdown();
+					await expect
+						.element(page.getByRole('menuitem', { name: 'Cerrar Sesión' }))
+						.toBeInTheDocument();
+				});
+			});
+
+			// =================================================================
+			// Dashboard link — only for consensus-creator role (FR-H-5)
+			// =================================================================
+
+			describe('Dashboard link', () => {
+				it('does NOT render the Dashboard link for a user without the role', async () => {
+					mockPage.data.user = {
+						sub: 'plain-user',
+						name: 'Plain User',
+						email: '[email protected]',
+					};
+					render(Header);
+					await openDropdown('Plain User');
+					await expect
+						.element(page.getByRole('menuitem', { name: 'Dashboard' }))
+						.not.toBeInTheDocument();
+				});
+
+				it('renders the Dashboard link for a consensus-creator user', async () => {
+					mockPage.data.user = {
+						sub: 'creator-1',
+						name: 'Creator User',
+						email: '[email protected]',
+						roles: ['consensus-creator'],
+					};
+					render(Header);
+					await openDropdown('Creator User');
+					const item = page.getByRole('menuitem', { name: 'Dashboard' });
+					await expect.element(item).toBeInTheDocument();
+					await expect.element(item).toHaveAttribute('href', '/dashboard');
+				});
+
+				it('renders Dashboard link BEFORE Registrar Credencial in dropdown for consensus-creator', async () => {
+					mockPage.data.user = {
+						sub: 'creator-1',
+						name: 'Creator User',
+						email: '[email protected]',
+						roles: ['consensus-creator'],
+					};
+					render(Header);
+					await openDropdown('Creator User');
+					const dashboardItem = page.getByRole('menuitem', { name: 'Dashboard' });
+					const passkeyItem = page.getByRole('menuitem', { name: 'Registrar Credencial' });
+					await expect.element(dashboardItem).toBeInTheDocument();
+					await expect.element(passkeyItem).toBeInTheDocument();
+					const position = dashboardItem.element().compareDocumentPosition(passkeyItem.element());
+					expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+				});
+
+				it('renders Dashboard button with pill styling inside dropdown (bg-brand-black, text-white)', async () => {
+					mockPage.data.user = {
+						sub: 'creator-1',
+						name: 'Creator User',
+						email: '[email protected]',
+						roles: ['consensus-creator'],
+					};
+					render(Header);
+					await openDropdown('Creator User');
+					const item = page.getByRole('menuitem', { name: 'Dashboard' });
+					await expect.element(item).toBeInTheDocument();
+					const cls = item.element().className;
+					expect(cls).toContain('bg-brand-black');
+					expect(cls).toContain('text-white');
+				});
+
+				it('renders Dashboard button with pill styling inside Sheet for mobile', async () => {
+					mockPage.data.user = {
+						sub: 'creator-1',
+						name: 'Creator User',
+						email: '[email protected]',
+						roles: ['consensus-creator'],
+					};
+					render(Header);
+					await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+					const link = page.getByRole('link', { name: 'Dashboard' });
+					await expect.element(link).toBeInTheDocument();
+					const cls = link.element().className;
+					expect(cls).toContain('bg-brand-black');
+					expect(cls).toContain('text-white');
+					expect(cls).toContain('rounded-full');
+					await expect.element(link).toHaveAttribute('href', '/dashboard');
+				});
 			});
 		});
-	});
 
-	// =========================================================================
-	// Dashboard link — only for consensus-creator role (FR-H-5)
-	// =========================================================================
+		// =====================================================================
+		// Dashboard link (Sheet) — inside Sheet auth section
+		// Note: Dashboard tests for dropdown are inside `describe('dropdown')` above
+		// =====================================================================
 
-	describe('Dashboard link', () => {
-		it('does NOT render the Dashboard link for an authenticated user without the role', async () => {
-			mockPage.data.user = {
-				sub: 'plain-user',
-				name: 'Plain User',
-				email: '[email protected]',
-			};
-			render(Header);
-			await expect.element(page.getByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
-		});
-
-		it('renders the Dashboard link for a user with the consensus-creator role', async () => {
+		it('renders Dashboard button with pill styling inside Sheet for consensus-creator', async () => {
 			mockPage.data.user = {
 				sub: 'creator-1',
 				name: 'Creator User',
@@ -299,8 +426,13 @@ describe('Header.svelte', () => {
 				roles: ['consensus-creator'],
 			};
 			render(Header);
+			await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
 			const link = page.getByRole('link', { name: 'Dashboard' });
 			await expect.element(link).toBeInTheDocument();
+			const cls = link.element().className;
+			expect(cls).toContain('bg-brand-black');
+			expect(cls).toContain('text-white');
+			expect(cls).toContain('rounded-full');
 			await expect.element(link).toHaveAttribute('href', '/dashboard');
 		});
 	});
@@ -408,6 +540,22 @@ describe('Header.svelte', () => {
 					page.getByRole('dialog').getByText('Firefox no soporta QR cross-device. Usá Chrome o Safari.')
 				).toBeInTheDocument();
 			});
+
+			it('HIDES Registrar Credencial button on Firefox in Sheet', async () => {
+				stubUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0');
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				await expect.element(dialog.getByRole('button', { name: 'Registrar Credencial' })).not.toBeInTheDocument();
+			});
+
+			it('still shows Cerrar Sesión on Firefox in Sheet', async () => {
+				stubUserAgent('Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0');
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				await expect.element(dialog.getByRole('button', { name: 'Cerrar Sesión' })).toBeInTheDocument();
+			});
 		});
 
 		describe('creator Dashboard link in Sheet', () => {
@@ -436,6 +584,106 @@ describe('Header.svelte', () => {
 				await expect.element(
 					page.getByRole('dialog').getByRole('link', { name: 'Dashboard' })
 				).not.toBeInTheDocument();
+			});
+		});
+
+		describe('Dashboard before Procesos in Sheet', () => {
+			it('renders Dashboard button in auth section ABOVE Procesos in Sheet for consensus-creator', async () => {
+				mockPage.data.user = {
+					sub: 'creator-1',
+					name: 'Creator User',
+					email: '[email protected]',
+					roles: ['consensus-creator'],
+				};
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				// Dashboard is now in auth section as a button link
+				const dashboardLink = dialog.getByRole('link', { name: 'Dashboard' });
+				await expect.element(dashboardLink).toBeInTheDocument();
+				// Procesos is in nav section
+				const procesosLink = dialog.getByRole('link', { name: 'Procesos' });
+				await expect.element(procesosLink).toBeInTheDocument();
+				// Dashboard (in auth section) should appear before Procesos (in nav section)
+				const position = dashboardLink.element().compareDocumentPosition(procesosLink.element());
+				expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+			});
+		});
+
+		describe('Dashboard button design in Sheet auth section', () => {
+			it('shows Dashboard button in Sheet auth section with pill styling for consensus-creator', async () => {
+				mockPage.data.user = {
+					sub: 'creator-1',
+					name: 'Creator User',
+					email: '[email protected]',
+					roles: ['consensus-creator'],
+				};
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				// Dashboard should be a link with pill button styling in auth section
+				const dashboardLink = dialog.getByRole('link', { name: 'Dashboard' });
+				await expect.element(dashboardLink).toBeInTheDocument();
+				const cls = dashboardLink.element().className;
+				// Original pill styling
+				expect(cls).toContain('bg-brand-black');
+				expect(cls).toContain('text-white');
+				expect(cls).toContain('rounded-full');
+			});
+
+			it('does NOT show Dashboard button in Sheet for user without consensus-creator role', async () => {
+				mockPage.data.user = {
+					sub: 'plain-user',
+					name: 'Plain User',
+					email: '[email protected]',
+				};
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				await expect.element(
+					dialog.getByRole('link', { name: 'Dashboard' })
+				).not.toBeInTheDocument();
+			});
+		});
+
+		describe('Sheet auth layout — centered vertical', () => {
+			beforeEach(() => {
+				mockPage.data.user = {
+					sub: 'test-user-123',
+					name: 'María García',
+					email: '[email protected]',
+					picture: 'https://example.com/avatar.jpg',
+				};
+			});
+
+			it('shows Cerrar Sesión with a LogOut icon in the Sheet', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				const cerrarBtn = dialog.getByRole('button', { name: 'Cerrar Sesión' });
+				await expect.element(cerrarBtn).toBeInTheDocument();
+				// LogOut icon renders as an inline SVG child of the button
+				const svg = cerrarBtn.element().querySelector('svg');
+				expect(svg).toBeTruthy();
+				expect(svg!.tagName.toLowerCase()).toBe('svg');
+			});
+
+			it('shows Cerrar Sesión with red text styling in the Sheet', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				const cerrarBtn = dialog.getByRole('button', { name: 'Cerrar Sesión' });
+				const cls = cerrarBtn.element().className;
+				expect(cls).toContain('text-red-600');
+			});
+
+			it('does NOT have truncate on Sheet email', async () => {
+				render(Header);
+				await page.getByRole('button', { name: 'Abrir menú de navegación' }).click();
+				const dialog = page.getByRole('dialog');
+				const email = dialog.getByText('[email protected]');
+				const cls = email.element().className;
+				expect(cls).not.toContain('truncate');
 			});
 		});
 
